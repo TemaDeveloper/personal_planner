@@ -8,7 +8,18 @@ import User from "./models/user";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === "development",
+  debug: true,
+  logger: {
+    error(code, ...message) {
+      console.error("[auth][error]", code, JSON.stringify(message));
+    },
+    warn(code, ...message) {
+      console.warn("[auth][warn]", code, JSON.stringify(message));
+    },
+    debug(code, ...message) {
+      console.log("[auth][debug]", code, JSON.stringify(message));
+    },
+  },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -43,13 +54,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      if (user && account) {
-        // On sign-in, look up the MongoDB _id
-        await connectDB();
-        const dbUser = await User.findOne({ email: user.email });
-        if (dbUser) {
-          token.id = dbUser._id.toString();
+      try {
+        if (user && account) {
+          await connectDB();
+          const dbUser = await User.findOne({ email: user.email });
+          if (dbUser) {
+            token.id = dbUser._id.toString();
+          }
         }
+      } catch (e) {
+        console.error("[auth] jwt callback error:", e);
       }
       return token;
     },
@@ -82,6 +96,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   session: { strategy: "jwt" },
 });
