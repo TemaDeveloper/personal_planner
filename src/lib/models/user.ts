@@ -205,7 +205,5 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-UserSchema.index({ email: 1 }, { unique: true });
-
 if (mongoose.models.User) mongoose.deleteModel("User");
 export default mongoose.model<IUser>("User", UserSchema);
