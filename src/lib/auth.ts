@@ -7,6 +7,8 @@ import User from "./models/user";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -58,19 +60,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        await connectDB();
-        const existing = await User.findOne({ email: user.email });
-        if (!existing) {
-          await User.create({
-            name: user.name ?? "User",
-            email: user.email!,
-            image: user.image ?? undefined,
-            provider: "google",
-          });
+      try {
+        if (account?.provider === "google") {
+          await connectDB();
+          const existing = await User.findOne({ email: user.email });
+          if (!existing) {
+            await User.create({
+              name: user.name ?? "User",
+              email: user.email!,
+              image: user.image ?? undefined,
+              provider: "google",
+            });
+          }
         }
+        return true;
+      } catch (e) {
+        console.error("[auth] signIn error:", e);
+        return true;
       }
-      return true;
     },
   },
   pages: {
