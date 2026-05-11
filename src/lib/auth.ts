@@ -8,22 +8,11 @@ import User from "./models/user";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-  debug: true,
-  logger: {
-    error(code, ...message) {
-      console.error("[auth][error]", code, JSON.stringify(message));
-    },
-    warn(code, ...message) {
-      console.warn("[auth][warn]", code, JSON.stringify(message));
-    },
-    debug(code, ...message) {
-      console.log("[auth][debug]", code, JSON.stringify(message));
-    },
-  },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      checks: ["state"],
     }),
     Credentials({
       credentials: {
