@@ -1,0 +1,32 @@
+import {
+  Briefcase,
+  Dumbbell,
+  DollarSign,
+  Flame,
+  GraduationCap,
+  Palette,
+  Home,
+  Heart,
+  Target,
+  BookOpen,
+  NotebookPen,
+  ShoppingCart,
+  UtensilsCrossed,
+  type LucideIcon,
+} from "lucide-react";
+
+export const ICON_MAP: Record<string, LucideIcon> = {
+  Briefcase,
+  Dumbbell,
+  DollarSign,
+  Flame,
+  GraduationCap,
+  Palette,
+  Home,
+  Heart,
+  Target,
+  BookOpen,
+  NotebookPen,
+  ShoppingCart,
+  UtensilsCrossed,
+};
