@@ -31,17 +31,18 @@ export async function POST(req: NextRequest) {
     const config = await generateWithDefaultAI(prompt.trim());
     return NextResponse.json({ config });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "AI generation failed";
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[onboarding/generate] Error:", message);
 
-    if (message.includes("401") || message.includes("invalid") || message.includes("Unauthorized")) {
+    if (message.includes("401") || message.includes("Unauthorized") || message.includes("Invalid API Key")) {
       return NextResponse.json({ error: "AI service authentication failed" }, { status: 500 });
     }
-    if (message.includes("429") || message.includes("rate")) {
+    if (message.includes("429") || message.includes("rate limit")) {
       return NextResponse.json({ error: "AI rate limited. Please try again in a moment." }, { status: 429 });
     }
 
     return NextResponse.json(
-      { error: "Failed to generate config. Please try again." },
+      { error: `Failed to generate config: ${message.slice(0, 100)}` },
       { status: 500 }
     );
   }
