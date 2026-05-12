@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Check, ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
 import { startOfWeek, addWeeks, addDays, format, startOfDay } from "date-fns";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface AttendanceRecord {
   _id: string;
@@ -97,34 +99,28 @@ export default function GymPage() {
 
       {/* Week navigation */}
       <div className="flex items-center justify-between mb-6">
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => setWeekOffset((p) => p - 1)}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{
-            background: "var(--surface-1)",
-            border: "1px solid var(--border-subtle)",
-          }}
         >
           <ChevronLeft size={16} />
-        </button>
+        </Button>
         <span className="text-sm font-medium">{weekLabel}</span>
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => setWeekOffset((p) => p + 1)}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{
-            background: "var(--surface-1)",
-            border: "1px solid var(--border-subtle)",
-          }}
         >
           <ChevronRight size={16} />
-        </button>
+        </Button>
       </div>
 
       {/* Weekly grid */}
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {DAYS.map((day) => (
-            <div key={day} className="planner-surface p-4 h-24 animate-pulse" />
+            <Card key={day} padding="md" className="h-24 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -135,21 +131,24 @@ export default function GymPage() {
             const isToggling = toggling === idx;
 
             return (
-              <button
+              <Card
                 key={day}
-                onClick={() => toggleDay(dayDate, idx)}
-                disabled={isToggling}
-                className="planner-surface p-4 flex flex-col items-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                interactive
+                padding="md"
+                className={`flex flex-col items-center gap-2 transition-all disabled:opacity-50 cursor-pointer ${
+                  attended
+                    ? "bg-[var(--accent-glow)] border-[var(--accent-color)]"
+                    : ""
+                }`}
+                onClick={() => !isToggling && toggleDay(dayDate, idx)}
                 style={{
-                  background: attended ? "var(--accent-glow)" : undefined,
-                  border: attended
-                    ? "1px solid var(--accent-color)"
-                    : undefined,
+                  opacity: isToggling ? 0.5 : 1,
                 }}
               >
                 <p
-                  className="text-xs font-semibold"
-                  style={{ color: attended ? "var(--accent-color)" : "var(--text-muted)" }}
+                  className={`text-xs font-semibold ${
+                    attended ? "text-[var(--accent-color)]" : "text-[var(--text-muted)]"
+                  }`}
                 >
                   {day.slice(0, 3)}
                 </p>
@@ -164,12 +163,12 @@ export default function GymPage() {
                   }}
                 >
                   {attended ? (
-                    <Check size={16} style={{ color: "var(--background)" }} />
+                    <Check size={16} className="text-[var(--background)]" />
                   ) : (
                     <Dumbbell size={14} className="text-muted-foreground" />
                   )}
                 </div>
-              </button>
+              </Card>
             );
           })}
         </div>

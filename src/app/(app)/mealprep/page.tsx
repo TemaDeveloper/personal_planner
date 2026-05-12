@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { FormInput, FormSelect } from "@/components/ui/form-input";
 import {
   Plus,
   Trash2,
   ChevronLeft,
   ChevronRight,
-  X,
 } from "lucide-react";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 
@@ -68,21 +71,21 @@ export default function MealPrepPage() {
 
       {/* Week navigation */}
       <div className="flex items-center justify-between mb-6">
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => setWeekOffset((p) => p - 1)}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
         >
           <ChevronLeft size={16} />
-        </button>
+        </Button>
         <span className="text-sm font-medium">{weekLabel}</span>
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => setWeekOffset((p) => p + 1)}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
         >
           <ChevronRight size={16} />
-        </button>
+        </Button>
       </div>
 
       {/* Weekly grid */}
@@ -92,25 +95,27 @@ export default function MealPrepPage() {
           const dayDate = addDays(weekStart, idx);
 
           return (
-            <div key={day} className="planner-surface p-4 min-h-[160px] flex flex-col">
+            <Card key={day} padding="sm" className="min-h-[160px] flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-xs font-semibold" style={{ color: "var(--accent-color)" }}>
+                  <p className="text-xs font-semibold text-[var(--accent-color)]">
                     {day.slice(0, 3)}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
                     {format(dayDate, "MMM d")}
                   </p>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
                   onClick={() => {
                     setEditDay(idx);
                     setShowForm(true);
                   }}
-                  className="p-2 rounded-md hover:bg-muted transition-colors"
                 >
-                  <Plus size={14} className="text-muted-foreground" />
-                </button>
+                  <Plus size={14} />
+                </Button>
               </div>
 
               {plan && plan.meals.length > 0 ? (
@@ -135,32 +140,39 @@ export default function MealPrepPage() {
                   <p className="text-xs text-muted-foreground">No meals</p>
                 </div>
               )}
-            </div>
+            </Card>
           );
         })}
       </div>
 
-      {showForm && editDay !== null && (
-        <MealForm
-          date={addDays(weekStart, editDay)}
-          dayOfWeek={editDay + 1}
-          existing={getPlanForDay(editDay)}
-          onClose={() => { setShowForm(false); setEditDay(null); }}
-          onSuccess={(plan) => {
-            setPlans((prev) => {
-              const filtered = prev.filter((p) => p.dayOfWeek !== plan.dayOfWeek || p.date !== plan.date);
-              return [...filtered, plan];
-            });
-            setShowForm(false);
-            setEditDay(null);
-          }}
-        />
-      )}
+      <Modal
+        open={showForm && editDay !== null}
+        onClose={() => { setShowForm(false); setEditDay(null); }}
+        title={editDay !== null ? format(addDays(weekStart, editDay), "EEEE, MMM d") : ""}
+        maxWidth="max-w-md"
+      >
+        {editDay !== null && (
+          <MealFormContent
+            date={addDays(weekStart, editDay)}
+            dayOfWeek={editDay + 1}
+            existing={getPlanForDay(editDay)}
+            onClose={() => { setShowForm(false); setEditDay(null); }}
+            onSuccess={(plan) => {
+              setPlans((prev) => {
+                const filtered = prev.filter((p) => p.dayOfWeek !== plan.dayOfWeek || p.date !== plan.date);
+                return [...filtered, plan];
+              });
+              setShowForm(false);
+              setEditDay(null);
+            }}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
 
-function MealForm({
+function MealFormContent({
   date,
   dayOfWeek,
   existing,
@@ -179,14 +191,6 @@ function MealForm({
     ]
   );
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,89 +221,78 @@ function MealForm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
-        className="relative w-full max-w-md rounded-xl p-6 animate-slide-up max-h-[80vh] overflow-y-auto"
-        style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">{format(date, "EEEE, MMM d")}</h3>
-          <button onClick={onClose}>
-            <X size={18} className="text-muted-foreground" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {meals.map((meal, idx) => (
-            <div
-              key={idx}
-              className="p-3 rounded-lg"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {meals.map((meal, idx) => (
+        <Card key={idx} variant="inset" padding="sm">
+          <div className="flex items-center gap-2 mb-2">
+            <FormSelect
+              value={meal.type}
+              onChange={(e) => {
+                const updated = [...meals];
+                updated[idx].type = e.target.value;
+                setMeals(updated);
+              }}
+              className="text-xs !py-1.5 !px-2"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <select
-                  value={meal.type}
-                  onChange={(e) => {
-                    const updated = [...meals];
-                    updated[idx].type = e.target.value;
-                    setMeals(updated);
-                  }}
-                  className="px-2 py-1.5 rounded text-xs"
-                  style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-                >
-                  {MEAL_TYPES.map((t) => (
-                    <option key={t} value={t}>{MEAL_LABELS[t]}</option>
-                  ))}
-                </select>
-                {meals.length > 1 && (
-                  <button type="button" onClick={() => setMeals(meals.filter((_, i) => i !== idx))} className="ml-auto">
-                    <Trash2 size={12} className="text-muted-foreground" />
-                  </button>
-                )}
-              </div>
-              <input
-                type="text"
-                placeholder="Meal name"
-                value={meal.name}
-                onChange={(e) => {
-                  const updated = [...meals];
-                  updated[idx].name = e.target.value;
-                  setMeals(updated);
-                }}
-                className="w-full px-2 py-1.5 rounded text-sm mb-1"
-                style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-              />
-              <input
-                type="text"
-                placeholder="Notes (optional)"
-                value={meal.notes}
-                onChange={(e) => {
-                  const updated = [...meals];
-                  updated[idx].notes = e.target.value;
-                  setMeals(updated);
-                }}
-                className="w-full px-2 py-1.5 rounded text-xs"
-                style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}
-              />
-            </div>
-          ))}
-
-          <button
-            type="button"
-            onClick={() => setMeals([...meals, { type: "lunch", name: "", notes: "" }])}
-            className="w-full py-2 rounded-lg text-xs font-medium"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}
-          >
-            + Add meal
-          </button>
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg text-sm font-medium" style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50">{saving ? "Saving..." : "Save meals"}</button>
+              {MEAL_TYPES.map((t) => (
+                <option key={t} value={t}>{MEAL_LABELS[t]}</option>
+              ))}
+            </FormSelect>
+            {meals.length > 1 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="ml-auto h-6 w-6"
+                onClick={() => setMeals(meals.filter((_, i) => i !== idx))}
+              >
+                <Trash2 size={12} />
+              </Button>
+            )}
           </div>
-        </form>
+          <FormInput
+            type="text"
+            placeholder="Meal name"
+            value={meal.name}
+            onChange={(e) => {
+              const updated = [...meals];
+              updated[idx].name = e.target.value;
+              setMeals(updated);
+            }}
+            className="mb-1 text-sm"
+          />
+          <FormInput
+            type="text"
+            placeholder="Notes (optional)"
+            value={meal.notes}
+            onChange={(e) => {
+              const updated = [...meals];
+              updated[idx].notes = e.target.value;
+              setMeals(updated);
+            }}
+            className="text-xs"
+          />
+        </Card>
+      ))}
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        size="sm"
+        onClick={() => setMeals([...meals, { type: "lunch", name: "", notes: "" }])}
+      >
+        + Add meal
+      </Button>
+
+      <div className="flex gap-3 pt-2">
+        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" className="flex-1" disabled={saving}>
+          {saving ? "Saving..." : "Save meals"}
+        </Button>
       </div>
-    </div>
+    </form>
   );
 }

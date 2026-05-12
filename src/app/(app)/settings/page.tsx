@@ -10,10 +10,18 @@ import {
   THEMES, FONTS, FONT_META, LAYOUTS, CURRENCIES, THEME_COLORS,
   WEEK_STARTS, DATE_FORMATS, TIME_FORMATS,
   SECTIONS, SECTION_META, type SectionId, type FontStyle,
+  type ColorMode,
 } from "@/lib/constants";
-import { Plus, Trash2, Save, Sparkles } from "lucide-react";
+import { Plus, Trash2, Save, Sparkles, Sun, Monitor, Moon } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
 import { AI_PROVIDERS, type AIProvider } from "@/lib/ai";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/form-input";
+import { FormSelect } from "@/components/ui/form-input";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Subject {
   name: string;
@@ -39,6 +47,12 @@ interface Bill {
 
 const SUBJECT_COLORS = ["#D4A853", "#00C9A7", "#9B72F0", "#F07070", "#7EC8A0", "#5B9BD5", "#FF8C42"];
 
+const COLOR_MODE_SEGMENTS = [
+  { value: "light" as ColorMode, label: "Light", icon: Sun },
+  { value: "system" as ColorMode, label: "System", icon: Monitor },
+  { value: "dark" as ColorMode, label: "Dark", icon: Moon },
+];
+
 export default function SettingsPage() {
   const router = useRouter();
   const { preferences, updatePreferences } = useTheme();
@@ -47,7 +61,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
-  const [avatarEmoji, setAvatarEmoji] = useState("🌟");
+  const [avatarEmoji, setAvatarEmoji] = useState("\u{1F31F}");
   const [accentTheme, setAccentTheme] = useState(preferences.accentTheme);
   const [fontStyle, setFontStyle] = useState(preferences.fontStyle);
   const [layoutDensity, setLayoutDensity] = useState(preferences.layoutDensity);
@@ -55,6 +69,7 @@ export default function SettingsPage() {
   const [weekStart, setWeekStart] = useState(preferences.weekStart);
   const [dateFormat, setDateFormat] = useState(preferences.dateFormat);
   const [timeFormat, setTimeFormat] = useState(preferences.timeFormat);
+  const [colorMode, setColorMode] = useState<ColorMode>(preferences.colorMode);
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [gasPrice, setGasPrice] = useState("210.2");
@@ -74,7 +89,7 @@ export default function SettingsPage() {
       .then((r) => r.json())
       .then((data) => {
         setName(data.name || "");
-        setAvatarEmoji(data.avatarEmoji || "🌟");
+        setAvatarEmoji(data.avatarEmoji || "\u{1F31F}");
         setAccentTheme(data.preferences?.accentTheme || "amber");
         setFontStyle(data.preferences?.fontStyle || "sans");
         setLayoutDensity(data.preferences?.layoutDensity || "default");
@@ -82,6 +97,7 @@ export default function SettingsPage() {
         setWeekStart(data.preferences?.weekStart || "monday");
         setDateFormat(data.preferences?.dateFormat || "MMM d, yyyy");
         setTimeFormat(data.preferences?.timeFormat || "24h");
+        setColorMode(data.preferences?.colorMode || "system");
         setJobs(data.workConfig?.jobs || []);
         setGasPrice(String(data.workConfig?.gasPrice || 210.2));
         setCarConsumption(String(data.workConfig?.carConsumption || 9.0));
@@ -104,7 +120,7 @@ export default function SettingsPage() {
       body: JSON.stringify({
         name,
         avatarEmoji,
-        preferences: { accentTheme, fontStyle, layoutDensity, currency, weekStart, dateFormat, timeFormat },
+        preferences: { accentTheme, fontStyle, layoutDensity, currency, weekStart, dateFormat, timeFormat, colorMode },
         workConfig: {
           jobs,
           gasPrice: Number(gasPrice),
@@ -119,7 +135,7 @@ export default function SettingsPage() {
     });
 
     if (res.ok) {
-      updatePreferences({ accentTheme, fontStyle, layoutDensity, currency, weekStart, dateFormat, timeFormat });
+      updatePreferences({ accentTheme, fontStyle, layoutDensity, currency, weekStart, dateFormat, timeFormat, colorMode });
       updateSections(localSections);
       toast.success("Settings saved");
       router.refresh();
@@ -162,7 +178,7 @@ export default function SettingsPage() {
         <PageHeader title="Settings" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="planner-surface p-6 h-32 animate-pulse" />
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
       </div>
@@ -175,14 +191,15 @@ export default function SettingsPage() {
         title="Settings"
         description="Personalize your planner"
         action={
-          <button
+          <Button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5 disabled:opacity-50"
+            variant="primary"
+            size="md"
           >
             <Save size={14} />
             {saving ? "Saving..." : "Save"}
-          </button>
+          </Button>
         }
       />
 
@@ -190,23 +207,20 @@ export default function SettingsPage() {
         {/* Profile */}
         <Section title="Profile">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Name">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="settings-input"
-              />
-            </Field>
-            <Field label="Avatar">
-              <input
-                type="text"
-                value={avatarEmoji}
-                onChange={(e) => setAvatarEmoji(e.target.value)}
-                className="settings-input text-center text-xl"
-                maxLength={2}
-              />
-            </Field>
+            <FormInput
+              label="Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <FormInput
+              label="Avatar"
+              type="text"
+              value={avatarEmoji}
+              onChange={(e) => setAvatarEmoji(e.target.value)}
+              className="text-center text-xl"
+              maxLength={2}
+            />
           </div>
         </Section>
 
@@ -221,13 +235,17 @@ export default function SettingsPage() {
               const Icon = ICON_MAP[meta.icon];
               const enabled = localSections.includes(id);
               return (
-                <button
+                <Card
                   key={id}
+                  variant={enabled ? "default" : "inset"}
+                  padding="none"
+                  interactive
                   onClick={() => toggleSection(id)}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all"
+                  className={`flex items-center gap-3 p-3 transition-all ${
+                    enabled ? "border border-[var(--accent-color)]" : ""
+                  }`}
                   style={{
-                    background: enabled ? "var(--accent-glow)" : "var(--surface-2)",
-                    border: `1px solid ${enabled ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                    background: enabled ? "var(--accent-glow)" : undefined,
                   }}
                 >
                   {Icon && (
@@ -245,23 +263,12 @@ export default function SettingsPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">{meta.description}</p>
                   </div>
-                  <div
-                    className="w-10 h-6 rounded-full transition-all flex items-center px-0.5"
-                    style={{
-                      background: enabled ? "var(--accent-color)" : "var(--surface-1)",
-                      border: enabled ? "none" : "1px solid var(--border-subtle)",
-                    }}
-                  >
-                    <div
-                      className="w-5 h-5 rounded-full transition-all"
-                      style={{
-                        background: enabled ? "white" : "var(--text-muted)",
-                        transform: enabled ? "translateX(16px)" : "translateX(0)",
-                        opacity: enabled ? 1 : 0.5,
-                      }}
-                    />
-                  </div>
-                </button>
+                  <ToggleSwitch
+                    checked={enabled}
+                    onChange={() => toggleSection(id)}
+                    size="sm"
+                  />
+                </Card>
               );
             })}
           </div>
@@ -275,7 +282,7 @@ export default function SettingsPage() {
             </p>
             <div className="space-y-3">
               {subjects.map((subj, idx) => (
-                <div key={idx} className="planner-surface-2 p-4">
+                <Card key={idx} variant="inset" padding="md">
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
@@ -288,7 +295,7 @@ export default function SettingsPage() {
                       className="w-8 h-8 rounded cursor-pointer border-0 p-0"
                       style={{ background: "transparent" }}
                     />
-                    <input
+                    <FormInput
                       type="text"
                       placeholder="Subject name"
                       value={subj.name}
@@ -297,29 +304,26 @@ export default function SettingsPage() {
                         updated[idx].name = e.target.value;
                         setSubjects(updated);
                       }}
-                      className="settings-input flex-1"
+                      className="flex-1"
                     />
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setSubjects(subjects.filter((_, i) => i !== idx))}
-                      className="text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
-                </div>
+                </Card>
               ))}
-              <button
+              <Button
+                variant="outline"
                 onClick={addSubject}
-                className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px dashed var(--border-subtle)",
-                  color: "var(--text-muted)",
-                }}
+                className="w-full border-dashed"
               >
                 <Plus size={14} />
                 Add subject
-              </button>
+              </Button>
             </div>
           </Section>
         )}
@@ -328,28 +332,34 @@ export default function SettingsPage() {
         {localSections.includes("gym") && (
           <Section title="Gym">
             <Field label="Target days per week">
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setTargetDaysPerWeek(n)}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: targetDaysPerWeek === n ? "var(--accent-glow)" : "var(--surface-2)",
-                      border: `1px solid ${targetDaysPerWeek === n ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                      color: targetDaysPerWeek === n ? "var(--accent-color)" : "var(--text-muted)",
-                    }}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                segments={[1, 2, 3, 4, 5, 6, 7].map((n) => ({
+                  value: String(n),
+                  label: String(n),
+                }))}
+                value={String(targetDaysPerWeek)}
+                onChange={(v) => setTargetDaysPerWeek(Number(v))}
+                layoutId="gym-days"
+                className="w-full"
+              />
             </Field>
           </Section>
         )}
 
         {/* Appearance */}
         <Section title="Appearance">
+          <Field label="Color mode">
+            <SegmentedControl
+              segments={COLOR_MODE_SEGMENTS}
+              value={colorMode}
+              onChange={(v) => {
+                setColorMode(v);
+                updatePreferences({ colorMode: v });
+              }}
+              layoutId="color-mode"
+            />
+          </Field>
+
           <Field label="Accent color">
             <div className="flex flex-wrap gap-2">
               {THEMES.map((t) => (
@@ -375,16 +385,22 @@ export default function SettingsPage() {
               {FONTS.map((f) => {
                 const meta = FONT_META[f as FontStyle];
                 return (
-                  <button
+                  <Card
                     key={f}
+                    variant="inset"
+                    padding="sm"
+                    interactive
                     onClick={() => {
                       setFontStyle(f);
                       document.documentElement.setAttribute("data-font", f);
                     }}
-                    className="p-3 rounded-lg text-left transition-all"
+                    className={`text-left transition-all ${
+                      fontStyle === f
+                        ? "border border-[var(--accent-color)]"
+                        : ""
+                    }`}
                     style={{
-                      background: fontStyle === f ? "var(--accent-glow)" : "var(--surface-2)",
-                      border: `1px solid ${fontStyle === f ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                      background: fontStyle === f ? "var(--accent-glow)" : undefined,
                     }}
                   >
                     <p
@@ -404,7 +420,7 @@ export default function SettingsPage() {
                       {meta.label}
                     </p>
                     <p className="text-[10px] text-muted-foreground">{meta.description}</p>
-                  </button>
+                  </Card>
                 );
               })}
             </div>
@@ -412,41 +428,29 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Density">
-              <div className="flex gap-2">
-                {LAYOUTS.map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLayoutDensity(l)}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: layoutDensity === l ? "var(--accent-glow)" : "var(--surface-2)",
-                      border: `1px solid ${layoutDensity === l ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                      color: layoutDensity === l ? "var(--accent-color)" : "var(--text-muted)",
-                    }}
-                  >
-                    {l.charAt(0).toUpperCase() + l.slice(1)}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                segments={LAYOUTS.map((l) => ({
+                  value: l,
+                  label: l.charAt(0).toUpperCase() + l.slice(1),
+                }))}
+                value={layoutDensity}
+                onChange={(v) => setLayoutDensity(v)}
+                layoutId="layout-density"
+                className="w-full"
+              />
             </Field>
 
             <Field label="Currency">
-              <div className="flex flex-wrap gap-2">
-                {CURRENCIES.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setCurrency(c)}
-                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: currency === c ? "var(--accent-glow)" : "var(--surface-2)",
-                      border: `1px solid ${currency === c ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                      color: currency === c ? "var(--accent-color)" : "var(--text-muted)",
-                    }}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                segments={CURRENCIES.map((c) => ({
+                  value: c,
+                  label: c,
+                }))}
+                value={currency}
+                onChange={(v) => setCurrency(v)}
+                layoutId="currency"
+                className="w-full"
+              />
             </Field>
           </div>
         </Section>
@@ -455,53 +459,39 @@ export default function SettingsPage() {
         <Section title="Regional">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Field label="Week starts on">
-              <div className="flex gap-2">
-                {WEEK_STARTS.map((w) => (
-                  <button
-                    key={w}
-                    onClick={() => setWeekStart(w)}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: weekStart === w ? "var(--accent-glow)" : "var(--surface-2)",
-                      border: `1px solid ${weekStart === w ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                      color: weekStart === w ? "var(--accent-color)" : "var(--text-muted)",
-                    }}
-                  >
-                    {w.charAt(0).toUpperCase() + w.slice(1)}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                segments={WEEK_STARTS.map((w) => ({
+                  value: w,
+                  label: w.charAt(0).toUpperCase() + w.slice(1),
+                }))}
+                value={weekStart}
+                onChange={(v) => setWeekStart(v)}
+                layoutId="week-start"
+                className="w-full"
+              />
             </Field>
 
-            <Field label="Date format">
-              <select
-                value={dateFormat}
-                onChange={(e) => setDateFormat(e.target.value)}
-                className="settings-input"
-              >
-                {DATE_FORMATS.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </Field>
+            <FormSelect
+              label="Date format"
+              value={dateFormat}
+              onChange={(e) => setDateFormat(e.target.value)}
+            >
+              {DATE_FORMATS.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </FormSelect>
 
             <Field label="Time format">
-              <div className="flex gap-2">
-                {TIME_FORMATS.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTimeFormat(t)}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: timeFormat === t ? "var(--accent-glow)" : "var(--surface-2)",
-                      border: `1px solid ${timeFormat === t ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                      color: timeFormat === t ? "var(--accent-color)" : "var(--text-muted)",
-                    }}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                segments={TIME_FORMATS.map((t) => ({
+                  value: t,
+                  label: t,
+                }))}
+                value={timeFormat}
+                onChange={(v) => setTimeFormat(v)}
+                layoutId="time-format"
+                className="w-full"
+              />
             </Field>
           </div>
         </Section>
@@ -510,9 +500,9 @@ export default function SettingsPage() {
         <Section title="Jobs">
           <div className="space-y-3">
             {jobs.map((job, idx) => (
-              <div key={idx} className="planner-surface-2 p-4 space-y-3">
+              <Card key={idx} variant="inset" padding="md" className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <input
+                  <FormInput
                     type="text"
                     placeholder="Job name"
                     value={job.name}
@@ -521,43 +511,40 @@ export default function SettingsPage() {
                       updated[idx].name = e.target.value;
                       setJobs(updated);
                     }}
-                    className="settings-input flex-1"
+                    className="flex-1"
                   />
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setJobs(jobs.filter((_, i) => i !== idx))}
-                    className="text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Hourly rate ($)">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      value={job.hourlyRate}
-                      onChange={(e) => {
-                        const updated = [...jobs];
-                        updated[idx].hourlyRate = Number(e.target.value);
-                        setJobs(updated);
-                      }}
-                      className="settings-input"
-                    />
-                  </Field>
-                  <Field label="Weekly target (h)">
-                    <input
-                      type="number"
-                      min="0"
-                      value={job.weeklyTarget}
-                      onChange={(e) => {
-                        const updated = [...jobs];
-                        updated[idx].weeklyTarget = Number(e.target.value);
-                        setJobs(updated);
-                      }}
-                      className="settings-input"
-                    />
-                  </Field>
+                  <FormInput
+                    label="Hourly rate ($)"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    value={job.hourlyRate}
+                    onChange={(e) => {
+                      const updated = [...jobs];
+                      updated[idx].hourlyRate = Number(e.target.value);
+                      setJobs(updated);
+                    }}
+                  />
+                  <FormInput
+                    label="Weekly target (h)"
+                    type="number"
+                    min="0"
+                    value={job.weeklyTarget}
+                    onChange={(e) => {
+                      const updated = [...jobs];
+                      updated[idx].weeklyTarget = Number(e.target.value);
+                      setJobs(updated);
+                    }}
+                  />
                 </div>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
@@ -574,44 +561,36 @@ export default function SettingsPage() {
                     Enable expense & km tracking
                   </span>
                 </label>
-              </div>
+              </Card>
             ))}
-            <button
+            <Button
+              variant="outline"
               onClick={addJob}
-              className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px dashed var(--border-subtle)",
-                color: "var(--text-muted)",
-              }}
+              className="w-full border-dashed"
             >
               <Plus size={14} />
               Add job
-            </button>
+            </Button>
           </div>
         </Section>
 
         {/* Gas configuration */}
         <Section title="Gas / KM">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Gas price (cents/L)">
-              <input
-                type="number"
-                step="0.1"
-                value={gasPrice}
-                onChange={(e) => setGasPrice(e.target.value)}
-                className="settings-input"
-              />
-            </Field>
-            <Field label="Consumption (L/100km)">
-              <input
-                type="number"
-                step="0.1"
-                value={carConsumption}
-                onChange={(e) => setCarConsumption(e.target.value)}
-                className="settings-input"
-              />
-            </Field>
+            <FormInput
+              label="Gas price (cents/L)"
+              type="number"
+              step="0.1"
+              value={gasPrice}
+              onChange={(e) => setGasPrice(e.target.value)}
+            />
+            <FormInput
+              label="Consumption (L/100km)"
+              type="number"
+              step="0.1"
+              value={carConsumption}
+              onChange={(e) => setCarConsumption(e.target.value)}
+            />
           </div>
         </Section>
 
@@ -619,77 +598,68 @@ export default function SettingsPage() {
         <Section title="Monthly Bills">
           <div className="space-y-3">
             {bills.map((bill, idx) => (
-              <div key={idx} className="planner-surface-2 p-4">
+              <Card key={idx} variant="inset" padding="md">
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                   <div className="sm:col-span-5">
-                    <Field label="Name">
-                      <input
-                        type="text"
-                        placeholder="e.g. Rent"
-                        value={bill.name}
-                        onChange={(e) => {
-                          const updated = [...bills];
-                          updated[idx].name = e.target.value;
-                          setBills(updated);
-                        }}
-                        className="settings-input"
-                      />
-                    </Field>
+                    <FormInput
+                      label="Name"
+                      type="text"
+                      placeholder="e.g. Rent"
+                      value={bill.name}
+                      onChange={(e) => {
+                        const updated = [...bills];
+                        updated[idx].name = e.target.value;
+                        setBills(updated);
+                      }}
+                    />
                   </div>
                   <div className="sm:col-span-3">
-                    <Field label="Amount">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={bill.amount}
-                        onChange={(e) => {
-                          const updated = [...bills];
-                          updated[idx].amount = Number(e.target.value);
-                          setBills(updated);
-                        }}
-                        className="settings-input"
-                      />
-                    </Field>
+                    <FormInput
+                      label="Amount"
+                      type="number"
+                      step="0.01"
+                      value={bill.amount}
+                      onChange={(e) => {
+                        const updated = [...bills];
+                        updated[idx].amount = Number(e.target.value);
+                        setBills(updated);
+                      }}
+                    />
                   </div>
                   <div className="sm:col-span-3">
-                    <Field label="Due day">
-                      <input
-                        type="number"
-                        min="1"
-                        max="31"
-                        value={bill.dueDay}
-                        onChange={(e) => {
-                          const updated = [...bills];
-                          updated[idx].dueDay = Number(e.target.value);
-                          setBills(updated);
-                        }}
-                        className="settings-input"
-                      />
-                    </Field>
+                    <FormInput
+                      label="Due day"
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={bill.dueDay}
+                      onChange={(e) => {
+                        const updated = [...bills];
+                        updated[idx].dueDay = Number(e.target.value);
+                        setBills(updated);
+                      }}
+                    />
                   </div>
                   <div className="sm:col-span-1 flex justify-end pb-1">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setBills(bills.filter((_, i) => i !== idx))}
-                      className="text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
-            <button
+            <Button
+              variant="outline"
               onClick={addBill}
-              className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px dashed var(--border-subtle)",
-                color: "var(--text-muted)",
-              }}
+              className="w-full border-dashed"
             >
               <Plus size={14} />
               Add bill
-            </button>
+            </Button>
           </div>
         </Section>
 
@@ -702,34 +672,28 @@ export default function SettingsPage() {
             </p>
           </div>
           <Field label="Provider">
-            <div className="flex gap-2">
-              {AI_PROVIDERS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setAiProviderSetting(p.id)}
-                  className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{
-                    background: aiProviderSetting === p.id ? "var(--accent-glow)" : "var(--surface-2)",
-                    border: `1px solid ${aiProviderSetting === p.id ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                    color: aiProviderSetting === p.id ? "var(--accent-color)" : "var(--text-muted)",
-                  }}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <Field label="API Key">
-            <input
-              type="password"
-              placeholder={hasAiKey ? "Key saved — enter new to replace" : AI_PROVIDERS.find((p) => p.id === (aiProviderSetting || "claude"))?.placeholder}
-              value={newAiKey}
-              onChange={(e) => setNewAiKey(e.target.value)}
-              className="settings-input"
+            <SegmentedControl
+              segments={AI_PROVIDERS.map((p) => ({
+                value: p.id,
+                label: p.label,
+              }))}
+              value={(aiProviderSetting || "claude") as string}
+              onChange={(v) => setAiProviderSetting(v as AIProvider)}
+              layoutId="ai-provider"
+              className="w-full"
             />
           </Field>
+          <FormInput
+            label="API Key"
+            type="password"
+            placeholder={hasAiKey ? "Key saved \u2014 enter new to replace" : AI_PROVIDERS.find((p) => p.id === (aiProviderSetting || "claude"))?.placeholder}
+            value={newAiKey}
+            onChange={(e) => setNewAiKey(e.target.value)}
+          />
           {hasAiKey && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={async () => {
                 await fetch("/api/user/preferences", {
                   method: "PATCH",
@@ -740,43 +704,26 @@ export default function SettingsPage() {
                 setAiProviderSetting("");
                 toast.success("API key removed");
               }}
-              className="text-xs text-destructive hover:underline"
+              className="text-destructive"
             >
               Remove API key
-            </button>
+            </Button>
           )}
         </Section>
       </div>
 
       {/* Sticky mobile save button */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 z-40" style={{ background: "var(--background)", borderTop: "1px solid var(--border-subtle)" }}>
-        <button
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 z-40 bg-[var(--background)] border-t border-[var(--border-subtle)]">
+        <Button
           onClick={handleSave}
           disabled={saving}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50"
+          variant="primary"
+          className="w-full"
         >
           <Save size={14} />
           {saving ? "Saving..." : "Save changes"}
-        </button>
+        </Button>
       </div>
-
-      <style>{`
-        .settings-input {
-          width: 100%;
-          padding: 0.625rem 0.75rem;
-          border-radius: var(--radius);
-          font-size: 0.875rem;
-          background: var(--surface-2);
-          border: 1px solid var(--border-subtle);
-          color: var(--text-primary);
-          transition: all 0.2s;
-        }
-        .settings-input:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px rgba(var(--ring), 0.3);
-          border-color: var(--accent-color);
-        }
-      `}</style>
     </div>
   );
 }
@@ -789,10 +736,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="planner-surface p-6">
+    <Card variant="default" padding="lg">
       <h2 className="text-sm font-semibold mb-4">{title}</h2>
       <div className="space-y-4">{children}</div>
-    </div>
+    </Card>
   );
 }
 
@@ -805,7 +752,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
         {label}
       </label>
       {children}

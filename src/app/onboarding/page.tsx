@@ -22,6 +22,11 @@ import {
 import { ICON_MAP } from "@/lib/icon-map";
 import type { PlannerConfig } from "@/lib/ai";
 
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormInput, FormSelect, FormTextarea } from "@/components/ui/form-input";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
+
 interface Job {
   name: string;
   hourlyRate: number;
@@ -187,7 +192,7 @@ export default function OnboardingPage() {
       title: "Welcome to MyPlanner",
       content: (
         <div className="space-y-8">
-          <p className="text-muted-foreground text-center max-w-md mx-auto">
+          <p className="text-[var(--text-muted)] text-center max-w-md mx-auto">
             Your personal workspace for tracking work, gym, finances, study, and more — designed exactly how you want it.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-md mx-auto">
@@ -199,11 +204,11 @@ export default function OnboardingPage() {
                 return { icon: Icon || LayoutDashboard, label: meta.label, desc: meta.description };
               }),
             ].map((feature) => (
-              <div key={feature.label} className="planner-surface-2 p-4 text-center">
+              <Card key={feature.label} variant="inset" padding="md" className="text-center">
                 <feature.icon size={24} className="mx-auto mb-2" style={{ color: "var(--accent-color)" }} />
-                <p className="text-xs font-semibold">{feature.label}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{feature.desc}</p>
-              </div>
+                <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{feature.label}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{feature.desc}</p>
+              </Card>
             ))}
           </div>
         </div>
@@ -215,29 +220,23 @@ export default function OnboardingPage() {
       title: aiMode ? "Describe your planner" : "Choose your sections",
       content: aiMode ? (
         <div className="space-y-6 max-w-md mx-auto">
-          <p className="text-xs text-muted-foreground text-center">
+          <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
             Tell us what you want to track and we&apos;ll set up your planner automatically.
           </p>
 
-          <div>
-            <textarea
-              placeholder={"e.g. I work two part-time jobs at Starbucks ($17/hr, 20h/week) and a bookstore ($16/hr, 15h/week). I go to the gym 5 days a week. I study Computer Science and Math at university. I want to track my reading and daily habits like meditation and journaling."}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={5}
-              className="w-full px-4 py-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-              }}
-            />
-          </div>
+          <FormTextarea
+            placeholder={"e.g. I work two part-time jobs at Starbucks ($17/hr, 20h/week) and a bookstore ($16/hr, 15h/week). I go to the gym 5 days a week. I study Computer Science and Math at university. I want to track my reading and daily habits like meditation and journaling."}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={5}
+          />
 
-          <button
+          <Button
             onClick={handleGenerate}
             disabled={generating}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5 disabled:opacity-50"
+            variant="primary"
+            size="lg"
+            className="w-full"
           >
             {generating ? (
               <>
@@ -250,19 +249,20 @@ export default function OnboardingPage() {
                 Generate my planner
               </>
             )}
-          </button>
+          </Button>
 
           <button
             onClick={() => setAiMode(false)}
-            className="w-full text-center text-xs text-muted-foreground hover:underline"
+            className="w-full text-center text-xs hover:underline"
+            style={{ color: "var(--text-muted)" }}
           >
             Skip AI — I&apos;ll choose sections manually
           </button>
         </div>
       ) : (
-        // Manual section picker (existing)
+        // Manual section picker
         <div className="space-y-4 max-w-sm mx-auto">
-          <p className="text-xs text-muted-foreground text-center mb-2">
+          <p className="text-xs text-center mb-2" style={{ color: "var(--text-muted)" }}>
             Pick which sections you want. You can change this anytime in Settings.
           </p>
           <div className="space-y-2">
@@ -283,18 +283,21 @@ export default function OnboardingPage() {
                   {Icon && <Icon size={20} style={{ color: enabled ? "var(--accent-color)" : "var(--text-muted)" }} />}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium" style={{ color: enabled ? "var(--text-primary)" : "var(--text-muted)" }}>{meta.label}</p>
-                    <p className="text-[11px] text-muted-foreground">{meta.description}</p>
+                    <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{meta.description}</p>
                   </div>
-                  <div className="w-10 h-6 rounded-full transition-all flex items-center px-0.5" style={{ background: enabled ? "var(--accent-color)" : "var(--surface-1)", border: enabled ? "none" : "1px solid var(--border-subtle)" }}>
-                    <div className="w-5 h-5 rounded-full transition-all" style={{ background: enabled ? "white" : "var(--text-muted)", transform: enabled ? "translateX(16px)" : "translateX(0)", opacity: enabled ? 1 : 0.5 }} />
-                  </div>
+                  <ToggleSwitch
+                    checked={enabled}
+                    onChange={() => toggleSection(id)}
+                    size="sm"
+                  />
                 </button>
               );
             })}
           </div>
           <button
             onClick={() => setAiMode(true)}
-            className="w-full text-center text-xs text-muted-foreground hover:underline mt-2"
+            className="w-full text-center text-xs hover:underline mt-2"
+            style={{ color: "var(--text-muted)" }}
           >
             Use AI to set up automatically
           </button>
@@ -325,9 +328,11 @@ export default function OnboardingPage() {
                 >
                   {Icon && <Icon size={16} style={{ color: enabled ? "var(--accent-color)" : "var(--text-muted)" }} />}
                   <span className="text-sm font-medium flex-1" style={{ color: enabled ? "var(--text-primary)" : "var(--text-muted)" }}>{meta.label}</span>
-                  <div className="w-8 h-5 rounded-full transition-all flex items-center px-0.5" style={{ background: enabled ? "var(--accent-color)" : "var(--surface-1)", border: enabled ? "none" : "1px solid var(--border-subtle)" }}>
-                    <div className="w-4 h-4 rounded-full transition-all" style={{ background: enabled ? "white" : "var(--text-muted)", transform: enabled ? "translateX(12px)" : "translateX(0)", opacity: enabled ? 1 : 0.5 }} />
-                  </div>
+                  <ToggleSwitch
+                    checked={enabled}
+                    onChange={() => toggleSection(id)}
+                    size="sm"
+                  />
                 </button>
               );
             })}
@@ -338,12 +343,32 @@ export default function OnboardingPage() {
             <ConfigCard title="Jobs">
               {jobs.map((job, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input type="text" value={job.name} onChange={(e) => { const u = [...jobs]; u[idx].name = e.target.value; setJobs(u); }} className="config-input flex-1" placeholder="Job name" />
-                  <input type="number" value={job.hourlyRate} onChange={(e) => { const u = [...jobs]; u[idx].hourlyRate = Number(e.target.value); setJobs(u); }} className="config-input w-16" placeholder="$/hr" />
-                  <button onClick={() => setJobs(jobs.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
+                  <FormInput
+                    type="text"
+                    value={job.name}
+                    onChange={(e) => { const u = [...jobs]; u[idx].name = e.target.value; setJobs(u); }}
+                    className="flex-1"
+                    placeholder="Job name"
+                  />
+                  <FormInput
+                    type="number"
+                    value={job.hourlyRate}
+                    onChange={(e) => { const u = [...jobs]; u[idx].hourlyRate = Number(e.target.value); setJobs(u); }}
+                    className="w-16"
+                    placeholder="$/hr"
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => setJobs(jobs.filter((_, i) => i !== idx))}>
+                    <Trash2 size={12} />
+                  </Button>
                 </div>
               ))}
-              <button onClick={() => setJobs([...jobs, { name: "", hourlyRate: 0, weeklyTarget: 20, active: true, enableExpenseTracking: false }])} className="text-xs text-muted-foreground hover:underline flex items-center gap-1"><Plus size={10} />Add job</button>
+              <button
+                onClick={() => setJobs([...jobs, { name: "", hourlyRate: 0, weeklyTarget: 20, active: true, enableExpenseTracking: false }])}
+                className="text-xs hover:underline flex items-center gap-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                <Plus size={10} />Add job
+              </button>
             </ConfigCard>
           )}
 
@@ -352,10 +377,21 @@ export default function OnboardingPage() {
             <ConfigCard title="Gym target">
               <div className="flex gap-1.5">
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                  <button key={n} onClick={() => setTargetDaysPerWeek(n)} className="flex-1 py-1.5 rounded text-xs font-medium transition-all" style={{ background: targetDaysPerWeek === n ? "var(--accent-glow)" : "var(--surface-1)", border: `1px solid ${targetDaysPerWeek === n ? "var(--accent-color)" : "var(--border-subtle)"}`, color: targetDaysPerWeek === n ? "var(--accent-color)" : "var(--text-muted)" }}>{n}</button>
+                  <button
+                    key={n}
+                    onClick={() => setTargetDaysPerWeek(n)}
+                    className="flex-1 py-1.5 rounded text-xs font-medium transition-all"
+                    style={{
+                      background: targetDaysPerWeek === n ? "var(--accent-glow)" : "var(--surface-1)",
+                      border: `1px solid ${targetDaysPerWeek === n ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                      color: targetDaysPerWeek === n ? "var(--accent-color)" : "var(--text-muted)",
+                    }}
+                  >
+                    {n}
+                  </button>
                 ))}
               </div>
-              <p className="text-[10px] text-muted-foreground">{targetDaysPerWeek} days per week</p>
+              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{targetDaysPerWeek} days per week</p>
             </ConfigCard>
           )}
 
@@ -364,9 +400,16 @@ export default function OnboardingPage() {
             <ConfigCard title="Subjects">
               {subjects.map((s, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ background: s.color }} />
-                  <input type="text" value={s.name} onChange={(e) => { const u = [...subjects]; u[idx].name = e.target.value; setSubjects(u); }} className="config-input flex-1" />
-                  <button onClick={() => setSubjects(subjects.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: s.color }} />
+                  <FormInput
+                    type="text"
+                    value={s.name}
+                    onChange={(e) => { const u = [...subjects]; u[idx].name = e.target.value; setSubjects(u); }}
+                    className="flex-1"
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => setSubjects(subjects.filter((_, i) => i !== idx))}>
+                    <Trash2 size={12} />
+                  </Button>
                 </div>
               ))}
             </ConfigCard>
@@ -377,8 +420,15 @@ export default function OnboardingPage() {
             <ConfigCard title="Hobbies">
               {hobbies.map((h, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input type="text" value={h.name} onChange={(e) => { const u = [...hobbies]; u[idx].name = e.target.value; setHobbies(u); }} className="config-input flex-1" />
-                  <button onClick={() => setHobbies(hobbies.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
+                  <FormInput
+                    type="text"
+                    value={h.name}
+                    onChange={(e) => { const u = [...hobbies]; u[idx].name = e.target.value; setHobbies(u); }}
+                    className="flex-1"
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => setHobbies(hobbies.filter((_, i) => i !== idx))}>
+                    <Trash2 size={12} />
+                  </Button>
                 </div>
               ))}
             </ConfigCard>
@@ -389,13 +439,24 @@ export default function OnboardingPage() {
             <ConfigCard title="Chores">
               {chores.map((c, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input type="text" value={c.name} onChange={(e) => { const u = [...chores]; u[idx].name = e.target.value; setChores(u); }} className="config-input flex-1" />
-                  <select value={c.frequency} onChange={(e) => { const u = [...chores]; u[idx].frequency = e.target.value; setChores(u); }} className="config-input w-24">
+                  <FormInput
+                    type="text"
+                    value={c.name}
+                    onChange={(e) => { const u = [...chores]; u[idx].name = e.target.value; setChores(u); }}
+                    className="flex-1"
+                  />
+                  <FormSelect
+                    value={c.frequency}
+                    onChange={(e) => { const u = [...chores]; u[idx].frequency = e.target.value; setChores(u); }}
+                    className="w-24"
+                  >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
-                  </select>
-                  <button onClick={() => setChores(chores.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
+                  </FormSelect>
+                  <Button variant="ghost" size="icon" onClick={() => setChores(chores.filter((_, i) => i !== idx))}>
+                    <Trash2 size={12} />
+                  </Button>
                 </div>
               ))}
             </ConfigCard>
@@ -406,9 +467,23 @@ export default function OnboardingPage() {
             <ConfigCard title="Bills">
               {bills.map((b, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input type="text" value={b.name} onChange={(e) => { const u = [...bills]; u[idx].name = e.target.value; setBills(u); }} className="config-input flex-1" placeholder="Name" />
-                  <input type="number" value={b.amount} onChange={(e) => { const u = [...bills]; u[idx].amount = Number(e.target.value); setBills(u); }} className="config-input w-20" placeholder="$" />
-                  <button onClick={() => setBills(bills.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
+                  <FormInput
+                    type="text"
+                    value={b.name}
+                    onChange={(e) => { const u = [...bills]; u[idx].name = e.target.value; setBills(u); }}
+                    className="flex-1"
+                    placeholder="Name"
+                  />
+                  <FormInput
+                    type="number"
+                    value={b.amount}
+                    onChange={(e) => { const u = [...bills]; u[idx].amount = Number(e.target.value); setBills(u); }}
+                    className="w-20"
+                    placeholder="$"
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => setBills(bills.filter((_, i) => i !== idx))}>
+                    <Trash2 size={12} />
+                  </Button>
                 </div>
               ))}
             </ConfigCard>
@@ -417,13 +492,15 @@ export default function OnboardingPage() {
           {/* Suggested habits */}
           {enabledSections.includes("habits") && suggestedHabits.length > 0 && (
             <ConfigCard title="Suggested habits">
-              <p className="text-[10px] text-muted-foreground -mt-1">These will be created as habits you can track daily.</p>
+              <p className="text-[10px] -mt-1" style={{ color: "var(--text-muted)" }}>These will be created as habits you can track daily.</p>
               <div className="space-y-1.5">
                 {suggestedHabits.map((h, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <Check size={12} style={{ color: "var(--accent-color)" }} />
-                    <span className="text-sm">{h}</span>
-                    <button onClick={() => setSuggestedHabits(suggestedHabits.filter((_, i) => i !== idx))} className="ml-auto text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
+                    <span className="text-sm" style={{ color: "var(--text-primary)" }}>{h}</span>
+                    <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setSuggestedHabits(suggestedHabits.filter((_, i) => i !== idx))}>
+                      <Trash2 size={12} />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -433,37 +510,24 @@ export default function OnboardingPage() {
           {/* Custom sections from AI */}
           {customSectionTemplates.length > 0 && (
             <ConfigCard title="Custom Sections">
-              <p className="text-[10px] text-muted-foreground -mt-1">AI-generated sections tailored to your needs.</p>
+              <p className="text-[10px] -mt-1" style={{ color: "var(--text-muted)" }}>AI-generated sections tailored to your needs.</p>
               {customSectionTemplates.map((tpl, idx) => {
                 const Icon = ICON_MAP[tpl.icon] || ICON_MAP.Star;
                 return (
-                  <div key={idx} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+                  <Card key={idx} variant="inset" padding="sm" className="flex items-center gap-3">
                     <Icon size={16} style={{ color: "var(--accent-color)" }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{tpl.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{tpl.fields.length} fields: {tpl.fields.map((f) => f.label).join(", ")}</p>
+                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{tpl.name}</p>
+                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{tpl.fields.length} fields: {tpl.fields.map((f) => f.label).join(", ")}</p>
                     </div>
-                    <button onClick={() => setCustomSectionTemplates(customSectionTemplates.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
-                  </div>
+                    <Button variant="ghost" size="icon" onClick={() => setCustomSectionTemplates(customSectionTemplates.filter((_, i) => i !== idx))}>
+                      <Trash2 size={12} />
+                    </Button>
+                  </Card>
                 );
               })}
             </ConfigCard>
           )}
-
-          <style>{`
-            .config-input {
-              padding: 0.375rem 0.5rem;
-              border-radius: 0.375rem;
-              font-size: 0.75rem;
-              background: var(--surface-1);
-              border: 1px solid var(--border-subtle);
-              color: var(--text-primary);
-            }
-            .config-input:focus {
-              outline: none;
-              border-color: var(--accent-color);
-            }
-          `}</style>
         </div>
       ),
     },
@@ -473,17 +537,15 @@ export default function OnboardingPage() {
       title: "Make it yours",
       content: (
         <div className="space-y-6 max-w-sm mx-auto">
+          <FormInput
+            label="Your name"
+            type="text"
+            placeholder="What should we call you?"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-2">Your name</label>
-            <input
-              type="text" placeholder="What should we call you?" value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-2">Accent color</label>
+            <label className="block text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Accent color</label>
             <div className="flex gap-3">
               {THEMES.map((t) => (
                 <button key={t} onClick={() => { setAccentTheme(t); document.documentElement.setAttribute("data-theme", t); }}
@@ -494,7 +556,7 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-2">Font</label>
+            <label className="block text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Font</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {FONTS.map((f) => {
                 const meta = FONT_META[f as FontStyle];
@@ -505,14 +567,14 @@ export default function OnboardingPage() {
                   >
                     <p className="text-lg font-semibold mb-0.5" style={{ fontFamily: f === "sans" ? "'DM Sans', sans-serif" : f === "inter" ? "'Inter', sans-serif" : f === "geometric" ? "'Space Grotesk', sans-serif" : f === "serif" ? "'Playfair Display', serif" : "'JetBrains Mono', monospace", color: fontStyle === f ? "var(--text-primary)" : "var(--text-muted)" }}>{meta.preview}</p>
                     <p className="text-xs font-medium" style={{ color: fontStyle === f ? "var(--accent-color)" : "var(--text-primary)" }}>{meta.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{meta.description}</p>
+                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{meta.description}</p>
                   </button>
                 );
               })}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-2">Currency</label>
+            <label className="block text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Currency</label>
             <div className="flex gap-2">
               {CURRENCIES.map((c) => (
                 <button key={c} onClick={() => setCurrency(c)}
@@ -569,7 +631,7 @@ export default function OnboardingPage() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            <h1 className="text-2xl font-bold text-center mb-6">
+            <h1 className="text-2xl font-bold text-center mb-6" style={{ color: "var(--text-primary)" }}>
               {steps[step].title}
             </h1>
             {steps[step].content}
@@ -579,37 +641,34 @@ export default function OnboardingPage() {
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8">
           {step > 0 ? (
-            <button onClick={handleBack} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all" style={{ color: "var(--text-muted)" }}>
+            <Button variant="ghost" size="md" onClick={handleBack}>
               <ArrowLeft size={14} />
               Back
-            </button>
+            </Button>
           ) : <div />}
 
           {step < steps.length - 1 ? (
             step === 1 && aiMode ? (
               <div /> // Generate button is inside the step content
             ) : (
-              <button onClick={handleNext}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
-              >
+              <Button variant="primary" size="lg" onClick={handleNext}>
                 Continue
                 <ArrowRight size={14} />
-              </button>
+              </Button>
             )
           ) : (
-            <button onClick={handleFinish} disabled={loading}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5 disabled:opacity-50"
-            >
+            <Button variant="primary" size="lg" onClick={handleFinish} disabled={loading}>
               {loading ? "Setting up..." : "Launch planner"}
               <Check size={14} />
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Skip */}
         {step < steps.length - 1 && step !== 1 && (
           <button onClick={handleFinish}
-            className="w-full text-center text-xs text-muted-foreground mt-4 hover:underline"
+            className="w-full text-center text-xs mt-4 hover:underline"
+            style={{ color: "var(--text-muted)" }}
           >
             Skip setup
           </button>
@@ -621,9 +680,9 @@ export default function OnboardingPage() {
 
 function ConfigCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="planner-surface p-4 space-y-2">
+    <Card variant="default" padding="md" className="space-y-2">
       <h3 className="text-xs font-semibold" style={{ color: "var(--accent-color)" }}>{title}</h3>
       {children}
-    </div>
+    </Card>
   );
 }

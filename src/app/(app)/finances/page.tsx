@@ -6,6 +6,7 @@ import WorkSession from "@/lib/models/work-session";
 import Expense from "@/lib/models/expense";
 import Route from "@/lib/models/route";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { calculateGasCost } from "@/lib/gas-calculator";
 import {
@@ -83,44 +84,43 @@ export default async function FinancesPage() {
       <PageHeader title="Finances" description="Income, bills, and expenses overview" />
 
       {/* Net income */}
-      <div className="planner-surface p-6 mb-6">
+      <Card padding="lg" className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <DollarSign size={16} style={{ color: "var(--accent-color)" }} />
+          <DollarSign size={16} className="text-[var(--accent-color)]" />
           <span className="stat-label">Net income this month</span>
         </div>
         <p
-          className="stat-value text-3xl"
-          style={{ color: netIncome >= 0 ? "var(--accent-color)" : "var(--destructive)" }}
+          className={`stat-value text-3xl ${netIncome >= 0 ? "text-[var(--accent-color)]" : "text-destructive"}`}
         >
           {formatCurrency(netIncome, currency)}
         </p>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Income */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <TrendingUp size={16} style={{ color: "var(--accent-color)" }} />
+            <TrendingUp size={16} className="text-[var(--accent-color)]" />
             <h2 className="text-sm font-semibold">Income</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="planner-surface p-3">
+            <Card padding="sm">
               <p className="stat-label">Today</p>
               <p className="text-lg font-semibold">{formatCurrency(totalTodayIncome, currency)}</p>
-            </div>
-            <div className="planner-surface p-3">
+            </Card>
+            <Card padding="sm">
               <p className="stat-label">This week</p>
               <p className="text-lg font-semibold">{formatCurrency(totalWeekIncome, currency)}</p>
-            </div>
-            <div className="planner-surface p-3">
+            </Card>
+            <Card padding="sm">
               <p className="stat-label">This month</p>
               <p className="text-lg font-semibold">{formatCurrency(totalMonthIncome, currency)}</p>
-            </div>
+            </Card>
           </div>
 
           {incomeByJob.length > 0 && (
-            <div className="planner-surface p-4 space-y-3">
+            <Card padding="md" className="space-y-3">
               {incomeByJob.map((job: { name: string; month: number; week: number }) => (
                 <div key={job.name} className="flex items-center justify-between">
                   <span className="text-sm">{job.name}</span>
@@ -129,7 +129,7 @@ export default async function FinancesPage() {
                   </span>
                 </div>
               ))}
-            </div>
+            </Card>
           )}
         </div>
 
@@ -140,7 +140,7 @@ export default async function FinancesPage() {
             <h2 className="text-sm font-semibold">Outflows</h2>
           </div>
 
-          <div className="planner-surface p-4 space-y-3">
+          <Card padding="md" className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt size={14} className="text-muted-foreground" />
@@ -168,20 +168,17 @@ export default async function FinancesPage() {
                 {formatCurrency(gasCalc.totalCostDollars, currency)}
               </span>
             </div>
-            <div
-              className="pt-3 flex items-center justify-between"
-              style={{ borderTop: "1px solid var(--border-subtle)" }}
-            >
+            <div className="pt-3 flex items-center justify-between border-t border-[var(--border-subtle)]">
               <span className="text-sm font-semibold">Total</span>
               <span className="text-sm font-bold">
                 {formatCurrency(totalOutflows, currency)}
               </span>
             </div>
-          </div>
+          </Card>
 
           {/* Bills list */}
           {bills.length > 0 && (
-            <div className="planner-surface p-4">
+            <Card padding="md">
               <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                 RECURRING BILLS
               </h3>
@@ -200,7 +197,7 @@ export default async function FinancesPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
         </div>
       </div>

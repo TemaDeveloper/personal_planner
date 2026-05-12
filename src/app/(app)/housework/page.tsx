@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Modal } from "@/components/ui/modal";
+import { FormInput, FormSelect } from "@/components/ui/form-input";
 import {
   Plus,
   Trash2,
@@ -10,7 +15,6 @@ import {
   ChevronRight,
   Check,
   Home,
-  X,
   RotateCcw,
   Settings2,
 } from "lucide-react";
@@ -159,135 +163,123 @@ export default function HouseworkPage() {
         title="Housework"
         description="Chores & recurring tasks"
         action={
-          <button
+          <Button
             onClick={() => setShowManage((v) => !v)}
-            className="p-2 rounded-lg transition-all"
-            style={{
-              background: showManage ? "var(--accent-glow)" : "var(--surface-1)",
-              border: `1px solid ${showManage ? "var(--accent-color)" : "var(--border-subtle)"}`,
-              color: showManage ? "var(--accent-color)" : "var(--text-muted)",
-            }}
+            variant={showManage ? "primary" : "outline"}
+            size="icon"
           >
             <Settings2 size={16} />
-          </button>
+          </Button>
         }
       />
 
       {/* Manage recurring chores panel */}
       {showManage && (
-        <div className="planner-surface p-4 mb-6 space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Recurring Chores</h3>
+        <Card padding="md" className="mb-6 space-y-3">
+          <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Recurring Chores</h3>
           {chores.map((c) => (
-            <div
+            <Card
               key={c.name}
-              className="flex items-center gap-3 p-2 rounded-lg"
-              style={{ background: "var(--surface-2)" }}
+              variant="inset"
+              padding="sm"
+              className="flex items-center gap-3"
             >
-              <RotateCcw size={12} className="text-muted-foreground flex-shrink-0" />
-              <span className="flex-1 text-sm font-medium">{c.name}</span>
+              <RotateCcw size={12} className="text-[var(--text-muted)] flex-shrink-0" />
+              <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">{c.name}</span>
               <span
                 className="text-[10px] px-2 py-0.5 rounded-full"
                 style={{ background: "var(--accent-glow)", color: "var(--accent-color)" }}
               >
                 {c.frequency}
               </span>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => removeChore(c.name)}
-                className="p-1.5 min-w-[28px] min-h-[28px] text-muted-foreground hover:text-destructive"
+                className="hover:text-destructive"
               >
                 <Trash2 size={14} />
-              </button>
-            </div>
+              </Button>
+            </Card>
           ))}
           {chores.length === 0 && (
-            <p className="text-xs text-muted-foreground">No recurring chores yet. Add one below.</p>
+            <p className="text-xs text-[var(--text-muted)]">No recurring chores yet. Add one below.</p>
           )}
           <div className="flex items-center gap-2 pt-1">
-            <input
+            <FormInput
               type="text"
               placeholder="Chore name"
               value={newChoreName}
               onChange={(e) => setNewChoreName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addChore()}
-              className="flex-1 px-3 py-2 rounded-lg text-sm min-w-0"
-              style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
+              className="flex-1 min-w-0"
             />
-            <select
+            <FormSelect
               value={newChoreFreq}
               onChange={(e) => setNewChoreFreq(e.target.value as ChoreConfig["frequency"])}
-              className="px-2 py-2 rounded-lg text-xs flex-shrink-0"
-              style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
+              className="flex-shrink-0 text-xs"
             >
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
-            </select>
-            <button
+            </FormSelect>
+            <Button
               onClick={addChore}
               disabled={!newChoreName.trim()}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground disabled:opacity-50 flex-shrink-0"
+              size="md"
             >
               Add
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Date navigation */}
       <div className="flex items-center justify-between mb-6">
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => setDate((d) => addDays(d, -1))}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
         >
           <ChevronLeft size={16} />
-        </button>
+        </Button>
         <div className="text-center">
-          <span className="text-sm font-medium">{format(date, "EEEE, MMM d, yyyy")}</span>
+          <span className="text-sm font-medium text-[var(--text-primary)]">{format(date, "EEEE, MMM d, yyyy")}</span>
           {format(date, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd") && (
             <button
               onClick={() => setDate(new Date())}
-              className="block mx-auto text-[10px] mt-0.5 hover:underline"
-              style={{ color: "var(--accent-color)" }}
+              className="block mx-auto text-[10px] mt-0.5 text-[var(--accent-color)] hover:underline"
             >
               Go to today
             </button>
           )}
         </div>
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => setDate((d) => addDays(d, 1))}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
         >
           <ChevronRight size={16} />
-        </button>
+        </Button>
       </div>
 
       {/* Progress */}
       {totalCount > 0 && (
-        <div className="planner-surface p-4 mb-4">
+        <Card padding="md" className="mb-4">
           <div className="flex items-center justify-between text-xs mb-2">
-            <span className="font-medium">Progress</span>
-            <span className="text-muted-foreground">
+            <span className="font-medium text-[var(--text-primary)]">Progress</span>
+            <span className="text-[var(--text-muted)]">
               {completedCount}/{totalCount} done
             </span>
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-2)" }}>
-            <div
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%`,
-                background: "var(--accent-color)",
-              }}
-            />
-          </div>
-        </div>
+          <Progress value={totalCount > 0 ? (completedCount / totalCount) * 100 : 0} size="md" />
+        </Card>
       )}
 
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="planner-surface p-4 h-14 animate-pulse" />
+            <Card key={i} padding="md" className="h-14 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -296,9 +288,10 @@ export default function HouseworkPage() {
           {checklist
             .sort((a, b) => Number(a.completed) - Number(b.completed))
             .map((item, idx) => (
-              <div
+              <Card
                 key={item._id || `recurring-${idx}`}
-                className="planner-surface p-4 flex items-center gap-3 transition-all"
+                padding="md"
+                className="flex items-center gap-3 transition-all"
                 style={{ opacity: item.completed ? 0.5 : 1 }}
               >
                 <button
@@ -309,66 +302,63 @@ export default function HouseworkPage() {
                     border: `2px solid ${item.completed ? "var(--accent-color)" : "var(--border-subtle)"}`,
                   }}
                 >
-                  {item.completed && <Check size={14} style={{ color: "var(--background)" }} />}
+                  {item.completed && <Check size={14} className="text-[var(--background)]" />}
                 </button>
                 <div className="flex-1 min-w-0">
                   <p
-                    className="text-sm font-medium"
+                    className="text-sm font-medium text-[var(--text-primary)]"
                     style={{ textDecoration: item.completed ? "line-through" : "none" }}
                   >
                     {item.choreName}
                   </p>
                   {item.isRecurring && item.frequency && (
                     <div className="flex items-center gap-1 mt-0.5">
-                      <RotateCcw size={10} className="text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground">
+                      <RotateCcw size={10} className="text-[var(--text-muted)]" />
+                      <span className="text-[10px] text-[var(--text-muted)]">
                         {FREQ_LABELS[item.frequency] || item.frequency}
                       </span>
                     </div>
                   )}
                 </div>
                 {!item.isRecurring && item._id && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={async () => {
                       await fetch(`/api/housework/${item._id}`, { method: "DELETE" });
                       setChecklist((prev) => prev.filter((c) => c._id !== item._id));
                       toast.success("Removed");
                     }}
-                    className="p-1.5 min-w-[28px] min-h-[28px] text-muted-foreground hover:text-destructive"
+                    className="hover:text-destructive"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </Button>
                 )}
-              </div>
+              </Card>
             ))}
 
           {checklist.length === 0 && (
-            <div className="planner-surface p-8 text-center">
-              <Home size={32} className="mx-auto mb-3 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-3">
+            <Card padding="lg" className="text-center">
+              <Home size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
+              <p className="text-sm text-[var(--text-muted)] mb-3">
                 No tasks for this day.
               </p>
               {chores.length === 0 && (
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setShowManage(true)}
-                  className="text-sm font-medium px-4 py-2 rounded-lg"
-                  style={{ background: "var(--accent-glow)", color: "var(--accent-color)", border: "1px solid var(--accent-color)" }}
+                  className="border-[var(--accent-color)] text-[var(--accent-color)]"
                 >
                   Set up recurring chores
-                </button>
+                </Button>
               )}
-            </div>
+            </Card>
           )}
 
           {/* Add one-off task */}
           <button
             onClick={() => setShowAddForm(true)}
-            className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
-            style={{
-              background: "var(--surface-1)",
-              border: "1px dashed var(--border-subtle)",
-              color: "var(--text-muted)",
-            }}
+            className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 bg-[var(--surface-1)] border border-dashed border-[var(--border-subtle)] text-[var(--text-muted)]"
           >
             <Plus size={14} />
             Add task
@@ -377,39 +367,32 @@ export default function HouseworkPage() {
       )}
 
       {/* Add task modal */}
-      {showAddForm && (
-        <AddTaskModal
-          date={date}
-          onClose={() => setShowAddForm(false)}
-          onSuccess={(item) => {
-            setChecklist((prev) => [...prev, item]);
-            setShowAddForm(false);
-          }}
-        />
-      )}
+      <AddTaskModal
+        open={showAddForm}
+        date={date}
+        onClose={() => setShowAddForm(false)}
+        onSuccess={(item) => {
+          setChecklist((prev) => [...prev, item]);
+          setShowAddForm(false);
+        }}
+      />
     </div>
   );
 }
 
 function AddTaskModal({
+  open,
   date,
   onClose,
   onSuccess,
 }: {
+  open: boolean;
   date: Date;
   onClose: () => void;
   onSuccess: (item: ChecklistItem) => void;
 }) {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -439,52 +422,35 @@ function AddTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
-        className="relative w-full max-w-sm rounded-xl p-6 animate-slide-up"
-        style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Add Task</h3>
-          <button onClick={onClose}>
-            <X size={18} className="text-muted-foreground" />
-          </button>
+    <Modal open={open} onClose={onClose} title="Add Task">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormInput
+          label="Task name"
+          type="text"
+          placeholder="e.g. Clean garage"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+        />
+
+        <div className="flex gap-3 pt-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={saving || !name.trim()}
+            className="flex-1"
+          >
+            {saving ? "Adding..." : "Add"}
+          </Button>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Task name</label>
-            <input
-              type="text"
-              placeholder="e.g. Clean garage"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg text-sm font-medium"
-              style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving || !name.trim()}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50"
-            >
-              {saving ? "Adding..." : "Add"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }

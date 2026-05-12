@@ -5,6 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import User from "@/lib/models/user";
 import SectionTemplate from "@/lib/models/section-template";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { TopBar } from "@/components/layout/top-bar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SectionsProvider, type CustomSectionNav } from "@/components/providers/sections-provider";
 import { DEFAULT_ENABLED_SECTIONS } from "@/lib/constants";
@@ -53,7 +54,12 @@ export default async function AppLayout({
       <div className="min-h-screen flex">
         <AppSidebar />
         <main className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 overflow-y-auto p-6 md:p-8">{children}</div>
+          <TopBar />
+          <div className="flex-1 overflow-y-auto px-6 py-4 md:px-8 md:py-6">
+            <div className="max-w-6xl mx-auto">
+              {children}
+            </div>
+          </div>
           <MobileNav />
         </main>
       </div>

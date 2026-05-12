@@ -4,7 +4,10 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/form-input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,25 +44,29 @@ export default function LoginPage() {
       <div className="text-center mb-8">
         <div
           className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-lg font-bold"
-          style={{ background: "var(--accent-glow)", border: "1px solid var(--accent-color)", color: "var(--accent-color)" }}
+          style={{
+            background: "var(--accent-glow)",
+            border: "1px solid var(--accent-color)",
+            color: "var(--accent-color)",
+            boxShadow: "var(--shadow-elevated)",
+          }}
         >
           P
         </div>
-        <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+          Welcome back
+        </h1>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
           Sign in to your planner
         </p>
       </div>
 
-      <div className="planner-surface p-6 space-y-6">
-        <button
+      <Card variant="elevated" padding="lg" className="space-y-6">
+        <Button
+          variant="secondary"
+          size="lg"
+          className="w-full gap-3"
           onClick={handleGoogleSignIn}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:-translate-y-0.5"
-          style={{
-            background: "var(--surface-2)",
-            border: "1px solid var(--border-subtle)",
-            color: "var(--text-primary)",
-          }}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -80,86 +87,60 @@ export default function LoginPage() {
             />
           </svg>
           Continue with Google
-        </button>
+        </Button>
 
         <div className="flex items-center gap-4">
           <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
-          <span className="text-xs text-muted-foreground">or</span>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>or</span>
           <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <div className="relative">
-              <Mail
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-lg text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                }}
-              />
-            </div>
-          </div>
+          <FormInput
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          <div>
-            <div className="relative">
-              <Lock
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-lg text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                }}
-              />
-            </div>
-          </div>
+          <FormInput
+            label="Password"
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            error={error || undefined}
+          />
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="lg"
             disabled={loading}
-            className="w-full py-3 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:translate-y-0"
+            className="w-full"
           >
             {loading ? (
-              <Loader2 size={16} className="animate-spin mx-auto" />
+              <Loader2 size={16} className="animate-spin" />
             ) : (
               "Sign in"
             )}
-          </button>
+          </Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="text-primary hover:underline font-medium"
+            className="font-medium hover:underline"
+            style={{ color: "var(--accent-color)" }}
           >
             Sign up
           </Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

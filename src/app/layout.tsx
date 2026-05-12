@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, JetBrains_Mono, Inter, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import { Toaster } from "sonner";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -40,6 +41,23 @@ export const metadata: Metadata = {
   description: "Your AI-powered personal planner — track anything, your way",
 };
 
+// Inline script to prevent FOUC — runs before React hydration
+const themeInitScript = `
+(function(){
+  try {
+    var cm = localStorage.getItem('planner-color-mode');
+    var dark = cm === 'dark' || (cm !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.classList.add('dark');
+    var t = localStorage.getItem('planner-theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    var f = localStorage.getItem('planner-font');
+    if (f) document.documentElement.setAttribute('data-font', f);
+    var l = localStorage.getItem('planner-layout');
+    if (l) document.documentElement.setAttribute('data-layout', l);
+  } catch(e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: {
@@ -54,6 +72,11 @@ export default function RootLayout({
       data-layout="default"
       suppressHydrationWarning
     >
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
+      </head>
       <body className="min-h-screen antialiased">
         <SessionProvider>
           <ThemeProvider>
@@ -62,10 +85,12 @@ export default function RootLayout({
               position="bottom-right"
               toastOptions={{
                 style: {
-                  background: "rgba(15, 23, 42, 0.9)",
-                  backdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  color: "#F8FAFC",
+                  background: "var(--surface-3)",
+                  backdropFilter: "blur(24px)",
+                  WebkitBackdropFilter: "blur(24px)",
+                  border: "1px solid var(--glass-border)",
+                  color: "var(--text-primary)",
+                  boxShadow: "var(--shadow-elevated)",
                 },
               }}
             />

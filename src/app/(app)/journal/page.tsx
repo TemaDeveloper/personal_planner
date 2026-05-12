@@ -5,6 +5,9 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Trash2, NotebookPen } from "lucide-react";
 import { format } from "date-fns";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormTextarea } from "@/components/ui/form-input";
 
 interface JournalEntry {
   _id: string;
@@ -14,11 +17,11 @@ interface JournalEntry {
 }
 
 const MOODS = [
-  { value: 1, emoji: "😞" },
-  { value: 2, emoji: "😕" },
-  { value: 3, emoji: "😐" },
-  { value: 4, emoji: "🙂" },
-  { value: 5, emoji: "😄" },
+  { value: 1, emoji: "\u{1F61E}" },
+  { value: 2, emoji: "\u{1F615}" },
+  { value: 3, emoji: "\u{1F610}" },
+  { value: 4, emoji: "\u{1F642}" },
+  { value: 5, emoji: "\u{1F604}" },
 ];
 
 export default function JournalPage() {
@@ -88,7 +91,7 @@ export default function JournalPage() {
         <PageHeader title="Journal" />
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="planner-surface p-6 h-32 animate-pulse" />
+            <Card key={i} padding="lg" className="h-32 animate-pulse" />
           ))}
         </div>
       </div>
@@ -100,13 +103,13 @@ export default function JournalPage() {
       <PageHeader title="Journal" description="Daily journal" />
 
       {/* Today's entry */}
-      <div className="planner-surface p-6 mb-6">
+      <Card padding="lg" className="mb-6">
         <h3 className="text-sm font-semibold mb-4">
           {format(new Date(), "EEEE, MMM d, yyyy")}
         </h3>
 
         <div className="mb-4">
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
             How are you feeling?
           </label>
           <div className="flex gap-1">
@@ -127,30 +130,24 @@ export default function JournalPage() {
           </div>
         </div>
 
-        <textarea
+        <FormTextarea
           placeholder="Write about your day..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={6}
-          className="w-full px-4 py-3 rounded-lg text-sm resize-none mb-4"
-          style={{
-            background: "var(--surface-2)",
-            border: "1px solid var(--border-subtle)",
-            color: "var(--text-primary)",
-          }}
+          className="mb-4"
         />
 
-        <button
+        <Button
           onClick={handleSave}
           disabled={saving || !content.trim()}
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50 transition-all hover:-translate-y-0.5"
         >
           {saving ? "Saving..." : todayId ? "Update entry" : "Save entry"}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
       {/* Past entries */}
-      <div className="planner-surface p-6">
+      <Card padding="lg">
         <h3 className="text-sm font-semibold mb-4">Past Entries</h3>
         {entries.length === 0 ? (
           <div className="text-center py-6">
@@ -160,10 +157,10 @@ export default function JournalPage() {
         ) : (
           <div className="space-y-3">
             {entries.map((entry) => (
-              <div
+              <Card
                 key={entry._id}
-                className="p-4 rounded-lg"
-                style={{ background: "var(--surface-2)" }}
+                variant="inset"
+                padding="md"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -174,7 +171,9 @@ export default function JournalPage() {
                       {MOODS[entry.mood - 1]?.emoji}
                     </span>
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={async () => {
                       await fetch(`/api/journal/${entry._id}`, { method: "DELETE" });
                       setEntries((prev) => prev.filter((e) => e._id !== entry._id));
@@ -185,19 +184,19 @@ export default function JournalPage() {
                       }
                       toast.success("Entry deleted");
                     }}
-                    className="p-1.5 min-w-[28px] min-h-[28px] text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </Button>
                 </div>
                 <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-4">
                   {entry.content}
                 </p>
-              </div>
+              </Card>
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

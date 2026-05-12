@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+
+type ColorMode = "light" | "dark" | "system";
 
 interface Preferences {
   accentTheme: string;
@@ -10,11 +12,13 @@ interface Preferences {
   weekStart: string;
   dateFormat: string;
   timeFormat: string;
+  colorMode: ColorMode;
 }
 
 interface ThemeContextType {
   preferences: Preferences;
   updatePreferences: (prefs: Partial<Preferences>) => void;
+  resolvedColorMode: "light" | "dark";
 }
 
 const defaultPreferences: Preferences = {
@@ -25,15 +29,25 @@ const defaultPreferences: Preferences = {
   weekStart: "monday",
   dateFormat: "MMM d, yyyy",
   timeFormat: "24h",
+  colorMode: "system",
 };
 
 const ThemeContext = createContext<ThemeContextType>({
   preferences: defaultPreferences,
   updatePreferences: () => {},
+  resolvedColorMode: "dark",
 });
 
 export function useTheme() {
   return useContext(ThemeContext);
+}
+
+function getResolvedMode(mode: ColorMode): "light" | "dark" {
+  if (mode === "system") {
+    if (typeof window === "undefined") return "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return mode;
 }
 
 export function ThemeProvider({
@@ -47,20 +61,68 @@ export function ThemeProvider({
     ...defaultPreferences,
     ...initialPreferences,
   });
+  const [resolvedColorMode, setResolvedColorMode] = useState<"light" | "dark">(() =>
+    getResolvedMode(preferences.colorMode)
+  );
 
-  useEffect(() => {
+  // Apply theme attributes and color mode class
+  const applyTheme = useCallback((prefs: Preferences, resolved: "light" | "dark") => {
     const root = document.documentElement;
-    root.setAttribute("data-theme", preferences.accentTheme);
-    root.setAttribute("data-font", preferences.fontStyle);
-    root.setAttribute("data-layout", preferences.layoutDensity);
-  }, [preferences]);
+    root.setAttribute("data-theme", prefs.accentTheme);
+    root.setAttribute("data-font", prefs.fontStyle);
+    root.setAttribute("data-layout", prefs.layoutDensity);
 
-  const updatePreferences = (prefs: Partial<Preferences>) => {
-    setPreferences((prev) => ({ ...prev, ...prefs }));
-  };
+    if (resolved === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, []);
+
+  // Initialize and listen for system color scheme changes
+  useEffect(() => {
+    // Read persisted color mode
+    const stored = localStorage.getItem("planner-color-mode") as ColorMode | null;
+    if (stored && ["light", "dark", "system"].includes(stored)) {
+      setPreferences((prev) => ({ ...prev, colorMode: stored }));
+    }
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => {
+      setPreferences((prev) => {
+        if (prev.colorMode === "system") {
+          const resolved = mq.matches ? "dark" : "light";
+          setResolvedColorMode(resolved);
+          applyTheme(prev, resolved);
+        }
+        return prev;
+      });
+    };
+
+    mq.addEventListener("change", handleChange);
+    return () => mq.removeEventListener("change", handleChange);
+  }, [applyTheme]);
+
+  // Apply whenever preferences change
+  useEffect(() => {
+    const resolved = getResolvedMode(preferences.colorMode);
+    setResolvedColorMode(resolved);
+    applyTheme(preferences, resolved);
+  }, [preferences, applyTheme]);
+
+  const updatePreferences = useCallback((prefs: Partial<Preferences>) => {
+    setPreferences((prev) => {
+      const next = { ...prev, ...prefs };
+      // Persist color mode separately for FOUC prevention script
+      if (prefs.colorMode !== undefined) {
+        localStorage.setItem("planner-color-mode", prefs.colorMode);
+      }
+      return next;
+    });
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ preferences, updatePreferences }}>
+    <ThemeContext.Provider value={{ preferences, updatePreferences, resolvedColorMode }}>
       {children}
     </ThemeContext.Provider>
   );

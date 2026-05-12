@@ -1,206 +1,163 @@
-# Design System Master File
+# Glass Planner — Design System v3
 
-> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
-> If that file exists, its rules **override** this Master file.
-> If not, strictly follow the rules below.
-
----
-
-**Project:** MyPlanner
-**Generated:** 2026-05-12 17:57:45
-**Category:** SaaS (General)
+**Style:** Apple-inspired glassmorphism with layered translucency
+**Modes:** Light + Dark (system-aware with manual toggle)
+**Framework:** Next.js 16 + Tailwind CSS 4 + Framer Motion
 
 ---
 
-## Global Rules
+## Color Modes
 
-### Color Palette
+### Light Mode (`:root`)
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#0F172A` | `--color-primary` |
-| Secondary | `#1E293B` | `--color-secondary` |
-| CTA/Accent | `#22C55E` | `--color-cta` |
-| Background | `#020617` | `--color-background` |
-| Text | `#F8FAFC` | `--color-text` |
+| Role | Value | Variable |
+|------|-------|----------|
+| Background | `#F5F5F7` | `--background` |
+| Text | `#1D1D1F` | `--text-primary` |
+| Text muted | `#86868B` | `--text-muted` |
+| Glass bg | `rgba(255,255,255,0.60)` | `--glass-bg` |
+| Glass border | `rgba(0,0,0,0.06)` | `--glass-border` |
+| Glass blur | `20px` | `--glass-blur` |
+| Surfaces | 60% / 80% / 92% white | `--surface-1/2/3` |
 
-**Color Notes:** Dark bg + green positive indicators
+### Dark Mode (`:root.dark`)
 
-### Typography
+| Role | Value | Variable |
+|------|-------|----------|
+| Background | `#000000` (OLED black) | `--background` |
+| Text | `#F5F5F7` | `--text-primary` |
+| Text muted | `#86868B` | `--text-muted` |
+| Glass bg | `rgba(28,28,30,0.72)` | `--glass-bg` |
+| Glass border | `rgba(255,255,255,0.10)` | `--glass-border` |
+| Glass blur | `24px` | `--glass-blur` |
+| Surfaces | 4% / 7% / 10% white | `--surface-1/2/3` |
 
-- **Heading Font:** Plus Jakarta Sans
-- **Body Font:** Plus Jakarta Sans
-- **Mood:** friendly, modern, saas, clean, approachable, professional
-- **Google Fonts:** [Plus Jakarta Sans + Plus Jakarta Sans](https://fonts.google.com/share?selection.family=Plus+Jakarta+Sans:wght@300;400;500;600;700)
+### Accent Themes
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-```
+7 accent colors, mode-independent: amber (`#22C55E`), teal (`#14B8A6`), violet (`#A78BFA`), rose (`#FB7185`), sage (`#4ADE80`), ocean (`#60A5FA`), sunset (`#FB923C`).
 
-### Spacing Variables
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
-
-### Shadow Depths
-
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+Glow opacity: 8% in light, 12% in dark.
 
 ---
 
-## Component Specs
+## Typography
 
-### Buttons
-
-```css
-/* Primary Button */
-.btn-primary {
-  background: #22C55E;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
-
-### Cards
-
-```css
-.card {
-  background: #020617;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #0F172A;
-  outline: none;
-  box-shadow: 0 0 0 3px #0F172A20;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
+- **Primary:** Plus Jakarta Sans (400-800)
+- **Alternates:** Inter, Space Grotesk, Playfair Display, JetBrains Mono
+- **Fallback:** `-apple-system, system-ui, sans-serif`
+- **Headings:** Display font, `-0.025em` tracking
+- **Page title:** `text-xl font-semibold`
+- **Section header:** `text-sm font-semibold`
+- **Stat value:** `2rem, 700 weight, -0.03em tracking`
+- **Stat label:** `0.7rem, 600 weight, uppercase, 0.08em tracking`
 
 ---
 
-## Style Guidelines
+## Surface Hierarchy
 
-**Style:** Glassmorphism
+| Class | Purpose | Effect |
+|-------|---------|--------|
+| `.surface-card` | Standard glass cards | blur + saturation + border + `--shadow-card` |
+| `.surface-elevated` | Modals, popovers | 32px blur, 200% saturation, `--shadow-elevated` |
+| `.surface-inset` | Nested cards | `--surface-1` bg, subtle border |
 
-**Keywords:** Frosted glass, transparent, blurred background, layered, vibrant background, light source, depth, multi-layer
-
-**Best For:** Modern SaaS, financial dashboards, high-end corporate, lifestyle apps, modal overlays, navigation
-
-**Key Effects:** Backdrop blur (10-20px), subtle border (1px solid rgba white 0.2), light reflection, Z-depth
-
-### Page Pattern
-
-**Pattern Name:** Horizontal Scroll Journey
-
-- **Conversion Strategy:** Immersive product discovery. High engagement. Keep navigation visible.
-28,Bento Grid Showcase,bento,  grid,  features,  modular,  apple-style,  showcase", 1. Hero, 2. Bento Grid (Key Features), 3. Detail Cards, 4. Tech Specs, 5. CTA, Floating Action Button or Bottom of Grid, Card backgrounds: #F5F5F7 or Glass. Icons: Vibrant brand colors. Text: Dark., Hover card scale (1.02), video inside cards, tilt effect, staggered reveal, Scannable value props. High information density without clutter. Mobile stack.
-29,Interactive 3D Configurator,3d,  configurator,  customizer,  interactive,  product", 1. Hero (Configurator), 2. Feature Highlight (synced), 3. Price/Specs, 4. Purchase, Inside Configurator UI + Sticky Bottom Bar, Neutral studio background. Product: Realistic materials. UI: Minimal overlay., Real-time rendering, material swap animation, camera rotate/zoom, light reflection, Increases ownership feeling. 360 view reduces return rates. Direct add-to-cart.
-30,AI-Driven Dynamic Landing,ai,  dynamic,  personalized,  adaptive,  generative", 1. Prompt/Input Hero, 2. Generated Result Preview, 3. How it Works, 4. Value Prop, Input Field (Hero) + 'Try it' Buttons, Adaptive to user input. Dark mode for compute feel. Neon accents., Typing text effects, shimmering generation loaders, morphing layouts, Immediate value demonstration. 'Show, don't tell'. Low friction start.
-- **CTA Placement:** Floating Sticky CTA or End of Horizontal Track
-- **Section Order:** 1. Intro (Vertical), 2. The Journey (Horizontal Track), 3. Detail Reveal, 4. Vertical Footer
+Shadows are mode-aware (lighter in light mode, deeper in dark).
 
 ---
 
-## Anti-Patterns (Do NOT Use)
+## Component Library
 
-- ❌ Excessive animation
-- ❌ Dark mode by default
+### Card (`@/components/ui/card`)
+- Variants: `default`, `elevated`, `inset`
+- Props: `interactive` (hover lift), `padding` (none/sm/md/lg)
 
-### Additional Forbidden Patterns
+### Button (`@/components/ui/button`)
+- Variants: `primary`, `secondary`, `ghost`, `destructive`, `outline`
+- Sizes: `sm`, `md`, `lg`, `icon`
+- Active state: `scale(0.98)` press effect
 
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
+### Modal (`@/components/ui/modal`)
+- Framer Motion spring animation (scale 0.96 → 1)
+- Sticky header, scrollable body
+- `--backdrop-overlay` for backdrop
+
+### FormInput / FormSelect / FormTextarea (`@/components/ui/form-input`)
+- Uses `.form-input` CSS class
+- Focus: accent border + 3px glow ring
+- Supports `label`, `error` props
+
+### ToggleSwitch (`@/components/ui/toggle-switch`)
+- Apple-style pill toggle, spring-animated thumb
+- Sizes: `sm`, `md`
+
+### SegmentedControl (`@/components/ui/segmented-control`)
+- Framer Motion `layoutId` sliding indicator
+- Used for tab bars, filter groups
+
+### Progress (`@/components/ui/progress`)
+- Sizes: `sm` (1.5px), `md` (2px)
+- Animated fill, optional label
+
+### Skeleton (`@/components/ui/skeleton`)
+- Mode-aware shimmer animation
 
 ---
 
-## Pre-Delivery Checklist
+## Layout
 
-Before delivering any UI code, verify:
+### Desktop
+- **Sidebar:** Fixed 240px, macOS source-list style
+  - Grouped navigation (Home, Sections, More)
+  - Active item: accent bg 10% + 2px left accent bar
+  - Group labels: 10px uppercase
+- **Top bar:** 52px, page title + color mode toggle
+- **Content:** `max-w-6xl mx-auto`, `px-6 py-4 md:px-8 md:py-6`
 
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
+### Mobile
+- **Bottom tab bar:** 56px + safe-area, 5 tabs (Home + 3 sections + More)
+  - Active: filled pill indicator in accent color
+- **More sheet:** Slide-up bottom sheet (half screen), drag handle, spring animation
+
+---
+
+## Animation
+
+### Motion Variants (`@/lib/motion.ts`)
+- `staggerContainer` — stagger children by 50ms
+- `fadeUp` — opacity + 12px Y, spring (200/25)
+- `scaleIn` — opacity + 0.96 scale, spring (300/30)
+- `slideFromRight` — opacity + 16px X, spring (200/25)
+
+### CSS Animations
+- `slide-up-fade` — 0.4s, `cubic-bezier(0.22, 1, 0.36, 1)`
+- `scale-in` — 0.25s, same curve
+- `shimmer` — infinite background sweep
+- Staggered delays: 50ms increments (delay-1 through delay-4)
+- `@media (prefers-reduced-motion: reduce)` disables all
+
+---
+
+## Anti-Patterns
+
+- No emojis as icons (use Lucide)
+- No `cursor-pointer` omissions on interactive elements
+- No layout-shifting hovers
+- No low contrast text (4.5:1 minimum)
+- No instant state changes (use 150-200ms transitions)
+- No invisible focus states
+- No hardcoded dark/light colors — always use CSS variables
+
+---
+
+## Checklist
+
+- [ ] Uses CSS variables, not hardcoded colors
+- [ ] Works in both light and dark mode
+- [ ] Uses component library (Card, Button, FormInput, etc.)
+- [ ] All icons from Lucide
+- [ ] `cursor-pointer` on all interactive elements
+- [ ] Hover/focus states with transitions
+- [ ] Text contrast 4.5:1 minimum
 - [ ] `prefers-reduced-motion` respected
 - [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
 - [ ] No horizontal scroll on mobile

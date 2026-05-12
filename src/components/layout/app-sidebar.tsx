@@ -1,16 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Settings,
   Download,
-  ChevronLeft,
-  ChevronRight,
   LogOut,
 } from "lucide-react";
 import { useSections } from "@/components/providers/sections-provider";
@@ -24,11 +21,9 @@ const BOTTOM_ITEMS = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [expanded, setExpanded] = useState(true);
   const { enabledSections, customSections } = useSections();
 
-  const NAV_ITEMS = useMemo(() => [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  const sectionItems = useMemo(() => [
     ...enabledSections.map((id) => ({
       href: SECTION_META[id].href,
       icon: ICON_MAP[SECTION_META[id].icon] || ICON_MAP.Briefcase,
@@ -44,134 +39,107 @@ export function AppSidebar() {
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
-  const NavButton = ({
-    href,
-    icon: Icon,
-    label,
-  }: {
-    href: string;
-    icon: React.ComponentType<{ size: number }>;
-    label: string;
-  }) => {
-    const active = isActive(href);
-    return (
-      <Link
-        href={href}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
-        style={{
-          background: active ? "var(--accent-glow)" : "transparent",
-          border: `1px solid ${active ? "var(--accent-color)" : "transparent"}`,
-          color: active ? "var(--accent-color)" : "var(--text-muted)",
-        }}
-      >
-        <span className="flex-shrink-0">
-          <Icon size={20} />
-        </span>
-        <AnimatePresence>
-          {expanded && (
-            <motion.span
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              className="text-sm font-medium overflow-hidden whitespace-nowrap"
-            >
-              {label}
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </Link>
-    );
-  };
-
   return (
-    <aside
-      className="hidden md:flex flex-col flex-shrink-0 transition-all duration-300 relative sticky top-0 h-screen"
-      style={{
-        width: expanded ? 220 : 64,
-        background: "rgba(15, 23, 42, 0.6)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderRight: "1px solid rgba(255, 255, 255, 0.06)",
-      }}
-    >
+    <aside className="hidden md:flex flex-col flex-shrink-0 w-60 sticky top-0 h-screen border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] backdrop-blur-xl">
       {/* Logo */}
-      <div
-        className="flex items-center gap-3 px-4 py-5"
-        style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)", minHeight: 64 }}
-      >
+      <div className="flex items-center gap-3 px-5 h-14 border-b border-[var(--sidebar-border)]">
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-extrabold"
-          style={{
-            background: "var(--accent-color)",
-            color: "#020617",
-            boxShadow: "0 0 20px var(--accent-glow)",
-          }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-extrabold bg-[var(--accent-color)] text-primary-foreground"
+          style={{ boxShadow: "0 0 16px var(--accent-glow)" }}
         >
           P
         </div>
-        <AnimatePresence>
-          {expanded && (
-            <motion.span
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              className="font-bold text-sm overflow-hidden whitespace-nowrap"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Planner
-            </motion.span>
-          )}
-        </AnimatePresence>
+        <span className="font-semibold text-sm text-[var(--text-primary)]">
+          Planner
+        </span>
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 py-4 px-2 space-y-1">
-        {NAV_ITEMS.map((item) => (
-          <NavButton key={item.href} {...item} />
-        ))}
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
+        {/* Home */}
+        <NavGroup label="Home">
+          <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={isActive("/dashboard")} />
+        </NavGroup>
+
+        {/* Sections */}
+        {sectionItems.length > 0 && (
+          <NavGroup label="Sections">
+            {sectionItems.map((item) => (
+              <NavItem
+                key={item.href}
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                active={isActive(item.href)}
+              />
+            ))}
+          </NavGroup>
+        )}
       </nav>
 
       {/* Bottom section */}
-      <div
-        className="px-2 pb-4 space-y-1 pt-4"
-        style={{ borderTop: "1px solid var(--border-subtle)" }}
-      >
+      <div className="px-3 pb-4 pt-2 border-t border-[var(--sidebar-border)] space-y-0.5">
         {BOTTOM_ITEMS.map((item) => (
-          <NavButton key={item.href} {...item} />
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            label={item.label}
+            active={isActive(item.href)}
+          />
         ))}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
-          style={{ color: "var(--text-muted)" }}
+          className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--surface-1)] transition-colors"
         >
-          <LogOut size={20} className="flex-shrink-0" />
-          <AnimatePresence>
-            {expanded && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="text-sm font-medium overflow-hidden whitespace-nowrap"
-              >
-                Sign out
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <LogOut size={18} className="flex-shrink-0" />
+          <span>Sign out</span>
         </button>
       </div>
-
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 z-10"
-        style={{
-          background: "var(--surface-2)",
-          border: "1px solid var(--border-subtle)",
-          color: "var(--text-muted)",
-        }}
-      >
-        {expanded ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
-      </button>
     </aside>
+  );
+}
+
+function NavGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        {label}
+      </p>
+      <div className="space-y-0.5">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function NavItem({
+  href,
+  icon: Icon,
+  label,
+  active,
+}: {
+  href: string;
+  icon: React.ComponentType<{ size: number; className?: string }>;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="relative flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium transition-colors"
+      style={{
+        background: active ? "var(--accent-glow)" : undefined,
+        color: active ? "var(--accent-color)" : "var(--text-muted)",
+      }}
+    >
+      {active && (
+        <span
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-[var(--accent-color)]"
+        />
+      )}
+      <Icon size={18} className="flex-shrink-0" />
+      <span>{label}</span>
+    </Link>
   );
 }

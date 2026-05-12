@@ -1,3 +1,6 @@
+export const COLOR_MODES = ["system", "light", "dark"] as const;
+export type ColorMode = (typeof COLOR_MODES)[number];
+
 export const THEMES = ["amber", "teal", "violet", "rose", "sage", "ocean", "sunset"] as const;
 export type AccentTheme = (typeof THEMES)[number];
 

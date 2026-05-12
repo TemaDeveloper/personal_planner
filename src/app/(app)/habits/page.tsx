@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Plus, Check, Flame, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { FormInput } from "@/components/ui/form-input";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface Habit {
   _id: string;
@@ -65,35 +67,33 @@ export default function HabitsPage() {
         title="Habits"
         description={`${completedCount}/${habits.length} completed today`}
         action={
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
-          >
+          <Button size="sm" onClick={() => setShowAdd(true)}>
             <Plus size={14} />
             Add
-          </button>
+          </Button>
         }
       />
 
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="planner-surface p-4 h-16 animate-pulse" />
+            <Card key={i} padding="md" className="h-16 animate-pulse" />
           ))}
         </div>
       ) : habits.length === 0 ? (
-        <div className="planner-surface p-8 text-center">
+        <Card padding="lg" className="text-center">
           <Flame size={32} className="mx-auto mb-4 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
             No habits yet. Add one to start tracking.
           </p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-2">
           {habits.map((habit) => (
-            <div
+            <Card
               key={habit._id}
-              className="planner-surface p-4 flex items-center gap-4"
+              padding="md"
+              className="flex items-center gap-4"
             >
               <button
                 onClick={() => toggleHabit(habit._id)}
@@ -106,18 +106,12 @@ export default function HabitsPage() {
                 }}
               >
                 {habit.completedToday && (
-                  <Check size={14} style={{ color: "var(--background)" }} />
+                  <Check size={14} className="text-[var(--background)]" />
                 )}
               </button>
               <div className="flex-1 min-w-0">
                 <p
-                  className="text-sm font-medium"
-                  style={{
-                    textDecoration: habit.completedToday
-                      ? "line-through"
-                      : "none",
-                    opacity: habit.completedToday ? 0.6 : 1,
-                  }}
+                  className={`text-sm font-medium ${habit.completedToday ? "line-through opacity-60" : ""}`}
                 >
                   {habit.emoji} {habit.name}
                 </p>
@@ -128,13 +122,15 @@ export default function HabitsPage() {
                   </p>
                 )}
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => deleteHabit(habit._id)}
-                className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                className="flex-shrink-0 text-muted-foreground hover:text-destructive"
               >
                 <Trash2 size={14} />
-              </button>
-            </div>
+              </Button>
+            </Card>
           ))}
         </div>
       )}
@@ -204,7 +200,7 @@ function AddHabitModal({
             className="text-center text-xl"
           />
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
               Color
             </label>
             <div className="flex gap-2 pt-1">
@@ -226,21 +222,22 @@ function AddHabitModal({
           </div>
         </div>
         <div className="flex gap-3 pt-2">
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-medium"
-            style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+            className="flex-1"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="primary"
             disabled={loading}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50"
+            className="flex-1"
           >
             {loading ? "Creating..." : "Create"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

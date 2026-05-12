@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Modal } from "@/components/ui/modal";
+import { FormInput, FormSelect, FormTextarea } from "@/components/ui/form-input";
 import {
   Plus,
   Trash2,
@@ -87,7 +92,7 @@ export default function GoalsPage() {
         <PageHeader title="Goals" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="planner-surface p-6 h-32 animate-pulse" />
+            <Card key={i} className="h-32 animate-pulse" />
           ))}
         </div>
       </div>
@@ -100,56 +105,47 @@ export default function GoalsPage() {
         title="Goals"
         description="Goals & milestones"
         action={
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
-          >
+          <Button onClick={() => setShowForm(true)} size="md">
             <Plus size={14} />
             New Goal
-          </button>
+          </Button>
         }
       />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-6">
         {["", ...STATUSES].map((s) => (
-          <button
+          <Button
             key={s || "all"}
             onClick={() => setFilterStatus(s)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: filterStatus === s ? "var(--accent-glow)" : "var(--surface-1)",
-              border: `1px solid ${filterStatus === s ? "var(--accent-color)" : "var(--border-subtle)"}`,
-              color: filterStatus === s ? "var(--accent-color)" : "var(--text-muted)",
-            }}
+            variant={filterStatus === s ? "primary" : "outline"}
+            size="sm"
+            className={filterStatus === s ? "" : "text-[var(--text-muted)] border-[var(--border-subtle)]"}
           >
             {s || "All"}
-          </button>
+          </Button>
         ))}
-        <span className="text-muted-foreground self-center">|</span>
+        <span className="text-[var(--text-muted)] self-center">|</span>
         {["", ...CATEGORIES].map((c) => (
-          <button
+          <Button
             key={c || "all-cat"}
             onClick={() => setFilterCategory(c)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: filterCategory === c ? "var(--accent-glow)" : "var(--surface-1)",
-              border: `1px solid ${filterCategory === c ? "var(--accent-color)" : "var(--border-subtle)"}`,
-              color: filterCategory === c ? "var(--accent-color)" : "var(--text-muted)",
-            }}
+            variant={filterCategory === c ? "primary" : "outline"}
+            size="sm"
+            className={filterCategory === c ? "" : "text-[var(--text-muted)] border-[var(--border-subtle)]"}
           >
             {c ? c.charAt(0).toUpperCase() + c.slice(1) : "All"}
-          </button>
+          </Button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="planner-surface p-8 text-center">
-          <Target size={32} className="mx-auto mb-3 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
+        <Card className="text-center" padding="lg">
+          <Target size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
+          <p className="text-sm text-[var(--text-muted)]">
             {goals.length === 0 ? "No goals yet. Create your first goal!" : "No goals match filters."}
           </p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-3">
           {filtered.map((goal) => {
@@ -159,7 +155,7 @@ export default function GoalsPage() {
             const expanded = expandedGoal === goal._id;
 
             return (
-              <div key={goal._id} className="planner-surface p-5">
+              <Card key={goal._id} padding="md">
                 <div className="flex items-start gap-3">
                   <div
                     className="w-3 h-3 rounded-full flex-shrink-0 mt-1.5"
@@ -167,7 +163,7 @@ export default function GoalsPage() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-sm font-semibold">{goal.title}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">{goal.title}</span>
                       <span
                         className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize"
                         style={{
@@ -179,10 +175,10 @@ export default function GoalsPage() {
                       </span>
                     </div>
                     {goal.description && (
-                      <p className="text-xs text-muted-foreground mb-2">{goal.description}</p>
+                      <p className="text-xs text-[var(--text-muted)] mb-2">{goal.description}</p>
                     )}
                     {goal.targetDate && (
-                      <p className="text-[10px] text-muted-foreground mb-2">
+                      <p className="text-[10px] text-[var(--text-muted)] mb-2">
                         Target: {format(new Date(goal.targetDate), "MMM d, yyyy")}
                       </p>
                     )}
@@ -190,16 +186,10 @@ export default function GoalsPage() {
                     {/* Progress bar */}
                     {totalMs > 0 && (
                       <div className="mb-2">
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                        <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] mb-1">
                           <span>{doneMs}/{totalMs} milestones</span>
-                          <span>{Math.round(pct)}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--surface-2)" }}>
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{ width: `${pct}%`, background: "var(--accent-color)" }}
-                          />
-                        </div>
+                        <Progress value={pct} size="sm" showLabel />
                       </div>
                     )}
 
@@ -210,8 +200,7 @@ export default function GoalsPage() {
                           <button
                             key={i}
                             onClick={() => toggleMilestone(goal, i)}
-                            className="w-full flex items-center gap-2 text-left text-xs p-2 rounded-md transition-all"
-                            style={{ background: "var(--surface-2)" }}
+                            className="w-full flex items-center gap-2 text-left text-xs p-2 rounded-md transition-all bg-[var(--surface-2)]"
                           >
                             <div
                               className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
@@ -220,9 +209,12 @@ export default function GoalsPage() {
                                 border: `1.5px solid ${ms.completed ? "var(--accent-color)" : "var(--border-subtle)"}`,
                               }}
                             >
-                              {ms.completed && <Check size={10} style={{ color: "var(--background)" }} />}
+                              {ms.completed && <Check size={10} className="text-[var(--background)]" />}
                             </div>
-                            <span style={{ textDecoration: ms.completed ? "line-through" : "none", opacity: ms.completed ? 0.5 : 1 }}>
+                            <span
+                              className="text-[var(--text-primary)]"
+                              style={{ textDecoration: ms.completed ? "line-through" : "none", opacity: ms.completed ? 0.5 : 1 }}
+                            >
                               {ms.title}
                             </span>
                           </button>
@@ -233,14 +225,15 @@ export default function GoalsPage() {
 
                   <div className="flex items-center gap-1">
                     {totalMs > 0 && (
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setExpandedGoal(expanded ? null : goal._id)}
-                        className="p-1.5 text-muted-foreground"
                       >
                         {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      </button>
+                      </Button>
                     )}
-                    <select
+                    <FormSelect
                       value={goal.status}
                       onChange={async (e) => {
                         const newStatus = e.target.value;
@@ -257,48 +250,50 @@ export default function GoalsPage() {
                           );
                         }
                       }}
-                      className="text-xs rounded px-1 py-1"
-                      style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
+                      className="text-xs !py-1 !px-1"
                     >
                       <option value="active">Active</option>
                       <option value="completed">Completed</option>
                       <option value="paused">Paused</option>
-                    </select>
-                    <button
+                    </FormSelect>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={async () => {
                         await fetch(`/api/goals/${goal._id}`, { method: "DELETE" });
                         setGoals((prev) => prev.filter((g) => g._id !== goal._id));
                         toast.success("Goal deleted");
                       }}
-                      className="p-1.5 min-w-[28px] min-h-[28px] text-muted-foreground hover:text-destructive"
+                      className="hover:text-destructive"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       )}
 
-      {showForm && (
-        <GoalModal
-          onClose={() => setShowForm(false)}
-          onSuccess={(g) => {
-            setGoals((prev) => [g, ...prev]);
-            setShowForm(false);
-          }}
-        />
-      )}
+      <GoalModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSuccess={(g) => {
+          setGoals((prev) => [g, ...prev]);
+          setShowForm(false);
+        }}
+      />
     </div>
   );
 }
 
 function GoalModal({
+  open,
   onClose,
   onSuccess,
 }: {
+  open: boolean;
   onClose: () => void;
   onSuccess: (g: Goal) => void;
 }) {
@@ -308,14 +303,6 @@ function GoalModal({
   const [category, setCategory] = useState("personal");
   const [milestones, setMilestones] = useState<string[]>([""]);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,125 +334,99 @@ function GoalModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
-        className="relative w-full max-w-md rounded-xl p-6 animate-slide-up max-h-[80vh] overflow-y-auto"
-        style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">New Goal</h3>
-          <button onClick={onClose}>
-            <X size={18} className="text-muted-foreground" />
-          </button>
+    <Modal open={open} onClose={onClose} title="New Goal" maxWidth="max-w-md">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormInput
+          label="Title"
+          type="text"
+          placeholder="What do you want to achieve?"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          autoFocus
+        />
+
+        <FormTextarea
+          label="Description (optional)"
+          placeholder="More details..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <FormSelect
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+            ))}
+          </FormSelect>
+
+          <FormInput
+            label="Target date"
+            type="date"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Title</label>
-            <input
-              type="text"
-              placeholder="What do you want to achieve?"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Description (optional)</label>
-            <textarea
-              placeholder="More details..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2.5 rounded-lg text-sm resize-none"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Target date</label>
-              <input
-                type="date"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Milestones</label>
-            <div className="space-y-2">
-              {milestones.map((ms, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder={`Milestone ${i + 1}`}
-                    value={ms}
-                    onChange={(e) => {
-                      const updated = [...milestones];
-                      updated[i] = e.target.value;
-                      setMilestones(updated);
-                    }}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm"
-                    style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-                  />
-                  {milestones.length > 1 && (
-                    <button type="button" onClick={() => setMilestones(milestones.filter((_, j) => j !== i))}>
-                      <X size={14} className="text-muted-foreground" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setMilestones([...milestones, ""])}
-                className="text-xs hover:underline"
-                style={{ color: "var(--accent-color)" }}
-              >
-                + Add milestone
-              </button>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
+        <div>
+          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Milestones</label>
+          <div className="space-y-2">
+            {milestones.map((ms, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <FormInput
+                  placeholder={`Milestone ${i + 1}`}
+                  value={ms}
+                  onChange={(e) => {
+                    const updated = [...milestones];
+                    updated[i] = e.target.value;
+                    setMilestones(updated);
+                  }}
+                  className="flex-1"
+                />
+                {milestones.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMilestones(milestones.filter((_, j) => j !== i))}
+                  >
+                    <X size={14} />
+                  </Button>
+                )}
+              </div>
+            ))}
             <button
               type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg text-sm font-medium"
-              style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+              onClick={() => setMilestones([...milestones, ""])}
+              className="text-xs text-[var(--accent-color)] hover:underline"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving || !title.trim()}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50"
-            >
-              {saving ? "Creating..." : "Create goal"}
+              + Add milestone
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={saving || !title.trim()}
+            className="flex-1"
+          >
+            {saving ? "Creating..." : "Create goal"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

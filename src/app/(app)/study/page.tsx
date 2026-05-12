@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormInput, FormSelect } from "@/components/ui/form-input";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   GraduationCap,
   Clock,
@@ -47,15 +51,14 @@ interface Subject {
   active: boolean;
 }
 
-const TABS = ["overview", "log", "homework", "academic"] as const;
-type Tab = (typeof TABS)[number];
+const TABS = [
+  { value: "overview" as const, label: "Overview", icon: GraduationCap },
+  { value: "log" as const, label: "Log Time", icon: Clock },
+  { value: "homework" as const, label: "Homework", icon: BookOpen },
+  { value: "academic" as const, label: "Academic", icon: FileText },
+];
 
-const TAB_META: Record<Tab, { label: string; icon: React.ElementType }> = {
-  overview: { label: "Overview", icon: GraduationCap },
-  log: { label: "Log Time", icon: Clock },
-  homework: { label: "Homework", icon: BookOpen },
-  academic: { label: "Academic", icon: FileText },
-};
+type Tab = (typeof TABS)[number]["value"];
 
 export default function StudyPage() {
   const [tab, setTab] = useState<Tab>("overview");
@@ -102,7 +105,7 @@ export default function StudyPage() {
         <PageHeader title="Study" description="Subjects, homework & grades" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="planner-surface p-6 h-32 animate-pulse" />
+            <Card key={i} className="h-32 animate-pulse" />
           ))}
         </div>
       </div>
@@ -114,40 +117,28 @@ export default function StudyPage() {
       <PageHeader title="Study" description="Subjects, homework & grades" />
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 rounded-xl" style={{ background: "var(--surface-1)" }}>
-        {TABS.map((t) => {
-          const Icon = TAB_META[t].icon;
-          return (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-all"
-              style={{
-                background: tab === t ? "var(--accent-glow)" : "transparent",
-                color: tab === t ? "var(--accent-color)" : "var(--text-muted)",
-                border: tab === t ? "1px solid var(--accent-color)" : "1px solid transparent",
-              }}
-            >
-              <Icon size={14} />
-              <span className="hidden sm:inline">{TAB_META[t].label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        segments={TABS}
+        value={tab}
+        onChange={setTab}
+        layoutId="study-tabs"
+        className="w-full mb-6"
+      />
 
       {subjects.length === 0 && (
-        <div className="planner-surface p-8 text-center mb-6">
-          <GraduationCap size={32} className="mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground text-sm mb-4">
+        <Card className="text-center mb-6">
+          <GraduationCap size={32} className="mx-auto mb-4" style={{ color: "var(--text-muted)" }} />
+          <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
             No subjects configured yet.
           </p>
           <a
             href="/settings"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+            style={{ color: "var(--accent-color)" }}
           >
             Add subjects in Settings
           </a>
-        </div>
+        </Card>
       )}
 
       {tab === "overview" && (
@@ -217,34 +208,34 @@ function OverviewTab({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="planner-surface p-4">
+        <Card padding="md">
           <div className="flex items-center gap-2 mb-3">
             <Clock size={16} style={{ color: "var(--accent-color)" }} />
-            <span className="stat-label">Study this week</span>
+            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Study this week</span>
           </div>
-          <div className="stat-value text-xl">
+          <div className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
             {hours}h {mins}m
           </div>
-        </div>
-        <div className="planner-surface p-4">
+        </Card>
+        <Card padding="md">
           <div className="flex items-center gap-2 mb-3">
             <BookOpen size={16} style={{ color: "var(--accent-color)" }} />
-            <span className="stat-label">Pending homework</span>
+            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Pending homework</span>
           </div>
-          <div className="stat-value text-xl">{pendingHomework}</div>
-        </div>
-        <div className="planner-surface p-4">
+          <div className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>{pendingHomework}</div>
+        </Card>
+        <Card padding="md">
           <div className="flex items-center gap-2 mb-3">
             <FileText size={16} style={{ color: "var(--accent-color)" }} />
-            <span className="stat-label">Upcoming items</span>
+            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Upcoming items</span>
           </div>
-          <div className="stat-value text-xl">{upcomingItems.length}</div>
-        </div>
+          <div className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>{upcomingItems.length}</div>
+        </Card>
       </div>
 
       {perSubject.length > 0 && (
-        <div className="planner-surface p-5">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-4">
+        <Card>
+          <h3 className="text-xs font-semibold mb-4" style={{ color: "var(--text-muted)" }}>
             TIME PER SUBJECT THIS WEEK
           </h3>
           <div className="space-y-3">
@@ -255,20 +246,20 @@ function OverviewTab({
                     className="w-3 h-3 rounded-full"
                     style={{ background: s.color }}
                   />
-                  <span className="text-sm">{s.name}</span>
+                  <span className="text-sm" style={{ color: "var(--text-primary)" }}>{s.name}</span>
                 </div>
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                   {Math.floor(s.minutes / 60)}h {s.minutes % 60}m
                 </span>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {upcomingItems.length > 0 && (
-        <div className="planner-surface p-5">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-4">
+        <Card>
+          <h3 className="text-xs font-semibold mb-4" style={{ color: "var(--text-muted)" }}>
             UPCOMING DEADLINES
           </h3>
           <div className="space-y-2">
@@ -278,12 +269,12 @@ function OverviewTab({
                 className="flex items-center justify-between text-sm"
               >
                 <div>
-                  <span className="font-medium">{item.title}</span>
-                  <span className="text-xs text-muted-foreground ml-2">
+                  <span className="font-medium" style={{ color: "var(--text-primary)" }}>{item.title}</span>
+                  <span className="text-xs ml-2" style={{ color: "var(--text-muted)" }}>
                     {item.subject} · {item.type}
                   </span>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {new Date(item.dueDate).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -292,7 +283,7 @@ function OverviewTab({
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
@@ -344,116 +335,76 @@ function LogTimeTab({
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="planner-surface p-5 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Subject
-            </label>
-            <select
+      <Card>
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <FormSelect
+              label="Subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-              }}
             >
               {subjects.map((s) => (
                 <option key={s.name} value={s.name}>
                   {s.name}
                 </option>
               ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Date
-            </label>
-            <input
+            </FormSelect>
+            <FormInput
+              label="Date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-              }}
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Minutes
-            </label>
-            <input
+            <FormInput
+              label="Minutes"
               type="number"
               min="1"
               placeholder="45"
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-              }}
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Note
-            </label>
-            <input
+            <FormInput
+              label="Note"
               type="text"
               placeholder="Optional"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-              }}
             />
           </div>
-        </div>
-        <button
-          type="submit"
-          disabled={saving || !subject || !minutes}
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5 disabled:opacity-50 flex items-center gap-2"
-        >
-          <Plus size={14} />
-          {saving ? "Saving..." : "Log session"}
-        </button>
-      </form>
+          <Button type="submit" disabled={saving || !subject || !minutes}>
+            <Plus size={14} />
+            {saving ? "Saving..." : "Log session"}
+          </Button>
+        </form>
+      </Card>
 
       <div className="space-y-2">
         {sessions.slice(0, 30).map((s) => (
-          <div key={s._id} className="planner-surface p-4 flex items-center justify-between">
+          <Card key={s._id} padding="md" className="flex items-center justify-between">
             <div>
-              <span className="text-sm font-medium">{s.subject}</span>
-              <span className="text-xs text-muted-foreground ml-2">
+              <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.subject}</span>
+              <span className="text-xs ml-2" style={{ color: "var(--text-muted)" }}>
                 {new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
               {s.note && (
-                <span className="text-xs text-muted-foreground ml-2">· {s.note}</span>
+                <span className="text-xs ml-2" style={{ color: "var(--text-muted)" }}>· {s.note}</span>
               )}
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold">
+              <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                 {Math.floor(s.minutes / 60) > 0 && `${Math.floor(s.minutes / 60)}h `}
                 {s.minutes % 60}m
               </span>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => handleDelete(s._id)}
-                className="p-1 text-muted-foreground hover:text-destructive"
+                className="hover:text-destructive"
               >
                 <Trash2 size={14} />
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
@@ -524,95 +475,87 @@ function HomeworkTab({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">
+        <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
           {pending.length} pending
         </h3>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
-        >
+        <Button onClick={() => setShowForm(!showForm)}>
           <Plus size={14} />
           Add
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAdd} className="planner-surface p-5 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Subject</label>
-              <select
+        <Card>
+          <form onSubmit={handleAdd} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <FormSelect
+                label="Subject"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               >
                 {subjects.map((s) => (
                   <option key={s.name} value={s.name}>{s.name}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Title</label>
-              <input
+              </FormSelect>
+              <FormInput
+                label="Title"
                 type="text"
                 placeholder="Chapter 5 problems"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Due date</label>
-              <input
+              <FormInput
+                label="Due date"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               />
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm" style={{ color: "var(--text-muted)" }}>
-              Cancel
-            </button>
-            <button type="submit" disabled={saving || !title} className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50">
-              {saving ? "Adding..." : "Add homework"}
-            </button>
-          </div>
-        </form>
+            <div className="flex gap-2">
+              <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving || !title}>
+                {saving ? "Adding..." : "Add homework"}
+              </Button>
+            </div>
+          </form>
+        </Card>
       )}
 
       <div className="space-y-2">
         {pending.map((h) => (
-          <div key={h._id} className="planner-surface p-4 flex items-center gap-3">
+          <Card key={h._id} padding="md" className="flex items-center gap-3">
             <button
               onClick={() => toggleComplete(h._id, h.completed)}
               className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-all"
               style={{ border: "2px solid var(--border-subtle)" }}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{h.title}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{h.title}</p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {h.subject}
                 {h.dueDate && ` · Due ${new Date(h.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
               </p>
             </div>
-            <button onClick={() => handleDelete(h._id)} className="p-1 text-muted-foreground hover:text-destructive">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDelete(h._id)}
+              className="hover:text-destructive"
+            >
               <Trash2 size={14} />
-            </button>
-          </div>
+            </Button>
+          </Card>
         ))}
       </div>
 
       {completed.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold text-muted-foreground mb-3">COMPLETED</h3>
+          <h3 className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>COMPLETED</h3>
           <div className="space-y-2">
             {completed.map((h) => (
-              <div key={h._id} className="planner-surface p-4 flex items-center gap-3 opacity-60">
+              <Card key={h._id} padding="md" className="flex items-center gap-3 opacity-60">
                 <button
                   onClick={() => toggleComplete(h._id, h.completed)}
                   className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center"
@@ -621,13 +564,18 @@ function HomeworkTab({
                   <Check size={12} className="text-white" />
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm line-through truncate">{h.title}</p>
-                  <p className="text-xs text-muted-foreground">{h.subject}</p>
+                  <p className="text-sm line-through truncate" style={{ color: "var(--text-primary)" }}>{h.title}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{h.subject}</p>
                 </div>
-                <button onClick={() => handleDelete(h._id)} className="p-1 text-muted-foreground hover:text-destructive">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(h._id)}
+                  className="hover:text-destructive"
+                >
                   <Trash2 size={14} />
-                </button>
-              </div>
+                </Button>
+              </Card>
             ))}
           </div>
         </div>
@@ -706,99 +654,86 @@ function AcademicTab({
     toast.success("Item removed");
   };
 
+  const filterSegments = [
+    { value: "all", label: "All" },
+    ...ACADEMIC_ITEM_TYPES.map((t) => ({
+      value: t,
+      label: t.charAt(0).toUpperCase() + t.slice(1),
+    })),
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex flex-wrap gap-2">
-          {["all", ...ACADEMIC_ITEM_TYPES].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(t)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-              style={{
-                background: typeFilter === t ? "var(--accent-glow)" : "var(--surface-2)",
-                border: `1px solid ${typeFilter === t ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                color: typeFilter === t ? "var(--accent-color)" : "var(--text-muted)",
-              }}
+          {filterSegments.map((t) => (
+            <Button
+              key={t.value}
+              variant={typeFilter === t.value ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setTypeFilter(t.value)}
             >
-              {t === "all" ? "All" : t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
+              {t.label}
+            </Button>
           ))}
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
-        >
+        <Button onClick={() => setShowForm(!showForm)}>
           <Plus size={14} />
           Add
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAdd} className="planner-surface p-5 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Type</label>
-              <select
+        <Card>
+          <form onSubmit={handleAdd} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <FormSelect
+                label="Type"
                 value={formType}
                 onChange={(e) => setFormType(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               >
                 {ACADEMIC_ITEM_TYPES.map((t) => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Subject</label>
-              <select
+              </FormSelect>
+              <FormSelect
+                label="Subject"
                 value={formSubject}
                 onChange={(e) => setFormSubject(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               >
                 {subjects.map((s) => (
                   <option key={s.name} value={s.name}>{s.name}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Title</label>
-              <input
+              </FormSelect>
+              <FormInput
+                label="Title"
                 type="text"
                 placeholder="Midterm exam"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Due date</label>
-              <input
+              <FormInput
+                label="Due date"
                 type="date"
                 value={formDueDate}
                 onChange={(e) => setFormDueDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               />
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm" style={{ color: "var(--text-muted)" }}>
-              Cancel
-            </button>
-            <button type="submit" disabled={saving || !formTitle || !formDueDate} className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50">
-              {saving ? "Adding..." : "Add item"}
-            </button>
-          </div>
-        </form>
+            <div className="flex gap-2">
+              <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving || !formTitle || !formDueDate}>
+                {saving ? "Adding..." : "Add item"}
+              </Button>
+            </div>
+          </form>
+        </Card>
       )}
 
       <div className="space-y-2">
         {filtered.map((item) => (
-          <div key={item._id} className="planner-surface p-4 flex items-center gap-3">
+          <Card key={item._id} padding="md" className="flex items-center gap-3">
             <button
               onClick={() => toggleComplete(item._id, item.completed)}
               className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-all"
@@ -810,32 +745,37 @@ function AcademicTab({
               {item.completed && <Check size={12} className="text-white" />}
             </button>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${item.completed ? "line-through opacity-60" : ""}`}>
+              <p className={`text-sm font-medium truncate ${item.completed ? "line-through opacity-60" : ""}`} style={{ color: "var(--text-primary)" }}>
                 {item.title}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {item.subject} · {item.type}
                 {item.grade !== undefined && item.grade !== null && ` · Grade: ${item.grade}%`}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {new Date(item.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
-              <button onClick={() => handleDelete(item._id)} className="p-1 text-muted-foreground hover:text-destructive">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(item._id)}
+                className="hover:text-destructive"
+              >
                 <Trash2 size={14} />
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         ))}
 
         {filtered.length === 0 && (
-          <div className="planner-surface p-8 text-center">
-            <FileText size={32} className="mx-auto mb-4 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
+          <Card className="text-center">
+            <FileText size={32} className="mx-auto mb-4" style={{ color: "var(--text-muted)" }} />
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
               No {typeFilter === "all" ? "academic items" : `${typeFilter}s`} yet
             </p>
-          </div>
+          </Card>
         )}
       </div>
     </div>

@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { Plus, Trash2, BookOpen, Star, X } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Modal } from "@/components/ui/modal";
+import { FormInput, FormSelect } from "@/components/ui/form-input";
+import { Plus, Trash2, BookOpen, Star } from "lucide-react";
 
 interface Book {
   _id: string;
@@ -58,7 +63,7 @@ export default function ReadingPage() {
         <PageHeader title="Reading" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="planner-surface p-6 h-24 animate-pulse" />
+            <Card key={i} className="h-24 animate-pulse" />
           ))}
         </div>
       </div>
@@ -71,47 +76,41 @@ export default function ReadingPage() {
         title="Reading"
         description="Reading list & progress"
         action={
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
-          >
+          <Button size="sm" onClick={() => setShowForm(true)}>
             <Plus size={14} />
             Add Book
-          </button>
+          </Button>
         }
       />
 
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{ background: "var(--surface-1)" }}>
+      <div className="flex gap-1 mb-6 p-1 rounded-lg bg-[var(--surface-1)]">
         {FILTER_TABS.map((t) => (
-          <button
+          <Button
             key={t.id}
+            variant={filter === t.id ? "primary" : "outline"}
+            size="sm"
             onClick={() => setFilter(t.id)}
-            className="flex-1 px-3 py-2 rounded-md text-xs font-medium transition-all"
-            style={{
-              background: filter === t.id ? "var(--accent-glow)" : "transparent",
-              color: filter === t.id ? "var(--accent-color)" : "var(--text-muted)",
-              border: filter === t.id ? "1px solid var(--accent-color)" : "1px solid transparent",
-            }}
+            className="flex-1 border-0"
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="planner-surface p-8 text-center">
+        <Card className="text-center">
           <BookOpen size={32} className="mx-auto mb-3 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
             {books.length === 0 ? "No books yet. Add your first!" : "No books match this filter."}
           </p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-3">
           {filtered.map((book) => {
             const pct = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0;
             return (
-              <div key={book._id} className="planner-surface p-5">
+              <Card key={book._id} padding="md">
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
@@ -134,12 +133,7 @@ export default function ReadingPage() {
                     {book.status === "reading" && book.totalPages > 0 && (
                       <div className="mb-2">
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--surface-2)" }}>
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{ width: `${pct}%`, background: "var(--accent-color)" }}
-                            />
-                          </div>
+                          <Progress value={pct} size="sm" className="flex-1" />
                           <span className="text-[10px] text-muted-foreground flex-shrink-0">
                             {book.currentPage}/{book.totalPages}
                           </span>
@@ -166,7 +160,7 @@ export default function ReadingPage() {
                           <Star
                             size={14}
                             fill={book.rating && s <= book.rating ? "var(--accent-color)" : "none"}
-                            style={{ color: book.rating && s <= book.rating ? "var(--accent-color)" : "var(--text-muted)" }}
+                            color={book.rating && s <= book.rating ? "var(--accent-color)" : "var(--text-muted)"}
                           />
                         </button>
                       ))}
@@ -174,48 +168,54 @@ export default function ReadingPage() {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <select
+                    <FormSelect
                       value={book.status}
                       onChange={(e) => updateBook(book._id, { status: e.target.value })}
-                      className="text-xs rounded px-1 py-1"
-                      style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
+                      className="text-xs !py-1 !px-1"
                     >
                       <option value="want-to-read">Want to Read</option>
                       <option value="reading">Reading</option>
                       <option value="completed">Completed</option>
-                    </select>
-                    <button
+                    </FormSelect>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={async () => {
                         await fetch(`/api/reading/${book._id}`, { method: "DELETE" });
                         setBooks((prev) => prev.filter((b) => b._id !== book._id));
                         toast.success("Book removed");
                       }}
-                      className="p-1.5 min-w-[28px] min-h-[28px] text-muted-foreground hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       )}
 
-      {showForm && (
-        <BookModal
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title="Add Book"
+        maxWidth="max-w-md"
+      >
+        <BookModalForm
           onClose={() => setShowForm(false)}
           onSuccess={(b) => {
             setBooks((prev) => [b, ...prev]);
             setShowForm(false);
           }}
         />
-      )}
+      </Modal>
     </div>
   );
 }
 
-function BookModal({
+function BookModalForm({
   onClose,
   onSuccess,
 }: {
@@ -227,14 +227,6 @@ function BookModal({
   const [totalPages, setTotalPages] = useState("");
   const [status, setStatus] = useState("want-to-read");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,77 +255,50 @@ function BookModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
-        className="relative w-full max-w-md rounded-xl p-6 animate-slide-up"
-        style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Add Book</h3>
-          <button onClick={onClose}>
-            <X size={18} className="text-muted-foreground" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Title</label>
-            <input
-              type="text"
-              placeholder="Book title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Author</label>
-            <input
-              type="text"
-              placeholder="Author name"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Total pages</label>
-              <input
-                type="number"
-                min="0"
-                placeholder="300"
-                value={totalPages}
-                onChange={(e) => setTotalPages(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-              >
-                <option value="want-to-read">Want to Read</option>
-                <option value="reading">Reading</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg text-sm font-medium" style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>Cancel</button>
-            <button type="submit" disabled={saving || !title.trim()} className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50">{saving ? "Adding..." : "Add book"}</button>
-          </div>
-        </form>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <FormInput
+        label="Title"
+        type="text"
+        placeholder="Book title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        autoFocus
+      />
+      <FormInput
+        label="Author"
+        type="text"
+        placeholder="Author name"
+        value={author}
+        onChange={(e) => setAuthor(e.target.value)}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <FormInput
+          label="Total pages"
+          type="number"
+          min={0}
+          placeholder="300"
+          value={totalPages}
+          onChange={(e) => setTotalPages(e.target.value)}
+        />
+        <FormSelect
+          label="Status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="want-to-read">Want to Read</option>
+          <option value="reading">Reading</option>
+          <option value="completed">Completed</option>
+        </FormSelect>
       </div>
-    </div>
+
+      <div className="flex gap-3 pt-2">
+        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" className="flex-1" disabled={saving || !title.trim()}>
+          {saving ? "Adding..." : "Add book"}
+        </Button>
+      </div>
+    </form>
   );
 }

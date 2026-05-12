@@ -6,14 +6,14 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
+    <div className="flex items-start justify-between gap-4 mb-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">{title}</h1>
         {description && (
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{description}</p>
+          <p className="text-sm mt-0.5 text-[var(--text-muted)]">{description}</p>
         )}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   );
 }

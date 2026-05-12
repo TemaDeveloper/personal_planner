@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CustomEntryForm } from "@/components/sections/custom-entry-form";
 import { Plus, Trash2, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
@@ -73,7 +75,7 @@ export default function CustomSectionPage() {
   if (loading) {
     return (
       <div className="animate-slide-up">
-        <div className="planner-surface p-6 h-32 animate-pulse" />
+        <Card padding="lg" className="h-32 animate-pulse" />
       </div>
     );
   }
@@ -94,29 +96,30 @@ export default function CustomSectionPage() {
         title={template.name}
         description={template.description}
         action={
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
-          >
+          <Button size="sm" onClick={() => setShowForm(true)}>
             <Plus size={14} />
             Add
-          </button>
+          </Button>
         }
       />
 
       {/* Week navigation */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={() => setWeekOffset((p) => p - 1)}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setWeekOffset((p) => p - 1)}
+        >
           <ChevronLeft size={16} />
-        </button>
+        </Button>
         <span className="text-sm font-medium">{weekLabel}</span>
-        <button onClick={() => setWeekOffset((p) => p + 1)}
-          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setWeekOffset((p) => p + 1)}
+        >
           <ChevronRight size={16} />
-        </button>
+        </Button>
       </div>
 
       {/* Weekly grid */}
@@ -126,16 +129,19 @@ export default function CustomSectionPage() {
           const entry = getEntryForDay(dayDate);
 
           return (
-            <div key={day} className="planner-surface p-4 min-h-[120px] flex flex-col">
+            <Card key={day} padding="md" className="min-h-[120px] flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <p className="text-xs font-semibold" style={{ color: entry ? "var(--accent-color)" : "var(--text-muted)" }}>
+                  <p className={
+                    "text-xs font-semibold " +
+                    (entry ? "text-[var(--accent-color)]" : "text-[var(--text-muted)]")
+                  }>
                     {day.slice(0, 3)}
                   </p>
                   <p className="text-[10px] text-muted-foreground">{format(dayDate, "MMM d")}</p>
                 </div>
                 {entry && (
-                  <Icon size={14} style={{ color: "var(--accent-color)" }} />
+                  <Icon size={14} className="text-[var(--accent-color)]" />
                 )}
               </div>
 
@@ -148,7 +154,7 @@ export default function CustomSectionPage() {
                       <div key={field.key} className="text-xs">
                         <span className="text-muted-foreground">{field.label}: </span>
                         {field.type === "boolean" ? (
-                          <Check size={10} className="inline" style={{ color: "var(--accent-color)" }} />
+                          <Check size={10} className="inline text-[var(--accent-color)]" />
                         ) : (
                           <span>{String(val)}</span>
                         )}
@@ -165,7 +171,7 @@ export default function CustomSectionPage() {
                   <p className="text-xs text-muted-foreground">—</p>
                 </div>
               )}
-            </div>
+            </Card>
           );
         })}
       </div>

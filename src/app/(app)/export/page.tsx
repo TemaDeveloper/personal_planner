@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/form-input";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,10 +45,10 @@ export default function ExportPage() {
         description="Download your data as CSV for Excel"
       />
 
-      <div className="planner-surface p-6 space-y-6">
+      <Card padding="lg" className="space-y-6">
         {/* Type selection */}
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-3">
+          <label className="block text-xs font-medium text-[var(--text-muted)] mb-3">
             What to export
           </label>
           <div className="space-y-2">
@@ -53,31 +56,29 @@ export default function ExportPage() {
               <button
                 key={t.value}
                 onClick={() => setType(t.value)}
-                className="w-full p-4 rounded-lg text-left transition-all flex items-center gap-4"
-                style={{
-                  background:
-                    type === t.value ? "var(--accent-glow)" : "var(--surface-2)",
-                  border: `1px solid ${type === t.value ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                }}
+                className={
+                  "w-full p-4 rounded-lg text-left transition-all flex items-center gap-4 border " +
+                  (type === t.value
+                    ? "bg-[var(--accent-glow)] border-[var(--accent-color)]"
+                    : "bg-[var(--surface-2)] border-[var(--border-subtle)]")
+                }
               >
                 <FileSpreadsheet
                   size={18}
-                  style={{
-                    color:
-                      type === t.value
-                        ? "var(--accent-color)"
-                        : "var(--text-muted)",
-                  }}
+                  className={
+                    type === t.value
+                      ? "text-[var(--accent-color)]"
+                      : "text-[var(--text-muted)]"
+                  }
                 />
                 <div>
                   <p
-                    className="text-sm font-medium"
-                    style={{
-                      color:
-                        type === t.value
-                          ? "var(--text-primary)"
-                          : "var(--text-muted)",
-                    }}
+                    className={
+                      "text-sm font-medium " +
+                      (type === t.value
+                        ? "text-[var(--text-primary)]"
+                        : "text-[var(--text-muted)]")
+                    }
                   >
                     {t.label}
                   </p>
@@ -90,42 +91,22 @@ export default function ExportPage() {
 
         {/* Date range */}
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-3">
+          <label className="block text-xs font-medium text-[var(--text-muted)] mb-3">
             Date range (optional)
           </label>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1">
-                From
-              </label>
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                }}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1">
-                To
-              </label>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                }}
-              />
-            </div>
+            <FormInput
+              label="From"
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+            <FormInput
+              label="To"
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             Leave empty to export all data
@@ -133,14 +114,15 @@ export default function ExportPage() {
         </div>
 
         {/* Export button */}
-        <button
+        <Button
           onClick={handleExport}
-          className="w-full py-3 rounded-lg text-sm font-semibold bg-primary text-primary-foreground flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+          size="lg"
+          className="w-full"
         >
           <Download size={16} />
           Download CSV
-        </button>
-      </div>
+        </Button>
+      </Card>
     </div>
   );
 }

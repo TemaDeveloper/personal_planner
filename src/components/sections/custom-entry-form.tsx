@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { FormInput, FormSelect } from "@/components/ui/form-input";
 
 interface FieldDefinition {
   key: string;
@@ -60,116 +62,116 @@ export function CustomEntryForm({ slug, fields, onClose, onSuccess, initialDate 
   return (
     <Modal open onClose={onClose} title="New Entry" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-            className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-          />
-        </div>
+        <FormInput
+          label="Date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          required
+        />
 
         {fields.map((field) => (
           <div key={field.key}>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              {field.label}{field.required && " *"}
-            </label>
-
             {field.type === "boolean" && (
-              <button
-                type="button"
-                onClick={() => updateField(field.key, !data[field.key])}
-                className="flex items-center gap-3 w-full p-2.5 rounded-lg text-sm text-left transition-all"
-                style={{
-                  background: data[field.key] ? "var(--accent-glow)" : "var(--surface-2)",
-                  border: `1px solid ${data[field.key] ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                  color: data[field.key] ? "var(--accent-color)" : "var(--text-muted)",
-                }}
-              >
-                <div
-                  className="w-8 h-5 rounded-full transition-all flex items-center px-0.5"
-                  style={{
-                    background: data[field.key] ? "var(--accent-color)" : "var(--surface-1)",
-                    border: data[field.key] ? "none" : "1px solid var(--border-subtle)",
-                  }}
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                  {field.label}{field.required && " *"}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => updateField(field.key, !data[field.key])}
+                  className={
+                    "flex items-center gap-3 w-full p-2.5 rounded-lg text-sm text-left transition-all border " +
+                    (data[field.key]
+                      ? "bg-[var(--accent-glow)] border-[var(--accent-color)] text-[var(--accent-color)]"
+                      : "bg-[var(--surface-2)] border-[var(--border-subtle)] text-[var(--text-muted)]")
+                  }
                 >
                   <div
-                    className="w-4 h-4 rounded-full transition-all"
-                    style={{
-                      background: data[field.key] ? "white" : "var(--text-muted)",
-                      transform: data[field.key] ? "translateX(12px)" : "translateX(0)",
-                      opacity: data[field.key] ? 1 : 0.5,
-                    }}
-                  />
-                </div>
-                {data[field.key] ? "Yes" : "No"}
-              </button>
+                    className={
+                      "w-8 h-5 rounded-full transition-all flex items-center px-0.5 " +
+                      (data[field.key]
+                        ? "bg-[var(--accent-color)]"
+                        : "bg-[var(--surface-1)] border border-[var(--border-subtle)]")
+                    }
+                  >
+                    <div
+                      className={
+                        "w-4 h-4 rounded-full transition-all " +
+                        (data[field.key]
+                          ? "bg-white translate-x-3"
+                          : "bg-[var(--text-muted)] translate-x-0 opacity-50")
+                      }
+                    />
+                  </div>
+                  {data[field.key] ? "Yes" : "No"}
+                </button>
+              </div>
             )}
 
             {field.type === "number" && (
-              <input
+              <FormInput
+                label={`${field.label}${field.required ? " *" : ""}`}
                 type="number"
                 step="any"
                 value={data[field.key] as number}
                 onChange={(e) => updateField(field.key, Number(e.target.value))}
                 required={field.required}
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               />
             )}
 
             {field.type === "text" && (
-              <input
+              <FormInput
+                label={`${field.label}${field.required ? " *" : ""}`}
                 type="text"
                 value={data[field.key] as string}
                 onChange={(e) => updateField(field.key, e.target.value)}
                 required={field.required}
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               />
             )}
 
             {field.type === "select" && field.options && (
-              <select
+              <FormSelect
+                label={`${field.label}${field.required ? " *" : ""}`}
                 value={data[field.key] as string}
                 onChange={(e) => updateField(field.key, e.target.value)}
                 required={field.required}
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               >
                 <option value="">Select...</option>
                 {field.options.map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
-              </select>
+              </FormSelect>
             )}
 
             {field.type === "date" && (
-              <input
+              <FormInput
+                label={`${field.label}${field.required ? " *" : ""}`}
                 type="date"
                 value={data[field.key] as string}
                 onChange={(e) => updateField(field.key, e.target.value)}
                 required={field.required}
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
               />
             )}
           </div>
         ))}
 
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-medium"
-            style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            className="flex-1"
+          >
             Cancel
-          </button>
-          <button type="submit" disabled={loading}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50">
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="flex-1"
+          >
             {loading ? "Saving..." : "Save"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

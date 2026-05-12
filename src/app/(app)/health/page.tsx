@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FormInput } from "@/components/ui/form-input";
 import { Droplets, Moon, Weight, Smile } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 
@@ -16,11 +19,11 @@ interface HealthLog {
 }
 
 const MOODS = [
-  { value: 1, emoji: "😞", label: "Bad" },
-  { value: 2, emoji: "😕", label: "Meh" },
-  { value: 3, emoji: "😐", label: "Okay" },
-  { value: 4, emoji: "🙂", label: "Good" },
-  { value: 5, emoji: "😄", label: "Great" },
+  { value: 1, emoji: "\u{1F61E}", label: "Bad" },
+  { value: 2, emoji: "\u{1F615}", label: "Meh" },
+  { value: 3, emoji: "\u{1F610}", label: "Okay" },
+  { value: 4, emoji: "\u{1F642}", label: "Good" },
+  { value: 5, emoji: "\u{1F604}", label: "Great" },
 ];
 
 export default function HealthPage() {
@@ -100,7 +103,7 @@ export default function HealthPage() {
   const avgSleep =
     weekLogs.length > 0
       ? (weekLogs.reduce((s, l) => s + l.sleepHours, 0) / weekLogs.length).toFixed(1)
-      : "—";
+      : "\u2014";
 
   if (loading) {
     return (
@@ -108,7 +111,7 @@ export default function HealthPage() {
         <PageHeader title="Health" />
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="planner-surface p-6 h-32 animate-pulse" />
+            <Card key={i} className="h-32 animate-pulse" />
           ))}
         </div>
       </div>
@@ -120,55 +123,53 @@ export default function HealthPage() {
       <PageHeader title="Health" description="Water, sleep & wellness" />
 
       {/* Log today */}
-      <div className="planner-surface p-6 mb-6">
+      <Card className="mb-6">
         <h3 className="text-sm font-semibold mb-4">Log Today</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <FormInput
+            label={
+              <>
+                <Droplets size={12} className="inline mr-1.5 align-[-1px]" />
+                Water (glasses)
+              </>
+            }
+            type="number"
+            min={0}
+            value={water}
+            onChange={(e) => setWater(e.target.value)}
+          />
+          <FormInput
+            label={
+              <>
+                <Moon size={12} className="inline mr-1.5 align-[-1px]" />
+                Sleep (hours)
+              </>
+            }
+            type="number"
+            min={0}
+            max={24}
+            step={0.5}
+            value={sleepHours}
+            onChange={(e) => setSleepHours(e.target.value)}
+          />
+          <FormInput
+            label={
+              <>
+                <Weight size={12} className="inline mr-1.5 align-[-1px]" />
+                Weight (kg, optional)
+              </>
+            }
+            type="number"
+            min={0}
+            step={0.1}
+            placeholder="\u2014"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          />
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
-              <Droplets size={12} /> Water (glasses)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={water}
-              onChange={(e) => setWater(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
-              <Moon size={12} /> Sleep (hours)
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="24"
-              step="0.5"
-              value={sleepHours}
-              onChange={(e) => setSleepHours(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
-              <Weight size={12} /> Weight (kg, optional)
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.1"
-              placeholder="—"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", color: "var(--text-primary)" }}
-            />
-          </div>
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
-              <Smile size={12} /> Mood
+            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+              <Smile size={12} className="inline mr-1.5 align-[-1px]" />
+              Mood
             </label>
             <div className="flex gap-1">
               {MOODS.map((m) => (
@@ -191,14 +192,10 @@ export default function HealthPage() {
           </div>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50 transition-all hover:-translate-y-0.5"
-        >
+        <Button onClick={handleSave} disabled={saving}>
           {saving ? "Saving..." : "Save"}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
       {/* Weekly summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -208,14 +205,14 @@ export default function HealthPage() {
             label: "Avg Water",
             value: weekLogs.length > 0
               ? `${(weekLogs.reduce((s, l) => s + l.water, 0) / weekLogs.length).toFixed(0)} glasses`
-              : "—",
+              : "\u2014",
             icon: Droplets,
           },
           {
             label: "Avg Mood",
             value: weekLogs.length > 0
-              ? MOODS[Math.round(weekLogs.reduce((s, l) => s + l.mood, 0) / weekLogs.length) - 1]?.emoji || "—"
-              : "—",
+              ? MOODS[Math.round(weekLogs.reduce((s, l) => s + l.mood, 0) / weekLogs.length) - 1]?.emoji || "\u2014"
+              : "\u2014",
             icon: Smile,
           },
           {
@@ -224,16 +221,16 @@ export default function HealthPage() {
             icon: Weight,
           },
         ].map((stat) => (
-          <div key={stat.label} className="planner-surface p-4 text-center">
+          <Card key={stat.label} padding="sm" className="text-center">
             <stat.icon size={16} className="mx-auto mb-1 text-muted-foreground" />
             <p className="text-lg font-bold">{stat.value}</p>
             <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-          </div>
+          </Card>
         ))}
       </div>
 
       {/* Recent history */}
-      <div className="planner-surface p-6">
+      <Card>
         <h3 className="text-sm font-semibold mb-4">Recent History</h3>
         {logs.length === 0 ? (
           <p className="text-xs text-muted-foreground">No entries yet.</p>
@@ -242,8 +239,7 @@ export default function HealthPage() {
             {logs.slice(0, 14).map((log) => (
               <div
                 key={log._id}
-                className="flex items-center gap-4 p-3 rounded-lg text-xs"
-                style={{ background: "var(--surface-2)" }}
+                className="flex items-center gap-4 p-3 rounded-lg text-xs bg-[var(--surface-2)]"
               >
                 <span className="font-medium w-24 flex-shrink-0">
                   {format(new Date(log.date), "MMM d")}
@@ -264,7 +260,7 @@ export default function HealthPage() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
