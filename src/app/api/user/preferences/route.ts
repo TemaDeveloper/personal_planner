@@ -24,6 +24,7 @@ export async function GET() {
     studyConfig: user.studyConfig,
     hobbiesConfig: user.hobbiesConfig,
     houseworkConfig: user.houseworkConfig,
+    gymConfig: user.gymConfig,
     bills: user.bills,
     name: user.name,
     avatarEmoji: user.avatarEmoji,
@@ -94,6 +95,13 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  // Update gym config
+  if (body.gymConfig) {
+    if (body.gymConfig.targetDaysPerWeek !== undefined) {
+      updateFields["gymConfig.targetDaysPerWeek"] = body.gymConfig.targetDaysPerWeek;
+    }
+  }
+
   // Update profile fields
   if (body.name) updateFields.name = body.name;
   if (body.avatarEmoji) updateFields.avatarEmoji = body.avatarEmoji;
@@ -115,6 +123,7 @@ export async function PATCH(req: NextRequest) {
     studyConfig: user.studyConfig,
     hobbiesConfig: user.hobbiesConfig,
     houseworkConfig: user.houseworkConfig,
+    gymConfig: user.gymConfig,
     bills: user.bills,
     enabledSections: user.enabledSections,
   });

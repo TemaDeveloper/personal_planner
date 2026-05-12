@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Planner
+
+A free, open-source personal planner to track your daily life -- gym, work, habits, finances, study, and more. Self-hostable, no subscription needed.
+
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## Features
+
+- **Gym** -- Daily attendance tracker with configurable weekly goals
+- **Work** -- Multi-job hour tracking, earnings calculator, expense & route logging
+- **Habits** -- Daily habit tracking with streaks and custom colors
+- **Finances** -- Expense categories, monthly bills, reimbursement tracking
+- **Study** -- Subject-based session logging, homework, grades & academic items
+- **Hobbies** -- Project management and time tracking for hobbies
+- **Housework** -- Chore tracking with recurring tasks
+- **Health** -- Water intake, sleep, weight, and mood logging
+- **Goals** -- Goal setting with milestones across personal, career, health & financial categories
+- **Reading** -- Book tracking with progress, ratings, and notes
+- **Journal** -- Daily journal entries with mood tracking
+- **Shopping** -- Shopping lists with quantities and prices
+- **Meal Prep** -- Weekly meal planning by day and meal type
+
+All sections are toggleable per user. Enable only what you need.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Database:** MongoDB with Mongoose
+- **Auth:** NextAuth v5 (credentials + Google OAuth)
+- **Styling:** Tailwind CSS 4, CSS custom properties, Framer Motion
+- **Deployment:** Vercel
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- pnpm (recommended) or npm
+- MongoDB (local instance or [MongoDB Atlas](https://www.mongodb.com/atlas))
+
+### Setup
+
+1. Clone the repository:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/TemaDeveloper/personal_planner.git
+cd personal_planner
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Create a `.env.local` file:
 
-## Learn More
+```env
+MONGODB_URI=mongodb://localhost:27017/personal_planner
+NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_URL=http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+# Optional: Google OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. Start the development server:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000) to start using the planner.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The easiest way to deploy is with [Vercel](https://vercel.com):
+
+1. Push your repo to GitHub
+2. Import the project on Vercel
+3. Add your environment variables (`MONGODB_URI`, `NEXTAUTH_SECRET`, Google OAuth vars)
+4. Deploy
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on setting up the dev environment, code conventions, and the PR process.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

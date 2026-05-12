@@ -29,6 +29,7 @@ interface WorkSummary {
 interface DashboardCardsProps {
   workSummaries: WorkSummary[];
   gymDaysThisWeek: number;
+  gymTargetDays: number;
   studyMinutesThisWeek: number;
   hobbyMinutesThisWeek: number;
   houseworkDone: number;
@@ -46,6 +47,7 @@ interface DashboardCardsProps {
 export function DashboardCards({
   workSummaries,
   gymDaysThisWeek,
+  gymTargetDays,
   studyMinutesThisWeek,
   hobbyMinutesThisWeek,
   houseworkDone,
@@ -83,7 +85,7 @@ export function DashboardCards({
   }
   if (has("gym")) {
     statCards.push(
-      <StatCard key="gym" label="Gym this week" value={`${gymDaysThisWeek}/5`} icon={<Dumbbell size={16} />} />,
+      <StatCard key="gym" label="Gym this week" value={`${gymDaysThisWeek}/${gymTargetDays}`} icon={<Dumbbell size={16} />} />,
     );
   }
   if (has("study")) {

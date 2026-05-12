@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { Plus, Check, Flame, Trash2, X } from "lucide-react";
+import { Plus, Check, Flame, Trash2 } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { FormInput } from "@/components/ui/form-input";
 
 interface Habit {
   _id: string;
@@ -158,14 +160,6 @@ function AddHabitModal({
   const [emoji, setEmoji] = useState("🎯");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
-
   const colors = ["#D4A853", "#00C9A7", "#9B72F0", "#F07070", "#7EC8A0"];
   const [color, setColor] = useState(colors[0]);
 
@@ -189,99 +183,63 @@ function AddHabitModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
-        className="relative w-full max-w-sm rounded-xl p-6 animate-slide-up"
-        style={{
-          background: "var(--surface-1)",
-          border: "1px solid var(--border-subtle)",
-        }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">New Habit</h3>
-          <button onClick={onClose}>
-            <X size={18} className="text-muted-foreground" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Modal open onClose={onClose} title="New Habit">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormInput
+          label="Name"
+          placeholder="e.g. Read 30 min"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormInput
+            label="Emoji"
+            value={emoji}
+            onChange={(e) => setEmoji(e.target.value)}
+            maxLength={2}
+            className="text-center text-xl"
+          />
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Name
+              Color
             </label>
-            <input
-              type="text"
-              placeholder="e.g. Read 30 min"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-              }}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                Emoji
-              </label>
-              <input
-                type="text"
-                value={emoji}
-                onChange={(e) => setEmoji(e.target.value)}
-                maxLength={2}
-                className="w-full px-3 py-2.5 rounded-lg text-sm text-center text-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                }}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                Color
-              </label>
-              <div className="flex gap-2 pt-1">
-                {colors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="w-8 h-8 rounded-lg transition-all hover:scale-110"
-                    style={{
-                      background: c,
-                      opacity: color === c ? 1 : 0.4,
-                      boxShadow:
-                        color === c ? `0 0 0 2px var(--background), 0 0 0 3px ${c}` : "none",
-                    }}
-                  />
-                ))}
-              </div>
+            <div className="flex gap-2 pt-1">
+              {colors.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className="w-8 h-8 rounded-lg transition-all hover:scale-110"
+                  style={{
+                    background: c,
+                    opacity: color === c ? 1 : 0.4,
+                    boxShadow:
+                      color === c ? `0 0 0 2px var(--background), 0 0 0 3px ${c}` : "none",
+                  }}
+                />
+              ))}
             </div>
           </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg text-sm font-medium"
-              style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50"
-            >
-              {loading ? "Creating..." : "Create"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg text-sm font-medium"
+            style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50"
+          >
+            {loading ? "Creating..." : "Create"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

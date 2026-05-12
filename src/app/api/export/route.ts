@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import WorkSession from "@/lib/models/work-session";
-import Workout from "@/lib/models/workout";
+import GymAttendance from "@/lib/models/gym-attendance";
 import Expense from "@/lib/models/expense";
 import Route from "@/lib/models/route";
 import StudySession from "@/lib/models/study-session";
@@ -59,26 +59,16 @@ export async function GET(req: NextRequest) {
       break;
     }
     case "gym": {
-      const workouts = await Workout.find({
+      const records = await GymAttendance.find({
         userId,
         ...(hasDateFilter ? { date: dateFilter } : {}),
       }).sort({ date: -1 });
 
-      const rows: string[][] = [];
-      for (const w of workouts) {
-        for (const ex of w.exercises) {
-          for (const set of ex.sets) {
-            rows.push([
-              w.date.toISOString().split("T")[0],
-              ex.name,
-              set.reps.toString(),
-              set.weight.toString(),
-            ]);
-          }
-        }
-      }
-      csv = generateCSV(["Date", "Exercise", "Reps", "Weight (kg)"], rows);
-      filename = `gym-workouts-${new Date().toISOString().split("T")[0]}.csv`;
+      csv = generateCSV(
+        ["Date"],
+        records.map((r) => [r.date.toISOString().split("T")[0]])
+      );
+      filename = `gym-attendance-${new Date().toISOString().split("T")[0]}.csv`;
       break;
     }
     case "expenses": {

@@ -66,6 +66,9 @@ export interface IUser extends Document {
   houseworkConfig: {
     chores: IChore[];
   };
+  gymConfig: {
+    targetDaysPerWeek: number;
+  };
   bills: IBill[];
   createdAt: Date;
   updatedAt: Date;
@@ -199,6 +202,9 @@ const UserSchema = new Schema<IUser>(
         ],
         default: [],
       },
+    },
+    gymConfig: {
+      targetDaysPerWeek: { type: Number, default: 5, min: 1, max: 7 },
     },
     bills: { type: [BillSchema], default: [] },
   },

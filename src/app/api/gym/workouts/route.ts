@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
-import Workout from "@/lib/models/workout";
-import { startOfWeek, endOfWeek } from "date-fns";
+import GymAttendance from "@/lib/models/gym-attendance";
+import User from "@/lib/models/user";
+import { startOfWeek, endOfWeek, startOfDay } from "date-fns";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -27,14 +28,20 @@ export async function GET(req: NextRequest) {
     end = endOfWeek(new Date(), { weekStartsOn: 1 });
   }
 
-  const workouts = await Workout.find({
-    userId,
-    date: { $gte: start, $lte: end },
-  })
-    .sort({ date: 1 })
-    .lean();
+  const [attendance, user] = await Promise.all([
+    GymAttendance.find({
+      userId,
+      date: { $gte: start, $lte: end },
+    })
+      .sort({ date: 1 })
+      .lean(),
+    User.findById(userId).select("gymConfig").lean(),
+  ]);
 
-  return NextResponse.json({ workouts });
+  return NextResponse.json({
+    attendance,
+    targetDaysPerWeek: user?.gymConfig?.targetDaysPerWeek ?? 5,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -47,30 +54,21 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { date, exercises, note } = body;
+  const { date } = body;
 
   if (!date) {
     return NextResponse.json({ error: "date is required" }, { status: 400 });
   }
 
-  const d = new Date(date);
-  const dayOfWeek = d.getDay();
-  const mappedDay = dayOfWeek === 0 ? 7 : dayOfWeek; // 1=Mon, 7=Sun
+  const d = startOfDay(new Date(date));
 
-  if (mappedDay > 5) {
-    return NextResponse.json(
-      { error: "Gym tracking is Mon-Fri only" },
-      { status: 400 }
-    );
+  const existing = await GymAttendance.findOne({ userId, date: d });
+
+  if (existing) {
+    await GymAttendance.deleteOne({ _id: existing._id });
+    return NextResponse.json({ attended: false, date: d });
   }
 
-  const workout = await Workout.create({
-    userId,
-    date: d,
-    dayOfWeek: mappedDay,
-    exercises: exercises || [],
-    note,
-  });
-
-  return NextResponse.json({ workout }, { status: 201 });
+  const record = await GymAttendance.create({ userId, date: d });
+  return NextResponse.json({ attended: true, date: d, record }, { status: 201 });
 }

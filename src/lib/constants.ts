@@ -74,7 +74,7 @@ export const SECTION_META: Record<SectionId, {
   mobileLabel: string;
 }> = {
   work:      { label: "Work",      icon: "Briefcase",       href: "/work",      description: "Track hours and earnings",     mobilePriority: 1,  mobileLabel: "Work" },
-  gym:       { label: "Gym",       icon: "Dumbbell",        href: "/gym",       description: "Mon-Fri workout tracker",      mobilePriority: 2,  mobileLabel: "Gym" },
+  gym:       { label: "Gym",       icon: "Dumbbell",        href: "/gym",       description: "Daily attendance tracker",      mobilePriority: 2,  mobileLabel: "Gym" },
   finances:  { label: "Finances",  icon: "DollarSign",      href: "/finances",  description: "Income & expenses",            mobilePriority: 3,  mobileLabel: "Money" },
   habits:    { label: "Habits",    icon: "Flame",           href: "/habits",    description: "Daily habits & streaks",       mobilePriority: 4,  mobileLabel: "Habits" },
   study:     { label: "Study",     icon: "GraduationCap",   href: "/study",     description: "Subjects, homework & grades",  mobilePriority: 5,  mobileLabel: "Study" },

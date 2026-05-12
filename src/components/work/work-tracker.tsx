@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Trash2, Clock, MapPin, Receipt, DollarSign } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 import { formatCurrency } from "@/lib/utils";
 import { calculateGasCost } from "@/lib/gas-calculator";
 
@@ -391,39 +392,6 @@ export function WorkTracker({
   );
 }
 
-// ── Modal Components ──
-
-function ModalOverlay({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
-        className="relative w-full max-w-md rounded-xl p-6 animate-slide-up max-h-[85vh] overflow-y-auto"
-        style={{
-          background: "var(--surface-1)",
-          border: "1px solid var(--border-subtle)",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function AddSessionModal({
   jobName,
   onClose,
@@ -458,8 +426,7 @@ function AddSessionModal({
   };
 
   return (
-    <ModalOverlay onClose={onClose}>
-      <h3 className="text-lg font-semibold mb-4">Log Hours</h3>
+    <Modal open onClose={onClose} title="Log Hours" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Date">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
@@ -493,7 +460,7 @@ function AddSessionModal({
           </button>
         </div>
       </form>
-    </ModalOverlay>
+    </Modal>
   );
 }
 
@@ -532,8 +499,7 @@ function AddExpenseModal({
   };
 
   return (
-    <ModalOverlay onClose={onClose}>
-      <h3 className="text-lg font-semibold mb-4">Add Expense</h3>
+    <Modal open onClose={onClose} title="Add Expense" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Date">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
@@ -576,7 +542,7 @@ function AddExpenseModal({
           </button>
         </div>
       </form>
-    </ModalOverlay>
+    </Modal>
   );
 }
 
@@ -614,8 +580,7 @@ function AddRouteModal({
   };
 
   return (
-    <ModalOverlay onClose={onClose}>
-      <h3 className="text-lg font-semibold mb-4">Add Route</h3>
+    <Modal open onClose={onClose} title="Add Route" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Date">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
@@ -641,7 +606,7 @@ function AddRouteModal({
           </button>
         </div>
       </form>
-    </ModalOverlay>
+    </Modal>
   );
 }
 

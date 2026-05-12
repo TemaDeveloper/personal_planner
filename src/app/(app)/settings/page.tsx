@@ -63,6 +63,7 @@ export default function SettingsPage() {
 
   const [localSections, setLocalSections] = useState<SectionId[]>([...enabledSections]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [targetDaysPerWeek, setTargetDaysPerWeek] = useState(5);
 
   useEffect(() => {
     fetch("/api/user/preferences")
@@ -83,6 +84,7 @@ export default function SettingsPage() {
         setBills(data.bills || []);
         if (data.enabledSections) setLocalSections(data.enabledSections);
         setSubjects(data.studyConfig?.subjects || []);
+        setTargetDaysPerWeek(data.gymConfig?.targetDaysPerWeek ?? 5);
         setLoading(false);
       });
   }, []);
@@ -105,6 +107,7 @@ export default function SettingsPage() {
         bills,
         enabledSections: localSections,
         studyConfig: { subjects },
+        gymConfig: { targetDaysPerWeek },
       }),
     });
 
@@ -311,6 +314,30 @@ export default function SettingsPage() {
                 Add subject
               </button>
             </div>
+          </Section>
+        )}
+
+        {/* Gym */}
+        {localSections.includes("gym") && (
+          <Section title="Gym">
+            <Field label="Target days per week">
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setTargetDaysPerWeek(n)}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                    style={{
+                      background: targetDaysPerWeek === n ? "var(--accent-glow)" : "var(--surface-2)",
+                      border: `1px solid ${targetDaysPerWeek === n ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                      color: targetDaysPerWeek === n ? "var(--accent-color)" : "var(--text-muted)",
+                    }}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </Field>
           </Section>
         )}
 

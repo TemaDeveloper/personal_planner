@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import User from "@/lib/models/user";
 import WorkSession from "@/lib/models/work-session";
-import Workout from "@/lib/models/workout";
+import GymAttendance from "@/lib/models/gym-attendance";
 import StudySession from "@/lib/models/study-session";
 import HobbySession from "@/lib/models/hobby-session";
 import HouseworkLog from "@/lib/models/housework-log";
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
     has("work") ? WorkSession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
     has("work") ? WorkSession.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean() : Promise.resolve([]),
     has("work") ? WorkSession.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean() : Promise.resolve([]),
-    has("gym") ? Workout.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
+    has("gym") ? GymAttendance.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
     has("study") ? StudySession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
     has("hobbies") ? HobbySession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
     has("housework") ? HouseworkLog.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean() : Promise.resolve([]),
@@ -90,6 +90,7 @@ export default async function DashboardPage() {
     : [];
 
   const gymDaysThisWeek = weekWorkouts.length;
+  const gymTargetDays = user.gymConfig?.targetDaysPerWeek ?? 5;
   const studyMinutesThisWeek = weekStudySessions.reduce(
     (sum: number, s: { minutes: number }) => sum + s.minutes,
     0
@@ -128,6 +129,7 @@ export default async function DashboardPage() {
       <DashboardCards
         workSummaries={workSummaries}
         gymDaysThisWeek={gymDaysThisWeek}
+        gymTargetDays={gymTargetDays}
         studyMinutesThisWeek={studyMinutesThisWeek}
         hobbyMinutesThisWeek={hobbyMinutesThisWeek}
         houseworkDone={houseworkDone}
