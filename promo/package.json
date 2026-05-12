@@ -1,0 +1,11 @@
+{
+  "name": "promo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.6.0 preview",
+    "check": "npx --yes hyperframes@0.6.0 lint && npx --yes hyperframes@0.6.0 validate && npx --yes hyperframes@0.6.0 inspect",
+    "render": "npx --yes hyperframes@0.6.0 render",
+    "publish": "npx --yes hyperframes@0.6.0 publish"
+  }
+}
