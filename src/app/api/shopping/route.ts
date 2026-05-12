@@ -4,7 +4,7 @@ import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import ShoppingList from "@/lib/models/shopping-list";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await auth();
   const userId = await resolveUserId(session);
   if (!userId) {

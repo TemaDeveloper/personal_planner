@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Plus, Check, Flame, Trash2 } from "lucide-react";
@@ -22,7 +21,6 @@ interface HabitWithLogs extends Habit {
 }
 
 export default function HabitsPage() {
-  const router = useRouter();
   const [habits, setHabits] = useState<HabitWithLogs[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -35,7 +33,12 @@ export default function HabitsPage() {
   };
 
   useEffect(() => {
-    fetchHabits();
+    fetch("/api/habits")
+      .then((r) => r.json())
+      .then((data) => {
+        setHabits(data.habits || []);
+        setLoading(false);
+      });
   }, []);
 
   const toggleHabit = async (habitId: string) => {

@@ -8,7 +8,6 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  UtensilsCrossed,
   X,
 } from "lucide-react";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
@@ -38,20 +37,23 @@ const MEAL_LABELS: Record<string, string> = {
 export default function MealPrepPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [plans, setPlans] = useState<MealPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editDay, setEditDay] = useState<number | null>(null);
 
   const weekStart = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/mealprep?weekOf=${weekStart.toISOString()}`)
+    let cancelled = false;
+    const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+    fetch(`/api/mealprep?weekOf=${ws.toISOString()}`)
       .then((r) => r.json())
       .then((d) => {
+        if (cancelled) return;
         setPlans(d.plans || []);
         setLoading(false);
       });
+    return () => { cancelled = true; };
   }, [weekOffset]);
 
   const getPlanForDay = (dayIndex: number) =>

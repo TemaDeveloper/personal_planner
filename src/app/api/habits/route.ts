@@ -27,7 +27,7 @@ export async function GET() {
 
       // Calculate streak
       let streak = 0;
-      let checkDate = todayLog ? today : subDays(today, 1);
+      const checkDate = todayLog ? today : subDays(today, 1);
       for (let i = 0; i < 365; i++) {
         const log = await HabitLog.findOne({
           habitId: habit._id,

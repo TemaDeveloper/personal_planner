@@ -25,14 +25,17 @@ export default function GymPage() {
   });
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/gym/workouts?weekOf=${weekStart.toISOString()}`)
+    let cancelled = false;
+    const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+    fetch(`/api/gym/workouts?weekOf=${ws.toISOString()}`)
       .then((r) => r.json())
       .then((d) => {
+        if (cancelled) return;
         setAttendance(d.attendance || []);
         setTargetDays(d.targetDaysPerWeek ?? 5);
         setLoading(false);
       });
+    return () => { cancelled = true; };
   }, [weekOffset]);
 
   const isAttended = (dayDate: Date) => {

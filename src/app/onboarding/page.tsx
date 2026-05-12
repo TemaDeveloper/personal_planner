@@ -34,7 +34,7 @@ export default function OnboardingPage() {
 
   // Personalization
   const [name, setName] = useState("");
-  const [avatarEmoji, setAvatarEmoji] = useState("🌟");
+  const [avatarEmoji] = useState("🌟");
   const [accentTheme, setAccentTheme] = useState("amber");
   const [fontStyle, setFontStyle] = useState("sans");
   const [currency, setCurrency] = useState("CAD");
