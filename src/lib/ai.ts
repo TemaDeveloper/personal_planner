@@ -48,36 +48,43 @@ const PlannerConfigSchema = z.object({
 
 export type PlannerConfig = z.infer<typeof PlannerConfigSchema>;
 
-const SYSTEM_PROMPT = `You are configuring a personal planner app. Based on the user's description, select which sections to enable and pre-configure them with sensible defaults.
+const SYSTEM_PROMPT = `You are configuring a personal planner app. Parse the user's description carefully and extract EVERY detail they mention. Do NOT skip anything.
 
-Available sections (use these exact IDs):
-- work: Track work hours and earnings across multiple jobs
-- gym: Daily gym attendance tracker
-- finances: Income, expenses, and monthly bills
-- habits: Daily habit tracking with streaks
-- study: Subject-based study sessions, homework, and grades
-- hobbies: Hobby projects and time tracking
-- housework: Chore tracking with recurring tasks
-- health: Water intake, sleep, weight, and mood
-- goals: Goal setting with milestones
-- reading: Book tracking with progress
-- journal: Daily journal entries
-- shopping: Shopping lists
-- mealprep: Weekly meal planning
+CRITICAL RULES:
+- If the user mentions multiple jobs, include ALL of them in workConfig.jobs
+- If the user mentions subjects or courses, include ALL of them in studyConfig.subjects
+- If the user mentions hobbies, include ALL of them
+- Capture every number they mention (hourly rates, hours/week, gym days, etc.)
+- When in doubt, INCLUDE the section rather than skip it
 
-Return ONLY valid JSON (no markdown, no explanation) matching this exact schema:
+Available sections (use these exact string IDs):
+- work: Track work hours and earnings. Supports MULTIPLE jobs.
+- gym: Daily gym attendance tracker with configurable days/week target.
+- finances: Income, expenses, and monthly bills.
+- habits: Daily habit tracking with streaks.
+- study: Subject-based study sessions. Supports MULTIPLE subjects.
+- hobbies: Hobby projects and time tracking. Supports MULTIPLE hobbies.
+- housework: Chore tracking with recurring tasks.
+- health: Water intake, sleep, weight, and mood.
+- goals: Goal setting with milestones.
+- reading: Book tracking with progress.
+- journal: Daily journal entries.
+- shopping: Shopping lists.
+- mealprep: Weekly meal planning.
+
+Return ONLY valid JSON (no markdown, no code fences, no explanation). Schema:
 {
-  "enabledSections": ["work", "gym", ...],
-  "workConfig": { "jobs": [{ "name": "Job Name", "hourlyRate": 18, "weeklyTarget": 20 }] },
+  "enabledSections": ["work", "gym", "study", ...],
+  "workConfig": { "jobs": [{ "name": "Job 1", "hourlyRate": 18, "weeklyTarget": 20 }, { "name": "Job 2", "hourlyRate": 16, "weeklyTarget": 15 }] },
   "gymConfig": { "targetDaysPerWeek": 5 },
-  "studyConfig": { "subjects": [{ "name": "Subject" }] },
-  "hobbiesConfig": { "hobbies": [{ "name": "Hobby" }] },
-  "houseworkConfig": { "chores": [{ "name": "Chore", "frequency": "daily" }] },
+  "studyConfig": { "subjects": [{ "name": "Math" }, { "name": "CS" }] },
+  "hobbiesConfig": { "hobbies": [{ "name": "Guitar" }, { "name": "Drawing" }] },
+  "houseworkConfig": { "chores": [{ "name": "Vacuum", "frequency": "weekly" }] },
   "bills": [{ "name": "Rent", "amount": 1200, "dueDay": 1, "category": "rent" }],
-  "suggestedHabits": ["Habit name"]
+  "suggestedHabits": ["Meditate", "Read 30 min"]
 }
 
-Only include config objects for sections that are in enabledSections. Use reasonable defaults when the user doesn't specify exact values. If unsure about a section, include it — the user can toggle it off.`;
+Include config objects ONLY for sections listed in enabledSections.`;
 
 function extractJSON(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -95,7 +102,7 @@ async function callClaude(prompt: string, apiKey: string): Promise<string> {
   const client = new Anthropic({ apiKey });
   const response = await client.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
+    max_tokens: 2048,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
   });
@@ -116,12 +123,12 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
 async function callMistral(prompt: string, apiKey: string): Promise<string> {
   const client = new Mistral({ apiKey });
   const response = await client.chat.complete({
-    model: "mistral-small-latest",
+    model: "mistral-large-latest",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: prompt },
     ],
-    maxTokens: 1024,
+    maxTokens: 2048,
   });
   const choice = response.choices?.[0];
   if (choice && "message" in choice && choice.message) {
@@ -138,7 +145,7 @@ async function callOpenAI(prompt: string, apiKey: string): Promise<string> {
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: prompt },
     ],
-    max_tokens: 1024,
+    max_tokens: 2048,
   });
   return response.choices[0]?.message?.content || "";
 }
