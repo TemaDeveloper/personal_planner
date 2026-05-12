@@ -27,6 +27,7 @@ export async function GET() {
     gymConfig: user.gymConfig,
     aiProvider: user.aiConfig?.provider || null,
     hasAiKey: !!user.aiConfig?.apiKey,
+    customSections: user.customSections || [],
     bills: user.bills,
     name: user.name,
     avatarEmoji: user.avatarEmoji,
@@ -116,6 +117,11 @@ export async function PATCH(req: NextRequest) {
       updateFields["aiConfig.apiKey"] = undefined;
       updateFields["aiConfig.provider"] = undefined;
     }
+  }
+
+  // Update custom sections
+  if (body.customSections !== undefined) {
+    updateFields.customSections = body.customSections;
   }
 
   // Update profile fields

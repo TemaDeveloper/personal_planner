@@ -73,6 +73,10 @@ export interface IUser extends Document {
     provider: "claude" | "gemini" | "openai" | "mistral";
     apiKey: string;
   };
+  customSections: {
+    templateId: mongoose.Types.ObjectId;
+    enabled: boolean;
+  }[];
   bills: IBill[];
   createdAt: Date;
   updatedAt: Date;
@@ -216,6 +220,15 @@ const UserSchema = new Schema<IUser>(
         enum: ["claude", "gemini", "openai", "mistral"],
       },
       apiKey: { type: String },
+    },
+    customSections: {
+      type: [
+        {
+          templateId: { type: Schema.Types.ObjectId, ref: "SectionTemplate" },
+          enabled: { type: Boolean, default: true },
+        },
+      ],
+      default: [],
     },
     bills: { type: [BillSchema], default: [] },
   },

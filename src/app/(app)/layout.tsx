@@ -3,9 +3,10 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import User from "@/lib/models/user";
+import SectionTemplate from "@/lib/models/section-template";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { SectionsProvider } from "@/components/providers/sections-provider";
+import { SectionsProvider, type CustomSectionNav } from "@/components/providers/sections-provider";
 import { DEFAULT_ENABLED_SECTIONS } from "@/lib/constants";
 import type { SectionId } from "@/lib/constants";
 
@@ -30,8 +31,25 @@ export default async function AppLayout({
 
   const enabledSections = (user?.enabledSections as SectionId[] | undefined) ?? [...DEFAULT_ENABLED_SECTIONS];
 
+  // Load custom section templates
+  let customSections: CustomSectionNav[] = [];
+  const userCustom = (user?.customSections || []) as { templateId: { toString(): string }; enabled: boolean }[];
+  if (userCustom.length > 0) {
+    const enabledCustom = userCustom.filter((cs) => cs.enabled);
+    const templateIds = enabledCustom.map((cs) => cs.templateId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const templates = await SectionTemplate.find({ _id: { $in: templateIds } } as any).lean();
+    customSections = templates.map((t) => ({
+      templateId: String(t._id),
+      slug: t.slug,
+      name: t.name,
+      icon: t.icon,
+      enabled: true,
+    }));
+  }
+
   return (
-    <SectionsProvider initialSections={enabledSections}>
+    <SectionsProvider initialSections={enabledSections} initialCustomSections={customSections}>
       <div className="min-h-screen flex">
         <AppSidebar />
         <main className="flex-1 flex flex-col min-w-0">

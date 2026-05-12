@@ -16,6 +16,7 @@ import MealPlan from "@/lib/models/meal-plan";
 import { startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
 import { PageHeader } from "@/components/layout/page-header";
 import { DashboardCards } from "@/components/dashboard/dashboard-cards";
+import { DashboardCalendar } from "@/components/dashboard/dashboard-calendar";
 import { DEFAULT_ENABLED_SECTIONS, type SectionId } from "@/lib/constants";
 
 export default async function DashboardPage() {
@@ -125,6 +126,10 @@ export default async function DashboardPage() {
       <PageHeader
         title={`${greeting}, ${userName}`}
         description={formatDate(now)}
+      />
+      <DashboardCalendar
+        enabledSections={enabledSections}
+        weekStart={(user.preferences?.weekStart as "monday" | "sunday") || "monday"}
       />
       <DashboardCards
         workSummaries={workSummaries}

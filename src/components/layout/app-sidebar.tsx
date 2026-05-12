@@ -25,7 +25,7 @@ const BOTTOM_ITEMS = [
 export function AppSidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(true);
-  const { enabledSections } = useSections();
+  const { enabledSections, customSections } = useSections();
 
   const NAV_ITEMS = useMemo(() => [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -34,7 +34,12 @@ export function AppSidebar() {
       icon: ICON_MAP[SECTION_META[id].icon] || ICON_MAP.Briefcase,
       label: SECTION_META[id].label,
     })),
-  ], [enabledSections]);
+    ...customSections.filter((cs) => cs.enabled).map((cs) => ({
+      href: `/sections/${cs.slug}`,
+      icon: ICON_MAP[cs.icon] || ICON_MAP.Star,
+      label: cs.name,
+    })),
+  ], [enabledSections, customSections]);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");

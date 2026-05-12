@@ -44,6 +44,17 @@ const PlannerConfigSchema = z.object({
     category: z.enum(["rent", "utilities", "subscriptions", "insurance", "other"]).default("other"),
   })).optional(),
   suggestedHabits: z.array(z.string()).optional(),
+  customSections: z.array(z.object({
+    name: z.string(),
+    icon: z.string(),
+    description: z.string(),
+    fields: z.array(z.object({
+      key: z.string(),
+      label: z.string(),
+      type: z.enum(["boolean", "number", "text", "select", "date"]),
+      options: z.array(z.string()).optional(),
+    })),
+  })).optional(),
 });
 
 export type PlannerConfig = z.infer<typeof PlannerConfigSchema>;
@@ -84,7 +95,16 @@ Return ONLY valid JSON (no markdown, no code fences, no explanation). Schema:
   "suggestedHabits": ["Meditate", "Read 30 min"]
 }
 
-Include config objects ONLY for sections listed in enabledSections.`;
+Include config objects ONLY for sections listed in enabledSections.
+
+CUSTOM SECTIONS: If the user describes tracking needs that DON'T fit any of the 13 built-in sections above, create custom section templates in the "customSections" array. Each needs:
+- name: display name (e.g., "Pet Care", "Meditation", "Side Projects")
+- icon: one of: PawPrint, Car, Baby, Bike, Coffee, Music, Camera, Plane, Clock, Leaf, Star, Wrench, Users, Globe, Zap, Calendar
+- description: short description
+- fields: array of field definitions with key (camelCase), label, type (boolean/number/text/select/date), and options (for select type only)
+
+Example custom section:
+{ "name": "Pet Care", "icon": "PawPrint", "description": "Track pet feeding and walks", "fields": [{ "key": "fed", "label": "Fed", "type": "boolean" }, { "key": "walked", "label": "Walked", "type": "boolean" }, { "key": "notes", "label": "Notes", "type": "text" }] }`;
 
 function extractJSON(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);

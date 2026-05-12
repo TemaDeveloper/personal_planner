@@ -1,0 +1,191 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
+import { CustomEntryForm } from "@/components/sections/custom-entry-form";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ICON_MAP } from "@/lib/icon-map";
+import { startOfWeek, addWeeks, addDays, format } from "date-fns";
+
+interface FieldDef {
+  key: string;
+  label: string;
+  type: "boolean" | "number" | "text" | "select" | "date";
+  options?: string[];
+}
+
+interface Template {
+  _id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  description: string;
+  fields: FieldDef[];
+}
+
+interface Entry {
+  _id: string;
+  date: string;
+  data: Record<string, unknown>;
+}
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+export default function CustomSectionPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [showForm, setShowForm] = useState(false);
+
+  const weekStart = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+
+  useEffect(() => {
+    const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+    fetch(`/api/sections/${slug}/entries?weekOf=${ws.toISOString()}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setTemplate(d.template || null);
+        setEntries(d.entries || []);
+        setLoading(false);
+      });
+  }, [slug, weekOffset]);
+
+  const getEntryForDay = (dayDate: Date) => {
+    const dayStr = format(dayDate, "yyyy-MM-dd");
+    return entries.find((e) => format(new Date(e.date), "yyyy-MM-dd") === dayStr);
+  };
+
+  const deleteEntry = async (id: string) => {
+    await fetch(`/api/sections/${slug}/entries/${id}`, { method: "DELETE" });
+    toast.success("Entry deleted");
+    setEntries((prev) => prev.filter((e) => e._id !== id));
+  };
+
+  const weekEnd = addDays(weekStart, 6);
+  const weekLabel = `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
+
+  if (loading) {
+    return (
+      <div className="animate-slide-up">
+        <div className="planner-surface p-6 h-32 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="animate-slide-up">
+        <PageHeader title="Section not found" />
+      </div>
+    );
+  }
+
+  const Icon = ICON_MAP[template.icon] || ICON_MAP.Star;
+
+  return (
+    <div className="animate-slide-up">
+      <PageHeader
+        title={template.name}
+        description={template.description}
+        action={
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground transition-all hover:-translate-y-0.5"
+          >
+            <Plus size={14} />
+            Add
+          </button>
+        }
+      />
+
+      {/* Week navigation */}
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => setWeekOffset((p) => p - 1)}
+          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
+          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+          <ChevronLeft size={16} />
+        </button>
+        <span className="text-sm font-medium">{weekLabel}</span>
+        <button onClick={() => setWeekOffset((p) => p + 1)}
+          className="p-2 rounded-lg transition-all hover:-translate-y-0.5"
+          style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      {/* Weekly grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        {DAYS.map((day, idx) => {
+          const dayDate = addDays(weekStart, idx);
+          const entry = getEntryForDay(dayDate);
+
+          return (
+            <div key={day} className="planner-surface p-4 min-h-[120px] flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: entry ? "var(--accent-color)" : "var(--text-muted)" }}>
+                    {day.slice(0, 3)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{format(dayDate, "MMM d")}</p>
+                </div>
+                {entry && (
+                  <Icon size={14} style={{ color: "var(--accent-color)" }} />
+                )}
+              </div>
+
+              {entry ? (
+                <div className="flex-1 space-y-1">
+                  {template.fields.map((field) => {
+                    const val = entry.data[field.key];
+                    if (val === undefined || val === null || val === "") return null;
+                    return (
+                      <div key={field.key} className="text-xs">
+                        <span className="text-muted-foreground">{field.label}: </span>
+                        {field.type === "boolean" ? (
+                          <Check size={10} className="inline" style={{ color: "var(--accent-color)" }} />
+                        ) : (
+                          <span>{String(val)}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => deleteEntry(entry._id)}
+                    className="text-[10px] text-muted-foreground hover:text-destructive flex items-center gap-1 mt-1 p-1">
+                    <Trash2 size={10} /> Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">—</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {showForm && template && (
+        <CustomEntryForm
+          slug={slug}
+          fields={template.fields}
+          onClose={() => setShowForm(false)}
+          onSuccess={() => {
+            setShowForm(false);
+            setWeekOffset(weekOffset); // trigger re-fetch
+            // Re-fetch entries
+            const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+            fetch(`/api/sections/${slug}/entries?weekOf=${ws.toISOString()}`)
+              .then((r) => r.json())
+              .then((d) => setEntries(d.entries || []));
+          }}
+        />
+      )}
+    </div>
+  );
+}

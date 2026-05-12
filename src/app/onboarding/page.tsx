@@ -63,6 +63,10 @@ export default function OnboardingPage() {
   const [chores, setChores] = useState<Chore[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [suggestedHabits, setSuggestedHabits] = useState<string[]>([]);
+  const [customSectionTemplates, setCustomSectionTemplates] = useState<{
+    name: string; icon: string; description: string;
+    fields: { key: string; label: string; type: string; options?: string[] }[];
+  }[]>([]);
 
   const toggleSection = (id: SectionId) => {
     setEnabledSections((prev) =>
@@ -105,6 +109,7 @@ export default function OnboardingPage() {
       })));
     }
     if (config.suggestedHabits) setSuggestedHabits(config.suggestedHabits);
+    if (config.customSections) setCustomSectionTemplates(config.customSections);
   };
 
   const handleGenerate = async () => {
@@ -132,6 +137,20 @@ export default function OnboardingPage() {
 
   const handleFinish = async () => {
     setLoading(true);
+
+    // Create custom section templates first
+    for (const tpl of customSectionTemplates) {
+      try {
+        await fetch("/api/sections/templates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tpl),
+        });
+      } catch {
+        // Continue even if one fails
+      }
+    }
+
     const res = await fetch("/api/user/preferences", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -408,6 +427,26 @@ export default function OnboardingPage() {
                   </div>
                 ))}
               </div>
+            </ConfigCard>
+          )}
+
+          {/* Custom sections from AI */}
+          {customSectionTemplates.length > 0 && (
+            <ConfigCard title="Custom Sections">
+              <p className="text-[10px] text-muted-foreground -mt-1">AI-generated sections tailored to your needs.</p>
+              {customSectionTemplates.map((tpl, idx) => {
+                const Icon = ICON_MAP[tpl.icon] || ICON_MAP.Star;
+                return (
+                  <div key={idx} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
+                    <Icon size={16} style={{ color: "var(--accent-color)" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{tpl.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{tpl.fields.length} fields: {tpl.fields.map((f) => f.label).join(", ")}</p>
+                    </div>
+                    <button onClick={() => setCustomSectionTemplates(customSectionTemplates.filter((_, i) => i !== idx))} className="text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
+                  </div>
+                );
+              })}
             </ConfigCard>
           )}
 
