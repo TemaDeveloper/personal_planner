@@ -11,6 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.2",
+    "@google/genai": "^2.1.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -20,6 +22,7 @@
     "mongoose": "^9.6.2",
     "next": "16.2.6",
     "next-auth": "5.0.0-beta.31",
+    "openai": "^6.37.0",
     "react": "19.2.4",
     "react-day-picker": "^9.14.0",
     "react-dom": "19.2.4",

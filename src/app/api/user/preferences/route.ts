@@ -25,6 +25,8 @@ export async function GET() {
     hobbiesConfig: user.hobbiesConfig,
     houseworkConfig: user.houseworkConfig,
     gymConfig: user.gymConfig,
+    aiProvider: user.aiConfig?.provider || null,
+    hasAiKey: !!user.aiConfig?.apiKey,
     bills: user.bills,
     name: user.name,
     avatarEmoji: user.avatarEmoji,
@@ -102,6 +104,20 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  // Update AI config
+  if (body.aiConfig) {
+    if (body.aiConfig.provider) {
+      updateFields["aiConfig.provider"] = body.aiConfig.provider;
+    }
+    if (body.aiConfig.apiKey) {
+      updateFields["aiConfig.apiKey"] = body.aiConfig.apiKey;
+    }
+    if (body.aiConfig.apiKey === null) {
+      updateFields["aiConfig.apiKey"] = undefined;
+      updateFields["aiConfig.provider"] = undefined;
+    }
+  }
+
   // Update profile fields
   if (body.name) updateFields.name = body.name;
   if (body.avatarEmoji) updateFields.avatarEmoji = body.avatarEmoji;
@@ -124,6 +140,8 @@ export async function PATCH(req: NextRequest) {
     hobbiesConfig: user.hobbiesConfig,
     houseworkConfig: user.houseworkConfig,
     gymConfig: user.gymConfig,
+    aiProvider: user.aiConfig?.provider || null,
+    hasAiKey: !!user.aiConfig?.apiKey,
     bills: user.bills,
     enabledSections: user.enabledSections,
   });

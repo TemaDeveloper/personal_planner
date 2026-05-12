@@ -69,6 +69,10 @@ export interface IUser extends Document {
   gymConfig: {
     targetDaysPerWeek: number;
   };
+  aiConfig: {
+    provider: "claude" | "gemini" | "openai";
+    apiKey: string;
+  };
   bills: IBill[];
   createdAt: Date;
   updatedAt: Date;
@@ -205,6 +209,13 @@ const UserSchema = new Schema<IUser>(
     },
     gymConfig: {
       targetDaysPerWeek: { type: Number, default: 5, min: 1, max: 7 },
+    },
+    aiConfig: {
+      provider: {
+        type: String,
+        enum: ["claude", "gemini", "openai"],
+      },
+      apiKey: { type: String },
     },
     bills: { type: [BillSchema], default: [] },
   },

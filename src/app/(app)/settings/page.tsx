@@ -11,8 +11,9 @@ import {
   WEEK_STARTS, DATE_FORMATS, TIME_FORMATS,
   SECTIONS, SECTION_META, type SectionId, type FontStyle,
 } from "@/lib/constants";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, Sparkles } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
+import { AI_PROVIDERS, type AIProvider } from "@/lib/ai";
 
 interface Subject {
   name: string;
@@ -64,6 +65,9 @@ export default function SettingsPage() {
   const [localSections, setLocalSections] = useState<SectionId[]>([...enabledSections]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [targetDaysPerWeek, setTargetDaysPerWeek] = useState(5);
+  const [aiProviderSetting, setAiProviderSetting] = useState<AIProvider | "">("");
+  const [hasAiKey, setHasAiKey] = useState(false);
+  const [newAiKey, setNewAiKey] = useState("");
 
   useEffect(() => {
     fetch("/api/user/preferences")
@@ -85,6 +89,8 @@ export default function SettingsPage() {
         if (data.enabledSections) setLocalSections(data.enabledSections);
         setSubjects(data.studyConfig?.subjects || []);
         setTargetDaysPerWeek(data.gymConfig?.targetDaysPerWeek ?? 5);
+        setAiProviderSetting(data.aiProvider || "");
+        setHasAiKey(data.hasAiKey || false);
         setLoading(false);
       });
   }, []);
@@ -108,6 +114,7 @@ export default function SettingsPage() {
         enabledSections: localSections,
         studyConfig: { subjects },
         gymConfig: { targetDaysPerWeek },
+        ...(newAiKey ? { aiConfig: { provider: aiProviderSetting || "claude", apiKey: newAiKey } } : {}),
       }),
     });
 
@@ -684,6 +691,60 @@ export default function SettingsPage() {
               Add bill
             </button>
           </div>
+        </Section>
+
+        {/* AI */}
+        <Section title="AI">
+          <div className="flex items-center gap-2 -mt-2 mb-3">
+            <Sparkles size={14} style={{ color: "var(--accent-color)" }} />
+            <p className="text-xs text-muted-foreground">
+              Used for AI-powered features like smart onboarding.
+            </p>
+          </div>
+          <Field label="Provider">
+            <div className="flex gap-2">
+              {AI_PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setAiProviderSetting(p.id)}
+                  className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                  style={{
+                    background: aiProviderSetting === p.id ? "var(--accent-glow)" : "var(--surface-2)",
+                    border: `1px solid ${aiProviderSetting === p.id ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                    color: aiProviderSetting === p.id ? "var(--accent-color)" : "var(--text-muted)",
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="API Key">
+            <input
+              type="password"
+              placeholder={hasAiKey ? "Key saved — enter new to replace" : AI_PROVIDERS.find((p) => p.id === (aiProviderSetting || "claude"))?.placeholder}
+              value={newAiKey}
+              onChange={(e) => setNewAiKey(e.target.value)}
+              className="settings-input"
+            />
+          </Field>
+          {hasAiKey && (
+            <button
+              onClick={async () => {
+                await fetch("/api/user/preferences", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ aiConfig: { apiKey: null } }),
+                });
+                setHasAiKey(false);
+                setAiProviderSetting("");
+                toast.success("API key removed");
+              }}
+              className="text-xs text-destructive hover:underline"
+            >
+              Remove API key
+            </button>
+          )}
         </Section>
       </div>
 
