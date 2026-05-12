@@ -2,6 +2,7 @@
 
 A free, open-source personal planner to track your daily life -- gym, work, habits, finances, study, and more. Self-hostable, no subscription needed.
 
+[![CI](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml/badge.svg)](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 

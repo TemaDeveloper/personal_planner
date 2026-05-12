@@ -25,7 +25,7 @@ export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60" data-testid="modal-overlay" onClick={onClose} />
       <div
         className={`relative w-full ${maxWidth} rounded-xl p-6 animate-slide-up max-h-[80vh] overflow-y-auto`}
         style={{
