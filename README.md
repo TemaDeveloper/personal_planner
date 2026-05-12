@@ -62,6 +62,9 @@ MONGODB_URI=mongodb://localhost:27017/personal_planner
 NEXTAUTH_SECRET=your-secret-key
 NEXTAUTH_URL=http://localhost:3000
 
+# AI-powered onboarding (free Mistral API key from console.mistral.ai)
+MISTRAL_API_KEY=your-mistral-api-key
+
 # Optional: Google OAuth
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=

@@ -20,7 +20,7 @@ import {
   type SectionId, type FontStyle,
 } from "@/lib/constants";
 import { ICON_MAP } from "@/lib/icon-map";
-import { AI_PROVIDERS, type AIProvider, type PlannerConfig } from "@/lib/ai";
+import type { PlannerConfig } from "@/lib/ai";
 
 interface Job {
   name: string;
@@ -45,8 +45,6 @@ export default function OnboardingPage() {
 
   // AI prompt state
   const [prompt, setPrompt] = useState("");
-  const [aiProvider, setAiProvider] = useState<AIProvider>("claude");
-  const [apiKey, setApiKey] = useState("");
   const [generating, setGenerating] = useState(false);
 
   // Personalization
@@ -111,14 +109,13 @@ export default function OnboardingPage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) { toast.error("Describe what you want to track"); return; }
-    if (!apiKey.trim()) { toast.error("Enter your API key"); return; }
 
     setGenerating(true);
     try {
       const res = await fetch("/api/onboarding/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), provider: aiProvider, apiKey }),
+        body: JSON.stringify({ prompt: prompt.trim() }),
       });
 
       const data = await res.json();
@@ -150,7 +147,6 @@ export default function OnboardingPage() {
         hobbiesConfig: { hobbies },
         houseworkConfig: { chores },
         bills,
-        ...(apiKey ? { aiConfig: { provider: aiProvider, apiKey } } : {}),
       }),
     });
 
@@ -217,49 +213,6 @@ export default function OnboardingPage() {
                 color: "var(--text-primary)",
               }}
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-2">
-              AI Provider
-            </label>
-            <div className="flex gap-2">
-              {AI_PROVIDERS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setAiProvider(p.id)}
-                  className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{
-                    background: aiProvider === p.id ? "var(--accent-glow)" : "var(--surface-2)",
-                    border: `1px solid ${aiProvider === p.id ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                    color: aiProvider === p.id ? "var(--accent-color)" : "var(--text-muted)",
-                  }}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-2">
-              API Key
-            </label>
-            <input
-              type="password"
-              placeholder={AI_PROVIDERS.find((p) => p.id === aiProvider)?.placeholder}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              style={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-subtle)",
-                color: "var(--text-primary)",
-              }}
-            />
-            <p className="text-[10px] text-muted-foreground mt-1.5">
-              Your key is sent to our server only to call the AI. It&apos;s saved to your account for future features.
-            </p>
           </div>
 
           <button

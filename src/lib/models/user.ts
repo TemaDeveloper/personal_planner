@@ -70,7 +70,7 @@ export interface IUser extends Document {
     targetDaysPerWeek: number;
   };
   aiConfig: {
-    provider: "claude" | "gemini" | "openai";
+    provider: "claude" | "gemini" | "openai" | "mistral";
     apiKey: string;
   };
   bills: IBill[];
@@ -213,7 +213,7 @@ const UserSchema = new Schema<IUser>(
     aiConfig: {
       provider: {
         type: String,
-        enum: ["claude", "gemini", "openai"],
+        enum: ["claude", "gemini", "openai", "mistral"],
       },
       apiKey: { type: String },
     },

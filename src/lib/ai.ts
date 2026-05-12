@@ -1,11 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
+import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod/v4";
 
-export type AIProvider = "claude" | "gemini" | "openai";
+export type AIProvider = "claude" | "gemini" | "openai" | "mistral";
 
 export const AI_PROVIDERS: { id: AIProvider; label: string; placeholder: string }[] = [
+  { id: "mistral", label: "Mistral", placeholder: "your-mistral-key" },
   { id: "claude", label: "Claude", placeholder: "sk-ant-..." },
   { id: "gemini", label: "Gemini", placeholder: "AIza..." },
   { id: "openai", label: "OpenAI", placeholder: "sk-..." },
@@ -111,6 +113,23 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
   return response.text || "";
 }
 
+async function callMistral(prompt: string, apiKey: string): Promise<string> {
+  const client = new Mistral({ apiKey });
+  const response = await client.chat.complete({
+    model: "mistral-small-latest",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ],
+    maxTokens: 1024,
+  });
+  const choice = response.choices?.[0];
+  if (choice && "message" in choice && choice.message) {
+    return (choice.message.content as string) || "";
+  }
+  return "";
+}
+
 async function callOpenAI(prompt: string, apiKey: string): Promise<string> {
   const client = new OpenAI({ apiKey });
   const response = await client.chat.completions.create({
@@ -141,9 +160,20 @@ export async function generatePlannerConfig(
     case "openai":
       raw = await callOpenAI(prompt, apiKey);
       break;
+    case "mistral":
+      raw = await callMistral(prompt, apiKey);
+      break;
   }
 
   const jsonStr = extractJSON(raw);
   const parsed = JSON.parse(jsonStr);
   return PlannerConfigSchema.parse(parsed);
+}
+
+export async function generateWithDefaultAI(prompt: string): Promise<PlannerConfig> {
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) {
+    throw new Error("MISTRAL_API_KEY not configured");
+  }
+  return generatePlannerConfig(prompt, "mistral", apiKey);
 }
