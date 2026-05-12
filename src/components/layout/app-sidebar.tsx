@@ -88,21 +88,23 @@ export function AppSidebar() {
       className="hidden md:flex flex-col flex-shrink-0 transition-all duration-300 relative sticky top-0 h-screen"
       style={{
         width: expanded ? 220 : 64,
-        background: "var(--surface-1)",
-        borderRight: "1px solid var(--border-subtle)",
+        background: "rgba(15, 23, 42, 0.6)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderRight: "1px solid rgba(255, 255, 255, 0.06)",
       }}
     >
       {/* Logo */}
       <div
         className="flex items-center gap-3 px-4 py-5"
-        style={{ borderBottom: "1px solid var(--border-subtle)", minHeight: 64 }}
+        style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)", minHeight: 64 }}
       >
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold"
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-extrabold"
           style={{
-            background: "var(--accent-glow)",
-            border: "1px solid var(--accent-color)",
-            color: "var(--accent-color)",
+            background: "var(--accent-color)",
+            color: "#020617",
+            boxShadow: "0 0 20px var(--accent-glow)",
           }}
         >
           P
@@ -116,7 +118,7 @@ export function AppSidebar() {
               className="font-bold text-sm overflow-hidden whitespace-nowrap"
               style={{ color: "var(--text-primary)" }}
             >
-              MyPlanner
+              Planner
             </motion.span>
           )}
         </AnimatePresence>

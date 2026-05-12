@@ -5,7 +5,7 @@ export const FONTS = ["sans", "inter", "geometric", "serif", "mono"] as const;
 export type FontStyle = (typeof FONTS)[number];
 
 export const FONT_META: Record<FontStyle, { label: string; description: string; preview: string }> = {
-  sans:      { label: "DM Sans",       description: "Clean & friendly",     preview: "Aa" },
+  sans:      { label: "Jakarta",       description: "Modern & friendly",    preview: "Aa" },
   inter:     { label: "Inter",         description: "Modern & neutral",     preview: "Aa" },
   geometric: { label: "Space Grotesk", description: "Bold & geometric",     preview: "Aa" },
   serif:     { label: "Playfair",      description: "Elegant & editorial",  preview: "Aa" },
@@ -45,13 +45,13 @@ export const BILL_CATEGORIES = [
 ] as const;
 
 export const THEME_COLORS: Record<AccentTheme, string> = {
-  amber: "#D4A853",
-  teal: "#00C9A7",
-  violet: "#9B72F0",
-  rose: "#F07070",
-  sage: "#7EC8A0",
-  ocean: "#5B9BD5",
-  sunset: "#FF8C42",
+  amber: "#22C55E",
+  teal: "#14B8A6",
+  violet: "#A78BFA",
+  rose: "#FB7185",
+  sage: "#4ADE80",
+  ocean: "#60A5FA",
+  sunset: "#FB923C",
 };
 
 export const DEFAULT_GAS_PRICE = 210.2; // cents per litre

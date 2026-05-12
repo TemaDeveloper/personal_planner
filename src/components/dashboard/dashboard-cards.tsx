@@ -177,7 +177,7 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="planner-surface p-4">
+    <div className="planner-surface glass-lift p-4 cursor-default">
       <div className="flex items-center gap-2 mb-3">
         <span style={{ color: "var(--accent-color)" }}>{icon}</span>
         <span className="stat-label">{label}</span>

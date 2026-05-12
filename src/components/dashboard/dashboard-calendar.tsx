@@ -13,19 +13,19 @@ interface DashboardCalendarProps {
 }
 
 const SECTION_COLORS: Record<string, string> = {
-  work: "#D4A853",
-  gym: "#00C9A7",
-  finances: "#9B72F0",
-  habits: "#F07070",
-  study: "#5B9BD5",
-  hobbies: "#7EC8A0",
-  housework: "#FF8C42",
-  health: "#F07070",
-  goals: "#D4A853",
-  reading: "#5B9BD5",
-  journal: "#9B72F0",
-  shopping: "#00C9A7",
-  mealprep: "#FF8C42",
+  work: "#22C55E",
+  gym: "#14B8A6",
+  finances: "#A78BFA",
+  habits: "#FB7185",
+  study: "#60A5FA",
+  hobbies: "#4ADE80",
+  housework: "#FB923C",
+  health: "#FB7185",
+  goals: "#F59E0B",
+  reading: "#60A5FA",
+  journal: "#A78BFA",
+  shopping: "#14B8A6",
+  mealprep: "#FB923C",
 };
 
 export function DashboardCalendar({ weekStart }: DashboardCalendarProps) {

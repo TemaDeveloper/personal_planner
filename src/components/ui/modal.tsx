@@ -25,12 +25,15 @@ export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" data-testid="modal-overlay" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" data-testid="modal-overlay" onClick={onClose} />
       <div
-        className={`relative w-full ${maxWidth} rounded-xl p-6 animate-slide-up max-h-[80vh] overflow-y-auto`}
+        className={`relative w-full ${maxWidth} rounded-2xl p-6 animate-scale-in max-h-[80vh] overflow-y-auto`}
         style={{
-          background: "var(--surface-1)",
-          border: "1px solid var(--border-subtle)",
+          background: "rgba(15, 23, 42, 0.85)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.4)",
         }}
       >
         <div className="flex items-center justify-between mb-4">
