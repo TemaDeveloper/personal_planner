@@ -1,5 +1,17 @@
-import { describe, it, expect } from "vitest";
-import { computeDistance, isSignificantlyDifferent } from "@/lib/embeddings";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { computeDistance, isSignificantlyDifferent, templateToEmbeddingInput } from "@/lib/embeddings";
+
+vi.mock("openai", () => {
+  const mockCreate = vi.fn().mockResolvedValue({
+    data: [{ embedding: new Array(1536).fill(0.1) }],
+  });
+  return {
+    default: vi.fn(function () {
+      return { embeddings: { create: mockCreate } };
+    }),
+    __mockCreate: mockCreate,
+  };
+});
 
 describe("computeDistance", () => {
   it("returns 0 for identical vectors", () => {
@@ -42,5 +54,46 @@ describe("isSignificantlyDifferent", () => {
     const a = [1, 0, 0];
     const b = [0.995, 0.1, 0]; // cosine distance ≈ 0.005
     expect(isSignificantlyDifferent(a, b)).toBe(false);
+  });
+});
+
+describe("templateToEmbeddingInput", () => {
+  it("formats template fields into a searchable string", () => {
+    const result = templateToEmbeddingInput(
+      "Tire Reselling",
+      "Track tire purchases and sales",
+      [
+        { key: "item", label: "Tire Model", type: "text" as const },
+        { key: "price", label: "Purchase Price", type: "number" as const },
+      ]
+    );
+    expect(result).toBe(
+      "Tire Reselling — Track tire purchases and sales. Fields: Tire Model (text), Purchase Price (number)"
+    );
+  });
+
+  it("handles empty fields array", () => {
+    const result = templateToEmbeddingInput("Test", "A test section", []);
+    expect(result).toBe("Test — A test section. Fields: ");
+  });
+});
+
+describe("generateEmbedding", () => {
+  beforeEach(() => {
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+  });
+
+  it("calls OpenAI embeddings API and returns vector", async () => {
+    const { generateEmbedding } = await import("@/lib/embeddings");
+    const result = await generateEmbedding("test text");
+    expect(result).toHaveLength(1536);
+    expect(result[0]).toBe(0.1);
+  });
+
+  it("throws if OPENAI_API_KEY is not set", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "");
+    vi.resetModules();
+    const { generateEmbedding } = await import("@/lib/embeddings");
+    await expect(generateEmbedding("test")).rejects.toThrow("OPENAI_API_KEY");
   });
 });
