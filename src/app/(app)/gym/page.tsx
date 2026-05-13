@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Check, ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
 import {
   startOfMonth, endOfMonth, addMonths, startOfWeek, addDays,
-  format, startOfDay, isSameMonth, isToday, isBefore,
+  format, startOfDay, isSameMonth, isToday, isBefore, isAfter,
   getDaysInMonth,
 } from "date-fns";
 import { Card } from "@/components/ui/card";
@@ -162,15 +162,16 @@ export default function GymPage() {
 
                     const attended = isAttended(day);
                     const today = isToday(day);
+                    const future = isAfter(startOfDay(day), startOfDay(new Date()));
                     const key = format(day, "yyyy-MM-dd");
-                    const isDisabled = toggling === key;
+                    const isDisabled = toggling === key || future;
 
                     return (
                       <button
                         key={di}
-                        onClick={() => toggleDay(day)}
+                        onClick={() => !future && toggleDay(day)}
                         disabled={isDisabled}
-                        className="aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer hover:scale-105 disabled:opacity-50"
+                        className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all ${future ? "opacity-30 cursor-not-allowed" : "cursor-pointer hover:scale-105"} disabled:opacity-30`}
                         style={{
                           background: attended ? "var(--accent-color)" : today ? "var(--surface-2)" : "var(--surface-1)",
                           border: today && !attended ? "1px solid var(--accent-color)" : "1px solid transparent",
