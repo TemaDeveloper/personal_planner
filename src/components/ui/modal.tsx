@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,12 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -27,10 +34,12 @@ export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }:
     };
   }, [open, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <motion.div
             className="absolute inset-0 bg-[var(--backdrop-overlay)] backdrop-blur-sm"
             data-testid="modal-overlay"
@@ -54,7 +63,7 @@ export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }:
               <h3 className="text-lg font-semibold">{title}</h3>
               <button
                 onClick={onClose}
-                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--surface-1)] transition-colors"
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--surface-1)] transition-colors cursor-pointer"
               >
                 <X size={16} className="text-muted-foreground" />
               </button>
@@ -65,6 +74,7 @@ export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }:
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
