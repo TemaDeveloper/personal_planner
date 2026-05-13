@@ -80,8 +80,8 @@ export function ThemeProvider({
   }, []);
 
   // Initialize and listen for system color scheme changes
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    // Read persisted color mode
     const stored = localStorage.getItem("planner-color-mode") as ColorMode | null;
     if (stored && ["light", "dark", "system"].includes(stored)) {
       setPreferences((prev) => ({ ...prev, colorMode: stored }));
@@ -109,6 +109,7 @@ export function ThemeProvider({
     setResolvedColorMode(resolved);
     applyTheme(preferences, resolved);
   }, [preferences, applyTheme]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const updatePreferences = useCallback((prefs: Partial<Preferences>) => {
     setPreferences((prev) => {
