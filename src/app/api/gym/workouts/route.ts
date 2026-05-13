@@ -4,7 +4,7 @@ import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import GymAttendance from "@/lib/models/gym-attendance";
 import User from "@/lib/models/user";
-import { startOfWeek, endOfWeek, startOfDay } from "date-fns";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay } from "date-fns";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -17,9 +17,14 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const weekOf = searchParams.get("weekOf");
+  const monthEnd = searchParams.get("monthEnd");
 
   let start: Date, end: Date;
-  if (weekOf) {
+  if (weekOf && monthEnd) {
+    // Month range query
+    start = startOfMonth(new Date(weekOf));
+    end = endOfMonth(new Date(monthEnd));
+  } else if (weekOf) {
     const d = new Date(weekOf);
     start = startOfWeek(d, { weekStartsOn: 1 });
     end = endOfWeek(d, { weekStartsOn: 1 });
