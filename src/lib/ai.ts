@@ -3,6 +3,49 @@ import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod/v4";
+import type { IFieldDefinition } from "@/lib/models/section-template";
+
+interface MatchedTemplate {
+  name: string;
+  fields: Pick<IFieldDefinition, "key" | "label" | "type" | "options" | "formula">[];
+  viewType: string;
+}
+
+export const STRONG_MATCH_THRESHOLD = 0.85;
+export const WEAK_MATCH_THRESHOLD = 0.70;
+
+/**
+ * Build an augmented prompt that includes matched template context.
+ * Strong match: fork and adapt. Weak match: use as inspiration. No match: generate fresh.
+ */
+export function buildAugmentedPrompt(
+  userPrompt: string,
+  template: MatchedTemplate | null,
+  score: number
+): string {
+  if (!template || score < WEAK_MATCH_THRESHOLD) {
+    return userPrompt;
+  }
+
+  const fieldsJson = JSON.stringify(template.fields, null, 2);
+
+  if (score >= STRONG_MATCH_THRESHOLD) {
+    return `Existing template found: "${template.name}"
+Fields: ${fieldsJson}
+ViewType: ${template.viewType}
+
+Adapt this template for the user's specific needs: "${userPrompt}"
+You may add, remove, or rename fields. Keep the general structure if it fits.`;
+  }
+
+  // Weak match — use as inspiration
+  return `For inspiration, here is a somewhat related template: "${template.name}"
+Fields: ${fieldsJson}
+ViewType: ${template.viewType}
+
+Generate a section for: "${userPrompt}"
+Use the above as inspiration but create what fits best for this specific use case.`;
+}
 
 export type AIProvider = "claude" | "gemini" | "openai" | "mistral";
 
