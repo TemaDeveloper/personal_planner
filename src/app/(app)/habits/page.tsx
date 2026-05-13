@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Plus, Flame, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
@@ -29,18 +29,20 @@ export default function HabitsPage() {
   const daysInMonth = getDaysInMonth(currentMonth);
   const monthStr = format(currentMonth, "yyyy-MM");
 
-  const fetchGrid = () => {
+  useEffect(() => {
     fetch(`/api/habits/grid?month=${monthStr}`)
       .then((r) => r.json())
       .then((d) => {
         setHabits(d.habits || []);
         setLoading(false);
       });
-  };
-
-  useEffect(() => {
-    fetchGrid();
   }, [monthStr]);
+
+  const refetchGrid = () => {
+    fetch(`/api/habits/grid?month=${monthStr}`)
+      .then((r) => r.json())
+      .then((d) => setHabits(d.habits || []));
+  };
 
   const toggleHabit = async (habitId: string, day: number) => {
     const dateStr = `${monthStr}-${String(day).padStart(2, "0")}`;
@@ -224,7 +226,7 @@ export default function HabitsPage() {
           onClose={() => setShowAdd(false)}
           onSuccess={() => {
             setShowAdd(false);
-            fetchGrid();
+            refetchGrid();
           }}
         />
       )}

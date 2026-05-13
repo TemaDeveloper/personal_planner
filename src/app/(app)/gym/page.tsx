@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Check, ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
@@ -46,11 +46,7 @@ export default function GymPage() {
     return () => { cancelled = true; };
   }, [monthOffset]);
 
-  const attendedDates = useMemo(() => {
-    const set = new Set<string>();
-    attendance.forEach((a) => set.add(format(new Date(a.date), "yyyy-MM-dd")));
-    return set;
-  }, [attendance]);
+  const attendedDates = new Set(attendance.map((a) => format(new Date(a.date), "yyyy-MM-dd")));
 
   const isAttended = (date: Date) => attendedDates.has(format(date, "yyyy-MM-dd"));
 
@@ -92,22 +88,20 @@ export default function GymPage() {
   };
 
   // Build calendar grid: weeks × 7 days
-  const calendarWeeks = useMemo(() => {
-    const weeks: (Date | null)[][] = [];
+  const calendarWeeks: (Date | null)[][] = [];
+  {
     const firstDay = startOfWeek(monthStart, { weekStartsOn: 1 });
     let current = firstDay;
-
-    while (isBefore(current, monthEnd) || weeks.length === 0) {
+    while (isBefore(current, monthEnd) || calendarWeeks.length === 0) {
       const week: (Date | null)[] = [];
       for (let i = 0; i < 7; i++) {
         const day = addDays(current, i);
         week.push(isSameMonth(day, monthStart) ? day : null);
       }
-      weeks.push(week);
+      calendarWeeks.push(week);
       current = addDays(current, 7);
     }
-    return weeks;
-  }, [monthStart, monthEnd]);
+  }
 
   const attendedCount = attendedDates.size;
   // Target for the month = targetDays * ~4.3 weeks
