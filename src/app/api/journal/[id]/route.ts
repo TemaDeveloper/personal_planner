@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { pickFields } from "@/lib/sanitize";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
@@ -20,7 +21,7 @@ export async function PATCH(
 
   const updated = await JournalEntry.findOneAndUpdate(
     { _id: id, userId },
-    body,
+    pickFields(body, ["content","mood","date"]),
     { new: true }
   );
 

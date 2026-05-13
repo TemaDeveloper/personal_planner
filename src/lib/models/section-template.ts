@@ -6,6 +6,7 @@ export interface IFieldDefinition {
   type: "boolean" | "number" | "text" | "select" | "date";
   options?: string[];
   required?: boolean;
+  formula?: string;
 }
 
 export interface ISectionTemplate extends Document {
@@ -14,6 +15,7 @@ export interface ISectionTemplate extends Document {
   icon: string;
   description: string;
   fields: IFieldDefinition[];
+  viewType: "weekly-cards" | "table" | "grid";
   isBuiltIn: boolean;
   createdBy: mongoose.Types.ObjectId | null;
   usageCount: number;
@@ -32,6 +34,7 @@ const FieldDefinitionSchema = new Schema<IFieldDefinition>(
     },
     options: { type: [String], default: undefined },
     required: { type: Boolean, default: false },
+    formula: { type: String },
   },
   { _id: false }
 );
@@ -43,6 +46,11 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
     icon: { type: String, required: true, default: "Star" },
     description: { type: String, maxlength: 200, default: "" },
     fields: { type: [FieldDefinitionSchema], default: [] },
+    viewType: {
+      type: String,
+      enum: ["weekly-cards", "table", "grid"],
+      default: "weekly-cards",
+    },
     isBuiltIn: { type: Boolean, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     usageCount: { type: Number, default: 1 },

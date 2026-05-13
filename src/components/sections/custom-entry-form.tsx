@@ -12,6 +12,7 @@ interface FieldDefinition {
   type: "boolean" | "number" | "text" | "select" | "date";
   options?: string[];
   required?: boolean;
+  formula?: string;
 }
 
 interface CustomEntryFormProps {
@@ -36,7 +37,24 @@ export function CustomEntryForm({ slug, fields, onClose, onSuccess, initialDate 
   const [loading, setLoading] = useState(false);
 
   const updateField = (key: string, value: unknown) => {
-    setData((prev) => ({ ...prev, [key]: value }));
+    setData((prev) => {
+      const next = { ...prev, [key]: value };
+      // Auto-compute formula fields
+      for (const f of fields) {
+        if (f.formula) {
+          try {
+            // Simple arithmetic: "salePrice - purchasePrice"
+            const result = f.formula.replace(/[a-zA-Z_]\w*/g, (varName) =>
+              String(Number(next[varName]) || 0)
+            );
+            next[f.key] = Function(`"use strict"; return (${result})`)();
+          } catch {
+            // Skip if formula can't be evaluated
+          }
+        }
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,12 +129,14 @@ export function CustomEntryForm({ slug, fields, onClose, onSuccess, initialDate 
 
             {field.type === "number" && (
               <FormInput
-                label={`${field.label}${field.required ? " *" : ""}`}
+                label={`${field.label}${field.required ? " *" : ""}${field.formula ? " (auto)" : ""}`}
                 type="number"
                 step="any"
                 value={data[field.key] as number}
                 onChange={(e) => updateField(field.key, Number(e.target.value))}
                 required={field.required}
+                readOnly={!!field.formula}
+                className={field.formula ? "opacity-70" : ""}
               />
             )}
 

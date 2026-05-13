@@ -548,13 +548,6 @@ export default function OnboardingPage() {
       title: "Make it yours",
       content: (
         <div className="space-y-6 max-w-sm mx-auto">
-          <FormInput
-            label="Your name"
-            type="text"
-            placeholder="What should we call you?"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
           <div>
             <label className="block text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Accent color</label>
             <div className="flex gap-3">

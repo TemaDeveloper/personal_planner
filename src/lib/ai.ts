@@ -51,11 +51,13 @@ const PlannerConfigSchema = z.object({
     name: z.string(),
     icon: z.string(),
     description: z.string(),
+    viewType: z.enum(["weekly-cards", "table", "grid"]).default("weekly-cards"),
     fields: z.array(z.object({
       key: z.string(),
       label: z.string(),
       type: z.enum(["boolean", "number", "text", "select", "date"]),
       options: z.array(z.string()).optional(),
+      formula: z.string().optional(),
     })),
   })).optional(),
 });
@@ -115,13 +117,16 @@ Each custom section needs:
 - name: clear, specific display name
 - icon: one of: PawPrint, Car, Baby, Bike, Coffee, Music, Camera, Plane, Clock, Leaf, Star, Wrench, Users, Globe, Zap, Calendar, Briefcase, DollarSign, Target, BookOpen
 - description: one-line description
-- fields: 3-8 fields that capture what the user would actually want to log daily. Think about:
-  * What data points matter for this activity?
-  * What would help them see trends over time?
-  * What's optional vs required?
-  * Include both quantitative (numbers) and qualitative (text, select) fields
+- viewType: pick the BEST UI for this section:
+  * "table" — for item-based tracking (reselling, inventory, transactions, purchases). Shows entries as rows in a spreadsheet table. USE THIS for anything where each entry is a distinct item/transaction.
+  * "grid" — for daily yes/no tracking (habits, attendance, daily check-ins). Shows a monthly calendar grid.
+  * "weekly-cards" — for daily logs with mixed field types. Shows one card per day in a week view.
+- fields: 3-8 fields. Think about what data points matter for this activity.
+  * For reselling/trading: ALWAYS include purchasePrice, salePrice, and a profit field with formula
+  * For computed fields, add "formula" property: e.g. "formula": "salePrice - purchasePrice"
 
 Field types: boolean (yes/no toggle), number, text, select (with options array), date
+Formula: optional string expression for auto-calculated fields (e.g. "salePrice - purchasePrice")
 
 Return ONLY valid JSON (no markdown, no code fences).
 
@@ -133,11 +138,12 @@ EXAMPLE 1 — user says "I resell tires on Facebook Marketplace":
       "name": "Tire Reselling",
       "icon": "DollarSign",
       "description": "Track tire purchases, sales, and profit",
+      "viewType": "table",
       "fields": [
         { "key": "itemName", "label": "Tire Model/Size", "type": "text" },
         { "key": "purchasePrice", "label": "Purchase Price ($)", "type": "number" },
         { "key": "salePrice", "label": "Sale Price ($)", "type": "number" },
-        { "key": "profit", "label": "Profit ($)", "type": "number" },
+        { "key": "profit", "label": "Profit ($)", "type": "number", "formula": "salePrice - purchasePrice" },
         { "key": "sold", "label": "Sold", "type": "boolean" },
         { "key": "buyer", "label": "Buyer", "type": "text" },
         { "key": "notes", "label": "Notes", "type": "text" }
@@ -152,7 +158,6 @@ EXAMPLE 2 — user says "I work at Starbucks and go to the gym":
   "enabledSections": ["work", "gym"],
   "workConfig": { "jobs": [{ "name": "Starbucks", "hourlyRate": 17, "weeklyTarget": 20 }] },
   "gymConfig": { "targetDaysPerWeek": 5 }
-}
 }
 
 Include config objects ONLY for sections in enabledSections. All numeric values must be numbers, not strings.`;

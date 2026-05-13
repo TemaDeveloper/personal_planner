@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { name, icon, description, fields } = body;
+  const { name, icon, description, fields, viewType } = body;
 
   if (!name || typeof name !== "string" || name.trim().length < 1) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -60,10 +60,12 @@ export async function POST(req: NextRequest) {
     slug = slug + "-custom";
   }
 
-  // Ensure unique slug
-  const existing = await SectionTemplate.findOne({ slug });
-  if (existing) {
-    slug = slug + "-" + Date.now().toString(36);
+  // Ensure unique slug with clean counter
+  let counter = 0;
+  const baseSlug = slug;
+  while (await SectionTemplate.findOne({ slug })) {
+    counter++;
+    slug = `${baseSlug}-${counter}`;
   }
 
   const template = await SectionTemplate.create({
@@ -72,6 +74,7 @@ export async function POST(req: NextRequest) {
     icon: icon || "Star",
     description: description || "",
     fields: fields || [],
+    viewType: viewType || "weekly-cards",
     isBuiltIn: false,
     createdBy: userId,
     usageCount: 1,

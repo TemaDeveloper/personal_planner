@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CustomEntryForm } from "@/components/sections/custom-entry-form";
+import { TableView } from "@/components/sections/table-view";
 import { Plus, Trash2, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
@@ -16,6 +17,7 @@ interface FieldDef {
   label: string;
   type: "boolean" | "number" | "text" | "select" | "date";
   options?: string[];
+  formula?: string;
 }
 
 interface Template {
@@ -24,6 +26,7 @@ interface Template {
   slug: string;
   icon: string;
   description: string;
+  viewType?: "weekly-cards" | "table" | "grid";
   fields: FieldDef[];
 }
 
@@ -96,13 +99,31 @@ export default function CustomSectionPage() {
         title={template.name}
         description={template.description}
         action={
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus size={14} />
-            Add
-          </Button>
+          template.viewType !== "table" ? (
+            <Button size="sm" onClick={() => setShowForm(true)}>
+              <Plus size={14} />
+              Add
+            </Button>
+          ) : undefined
         }
       />
 
+      {/* Table view for item-based sections */}
+      {template.viewType === "table" ? (
+        <TableView
+          slug={slug}
+          fields={template.fields}
+          entries={entries}
+          onAdd={() => setShowForm(true)}
+          onRefresh={() => {
+            const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+            fetch(`/api/sections/${slug}/entries?weekOf=${ws.toISOString()}`)
+              .then((r) => r.json())
+              .then((d) => setEntries(d.entries || []));
+          }}
+        />
+      ) : (
+      <>
       {/* Week navigation */}
       <div className="flex items-center justify-between mb-6">
         <Button
@@ -175,6 +196,8 @@ export default function CustomSectionPage() {
           );
         })}
       </div>
+      </>
+      )}
 
       {showForm && template && (
         <CustomEntryForm
