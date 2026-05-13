@@ -121,6 +121,16 @@ export default function OnboardingPage() {
   const handleGenerate = async () => {
     if (!prompt.trim()) { toast.error("Describe what you want to track"); return; }
 
+    // Reset everything before AI generates — no leftover defaults
+    setEnabledSections([]);
+    setJobs([]);
+    setSubjects([]);
+    setHobbies([]);
+    setChores([]);
+    setBills([]);
+    setSuggestedHabits([]);
+    setCustomSectionTemplates([]);
+
     setGenerating(true);
     try {
       const res = await fetch("/api/onboarding/generate", {
