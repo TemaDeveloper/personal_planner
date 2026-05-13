@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { resolveUserId } from "@/lib/session";
-import { generateWithDefaultAI } from "@/lib/ai";
+import { generateWithDefaultAI, generateWithTemplateSearch } from "@/lib/ai";
 
 export const maxDuration = 30;
 
@@ -31,6 +31,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Use template search pipeline if OPENAI_API_KEY is available,
+    // otherwise fall back to direct generation
+    const hasEmbeddingSupport = !!process.env.OPENAI_API_KEY;
+
+    if (hasEmbeddingSupport) {
+      const { config } = await generateWithTemplateSearch(prompt.trim(), String(userId));
+      return NextResponse.json({ config });
+    }
+
+    // Fallback: no embedding support, generate directly
     const config = await generateWithDefaultAI(prompt.trim());
     return NextResponse.json({ config });
   } catch (err: unknown) {
