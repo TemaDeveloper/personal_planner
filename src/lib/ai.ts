@@ -123,31 +123,36 @@ Each custom section needs:
 
 Field types: boolean (yes/no toggle), number, text, select (with options array), date
 
-Return ONLY valid JSON (no markdown, no code fences). Schema:
+Return ONLY valid JSON (no markdown, no code fences).
+
+EXAMPLE 1 — user says "I resell tires on Facebook Marketplace":
 {
-  "enabledSections": ["gym", "habits", ...],
-  "gymConfig": { "targetDaysPerWeek": 5 },
-  "workConfig": { "jobs": [{ "name": "Job Name", "hourlyRate": 18, "weeklyTarget": 20 }] },
-  "studyConfig": { "subjects": [{ "name": "Subject" }] },
-  "hobbiesConfig": { "hobbies": [{ "name": "Hobby" }] },
-  "houseworkConfig": { "chores": [{ "name": "Chore", "frequency": "daily" }] },
-  "bills": [{ "name": "Rent", "amount": 1200, "dueDay": 1, "category": "rent" }],
-  "suggestedHabits": ["Habit name"],
+  "enabledSections": [],
   "customSections": [
     {
-      "name": "Monitor Reselling",
+      "name": "Tire Reselling",
       "icon": "DollarSign",
-      "description": "Track monitor purchases, sales, and profit",
+      "description": "Track tire purchases, sales, and profit",
       "fields": [
-        { "key": "itemName", "label": "Monitor Model", "type": "text" },
+        { "key": "itemName", "label": "Tire Model/Size", "type": "text" },
         { "key": "purchasePrice", "label": "Purchase Price ($)", "type": "number" },
         { "key": "salePrice", "label": "Sale Price ($)", "type": "number" },
+        { "key": "profit", "label": "Profit ($)", "type": "number" },
         { "key": "sold", "label": "Sold", "type": "boolean" },
-        { "key": "platform", "label": "Platform", "type": "select", "options": ["Facebook Marketplace", "Craigslist", "eBay", "Other"] },
+        { "key": "buyer", "label": "Buyer", "type": "text" },
         { "key": "notes", "label": "Notes", "type": "text" }
       ]
     }
   ]
+}
+Notice: enabledSections is EMPTY because the user only asked about reselling, not gym/work/habits.
+
+EXAMPLE 2 — user says "I work at Starbucks and go to the gym":
+{
+  "enabledSections": ["work", "gym"],
+  "workConfig": { "jobs": [{ "name": "Starbucks", "hourlyRate": 17, "weeklyTarget": 20 }] },
+  "gymConfig": { "targetDaysPerWeek": 5 }
+}
 }
 
 Include config objects ONLY for sections in enabledSections. All numeric values must be numbers, not strings.`;

@@ -59,7 +59,7 @@ export default function OnboardingPage() {
   const [fontStyle, setFontStyle] = useState("sans");
   const [currency, setCurrency] = useState("CAD");
 
-  // Sections & config
+  // Sections & config — empty when using AI mode, defaults only for manual mode
   const [enabledSections, setEnabledSections] = useState<SectionId[]>([...DEFAULT_ENABLED_SECTIONS]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [targetDaysPerWeek, setTargetDaysPerWeek] = useState(5);
@@ -80,10 +80,11 @@ export default function OnboardingPage() {
   };
 
   const applyAIConfig = (config: PlannerConfig) => {
+    // Only enable sections the AI explicitly returned — no defaults
     const validSections = config.enabledSections.filter((s) =>
       SECTIONS.includes(s as SectionId)
     ) as SectionId[];
-    setEnabledSections(validSections.length > 0 ? validSections : [...DEFAULT_ENABLED_SECTIONS]);
+    setEnabledSections(validSections);
 
     if (config.workConfig?.jobs) {
       setJobs(config.workConfig.jobs.map((j) => ({
