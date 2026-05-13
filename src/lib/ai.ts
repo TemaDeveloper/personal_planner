@@ -13,17 +13,20 @@ export const AI_PROVIDERS: { id: AIProvider; label: string; placeholder: string 
   { id: "openai", label: "OpenAI", placeholder: "sk-..." },
 ];
 
+// Coerce strings to numbers (LLMs sometimes return "18" instead of 18)
+const coerceNum = z.union([z.number(), z.string().transform(Number)]).pipe(z.number());
+
 const PlannerConfigSchema = z.object({
   enabledSections: z.array(z.string()),
   workConfig: z.object({
     jobs: z.array(z.object({
       name: z.string(),
-      hourlyRate: z.number().default(0),
-      weeklyTarget: z.number().default(20),
+      hourlyRate: coerceNum.default(0),
+      weeklyTarget: coerceNum.default(20),
     })),
   }).optional(),
   gymConfig: z.object({
-    targetDaysPerWeek: z.number().min(1).max(7),
+    targetDaysPerWeek: coerceNum.pipe(z.number().min(1).max(7)),
   }).optional(),
   studyConfig: z.object({
     subjects: z.array(z.object({ name: z.string() })),
@@ -39,8 +42,8 @@ const PlannerConfigSchema = z.object({
   }).optional(),
   bills: z.array(z.object({
     name: z.string(),
-    amount: z.number().default(0),
-    dueDay: z.number().min(1).max(31).default(1),
+    amount: coerceNum.default(0),
+    dueDay: coerceNum.pipe(z.number().min(1).max(31)).default(1),
     category: z.enum(["rent", "utilities", "subscriptions", "insurance", "other"]).default("other"),
   })).optional(),
   suggestedHabits: z.array(z.string()).optional(),
