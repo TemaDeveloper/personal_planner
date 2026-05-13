@@ -3,7 +3,14 @@ import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod/v4";
-import type { IFieldDefinition } from "@/lib/models/section-template";
+import type { IFieldDefinition, ISectionTemplate } from "@/lib/models/section-template";
+import {
+  generateEmbedding,
+  searchSimilarTemplates,
+  templateToEmbeddingInput,
+  saveOrDedup,
+  type TemplateSearchResult,
+} from "@/lib/embeddings";
 
 interface MatchedTemplate {
   name: string;
@@ -302,4 +309,80 @@ export async function generateWithDefaultAI(prompt: string): Promise<PlannerConf
     throw new Error("MISTRAL_API_KEY not configured");
   }
   return generatePlannerConfig(prompt, "mistral", apiKey);
+}
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+interface PipelineResult {
+  config: PlannerConfig;
+  sourceTemplate: TemplateSearchResult | null;
+  saveResult: { action: "created" | "reused"; templateId: string };
+}
+
+export async function generateWithTemplateSearch(
+  prompt: string,
+  userId: string
+): Promise<PipelineResult> {
+  let promptEmbedding: number[] | null = null;
+  let searchResults: TemplateSearchResult[] = [];
+
+  try {
+    promptEmbedding = await generateEmbedding(prompt);
+    searchResults = await searchSimilarTemplates(promptEmbedding);
+  } catch {
+    console.warn("[generate] Embedding search failed, generating from scratch");
+  }
+
+  const bestMatch = searchResults.length > 0 ? searchResults[0] : null;
+  const bestScore = bestMatch?.score ?? 0;
+
+  const augmentedPrompt = buildAugmentedPrompt(
+    prompt,
+    bestMatch ? { name: bestMatch.name, fields: bestMatch.fields, viewType: bestMatch.viewType } : null,
+    bestScore
+  );
+
+  const config = await generateWithDefaultAI(augmentedPrompt);
+
+  let saveResult = { action: "created" as const, templateId: "" };
+
+  if (config.customSections && config.customSections.length > 0) {
+    const section = config.customSections[0];
+    const embeddingInput = templateToEmbeddingInput(
+      section.name,
+      section.description,
+      section.fields
+    );
+
+    let outputEmbedding: number[];
+    try {
+      outputEmbedding = await generateEmbedding(embeddingInput);
+    } catch {
+      outputEmbedding = promptEmbedding ?? [];
+    }
+
+    saveResult = await saveOrDedup(
+      {
+        name: section.name,
+        slug: slugify(section.name),
+        icon: section.icon,
+        description: section.description,
+        fields: section.fields as ISectionTemplate["fields"],
+        viewType: section.viewType,
+        embedding: outputEmbedding,
+        sourcePrompt: prompt,
+        createdBy: userId,
+      },
+      bestMatch && bestScore >= WEAK_MATCH_THRESHOLD
+        ? { _id: bestMatch._id, embedding: bestMatch.embedding }
+        : null
+    );
+  }
+
+  return { config, sourceTemplate: bestMatch, saveResult };
 }
