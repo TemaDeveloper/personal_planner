@@ -14,7 +14,7 @@ import {
 } from "@/lib/constants";
 import { Plus, Trash2, Save, Sparkles, Sun, Monitor, Moon } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
-import { AI_PROVIDERS, type AIProvider } from "@/lib/ai";
+import { AI_PROVIDERS, type AIProvider } from "@/lib/ai-providers";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/ui/form-input";

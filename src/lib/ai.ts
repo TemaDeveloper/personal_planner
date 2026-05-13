@@ -54,14 +54,8 @@ Generate a section for: "${userPrompt}"
 Use the above as inspiration but create what fits best for this specific use case.`;
 }
 
-export type AIProvider = "claude" | "gemini" | "openai" | "mistral";
-
-export const AI_PROVIDERS: { id: AIProvider; label: string; placeholder: string }[] = [
-  { id: "mistral", label: "Mistral", placeholder: "your-mistral-key" },
-  { id: "claude", label: "Claude", placeholder: "sk-ant-..." },
-  { id: "gemini", label: "Gemini", placeholder: "AIza..." },
-  { id: "openai", label: "OpenAI", placeholder: "sk-..." },
-];
+import { type AIProvider } from "@/lib/ai-providers";
+export type { AIProvider };
 
 // Coerce strings to numbers (LLMs sometimes return "18" instead of 18)
 const coerceNum = z.union([z.number(), z.string().transform(Number)]).pipe(z.number());
@@ -349,7 +343,7 @@ export async function generateWithTemplateSearch(
 
   const config = await generateWithDefaultAI(augmentedPrompt);
 
-  let saveResult = { action: "created" as const, templateId: "" };
+  let saveResult: { action: "created" | "reused"; templateId: string } = { action: "created", templateId: "" };
 
   if (config.customSections && config.customSections.length > 0) {
     const section = config.customSections[0];
