@@ -19,6 +19,11 @@ export interface ISectionTemplate extends Document {
   isBuiltIn: boolean;
   createdBy: mongoose.Types.ObjectId | null;
   usageCount: number;
+  embedding: number[];
+  sourcePrompt: string;
+  forkedFrom: mongoose.Types.ObjectId | null;
+  forkCount: number;
+  isShared: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +59,11 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
     isBuiltIn: { type: Boolean, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     usageCount: { type: Number, default: 1 },
+    embedding: { type: [Number], default: [] },
+    sourcePrompt: { type: String, default: "" },
+    forkedFrom: { type: Schema.Types.ObjectId, ref: "SectionTemplate", default: null },
+    forkCount: { type: Number, default: 0 },
+    isShared: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
@@ -61,6 +71,7 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
 SectionTemplateSchema.index({ slug: 1 }, { unique: true });
 SectionTemplateSchema.index({ createdBy: 1 });
 SectionTemplateSchema.index({ usageCount: -1 });
+SectionTemplateSchema.index({ isShared: 1, usageCount: -1 });
 
 if (mongoose.models.SectionTemplate) mongoose.deleteModel("SectionTemplate");
 export default mongoose.model<ISectionTemplate>("SectionTemplate", SectionTemplateSchema);
