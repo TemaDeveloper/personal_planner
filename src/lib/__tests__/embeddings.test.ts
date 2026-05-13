@@ -1,6 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { computeDistance, isSignificantlyDifferent, templateToEmbeddingInput } from "@/lib/embeddings";
 
+vi.mock("@/lib/models/section-template", () => {
+  const mockAggregate = vi.fn().mockResolvedValue([
+    {
+      _id: "abc123",
+      name: "Pet Breeding Tracker",
+      score: 0.92,
+      usageCount: 5,
+      fields: [],
+    },
+  ]);
+  return {
+    default: { aggregate: mockAggregate },
+    __mockAggregate: mockAggregate,
+  };
+});
+
 vi.mock("openai", () => {
   const mockCreate = vi.fn().mockResolvedValue({
     data: [{ embedding: new Array(1536).fill(0.1) }],
@@ -95,5 +111,32 @@ describe("generateEmbedding", () => {
     vi.resetModules();
     const { generateEmbedding } = await import("@/lib/embeddings");
     await expect(generateEmbedding("test")).rejects.toThrow("OPENAI_API_KEY");
+  });
+});
+
+describe("searchSimilarTemplates", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns matching templates from vector search", async () => {
+    const { searchSimilarTemplates } = await import("@/lib/embeddings");
+    const embedding = new Array(1536).fill(0.1);
+    const results = await searchSimilarTemplates(embedding);
+    expect(results).toHaveLength(1);
+    expect(results[0].name).toBe("Pet Breeding Tracker");
+    expect(results[0].score).toBe(0.92);
+  });
+
+  it("accepts a custom limit parameter", async () => {
+    vi.resetModules();
+    const SectionTemplate = (await import("@/lib/models/section-template")).default;
+    const { searchSimilarTemplates } = await import("@/lib/embeddings");
+    const embedding = new Array(1536).fill(0.1);
+    await searchSimilarTemplates(embedding, 5);
+    expect(SectionTemplate.aggregate).toHaveBeenCalled();
+    const pipeline = (SectionTemplate.aggregate as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const vectorStage = pipeline.find((s: Record<string, unknown>) => "$vectorSearch" in s);
+    expect(vectorStage.$vectorSearch.limit).toBe(5);
   });
 });

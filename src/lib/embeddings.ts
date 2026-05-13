@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { IFieldDefinition } from "@/lib/models/section-template";
+import SectionTemplate, { type ISectionTemplate, type IFieldDefinition } from "@/lib/models/section-template";
 
 const DEDUP_THRESHOLD = 0.10;
 const EMBEDDING_MODEL = "text-embedding-3-small";
@@ -29,6 +29,48 @@ export function templateToEmbeddingInput(
 ): string {
   const fieldStr = fields.map((f) => `${f.label} (${f.type})`).join(", ");
   return `${name} — ${description}. Fields: ${fieldStr}`;
+}
+
+export interface TemplateSearchResult {
+  _id: string;
+  name: string;
+  description: string;
+  fields: ISectionTemplate["fields"];
+  viewType: ISectionTemplate["viewType"];
+  icon: string;
+  embedding: number[];
+  usageCount: number;
+  score: number;
+}
+
+export async function searchSimilarTemplates(
+  embedding: number[],
+  limit: number = 3
+): Promise<TemplateSearchResult[]> {
+  const results = await SectionTemplate.aggregate([
+    {
+      $vectorSearch: {
+        index: "section_template_embeddings",
+        path: "embedding",
+        queryVector: embedding,
+        numCandidates: limit * 10,
+        limit,
+        filter: { isShared: true },
+      },
+    },
+    {
+      $addFields: {
+        score: { $meta: "vectorSearchScore" },
+      },
+    },
+    {
+      $project: {
+        _id: 1, name: 1, description: 1, fields: 1, viewType: 1,
+        icon: 1, embedding: 1, usageCount: 1, score: 1,
+      },
+    },
+  ]);
+  return results;
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
