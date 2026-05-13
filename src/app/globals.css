@@ -368,28 +368,6 @@
     border-radius: var(--radius-md);
   }
 
-  /* Legacy compat — will be removed after full migration */
-  .planner-surface {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .planner-surface:hover {
-    background: var(--glass-highlight);
-  }
-
-  .planner-surface-2 {
-    background: var(--surface-2);
-    backdrop-filter: blur(12px) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturation));
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-  }
 
   .accent-glow {
     box-shadow: 0 0 32px var(--accent-glow), 0 0 64px var(--accent-glow);

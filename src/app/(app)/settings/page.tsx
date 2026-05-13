@@ -666,7 +666,7 @@ export default function SettingsPage() {
         {/* AI */}
         <Section title="AI">
           <div className="flex items-center gap-2 -mt-2 mb-3">
-            <Sparkles size={14} style={{ color: "var(--accent-color)" }} />
+            <Sparkles size={14} className="text-[var(--accent-color)]" />
             <p className="text-xs text-muted-foreground">
               Used for AI-powered features like smart onboarding.
             </p>
