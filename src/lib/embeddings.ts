@@ -73,6 +73,61 @@ export async function searchSimilarTemplates(
   return results;
 }
 
+interface TemplateSaveData {
+  name: string;
+  slug: string;
+  icon: string;
+  description: string;
+  fields: ISectionTemplate["fields"];
+  viewType: ISectionTemplate["viewType"];
+  embedding: number[];
+  sourcePrompt: string;
+  createdBy: string;
+}
+
+export interface SaveResult {
+  action: "created" | "reused";
+  templateId: string;
+}
+
+export async function saveOrDedup(
+  templateData: TemplateSaveData,
+  sourceTemplate: { _id: string; embedding: number[] } | null
+): Promise<SaveResult> {
+  // No source = generated from scratch, always save
+  if (!sourceTemplate) {
+    const created = await SectionTemplate.create({
+      ...templateData,
+      isShared: true,
+      forkedFrom: null,
+      forkCount: 0,
+      usageCount: 1,
+    });
+    return { action: "created", templateId: String(created._id) };
+  }
+
+  // Forked — check if different enough
+  if (isSignificantlyDifferent(templateData.embedding, sourceTemplate.embedding)) {
+    const created = await SectionTemplate.create({
+      ...templateData,
+      isShared: true,
+      forkedFrom: sourceTemplate._id,
+      forkCount: 0,
+      usageCount: 1,
+    });
+    await SectionTemplate.findByIdAndUpdate(sourceTemplate._id, {
+      $inc: { forkCount: 1 },
+    });
+    return { action: "created", templateId: String(created._id) };
+  }
+
+  // Not different enough → reuse source
+  await SectionTemplate.findByIdAndUpdate(sourceTemplate._id, {
+    $inc: { usageCount: 1 },
+  });
+  return { action: "reused", templateId: sourceTemplate._id };
+}
+
 export async function generateEmbedding(text: string): Promise<number[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { computeDistance, isSignificantlyDifferent, templateToEmbeddingInput } from "@/lib/embeddings";
+import { computeDistance, isSignificantlyDifferent, templateToEmbeddingInput, saveOrDedup } from "@/lib/embeddings";
 
 vi.mock("@/lib/models/section-template", () => {
   const mockAggregate = vi.fn().mockResolvedValue([
@@ -11,8 +11,19 @@ vi.mock("@/lib/models/section-template", () => {
       fields: [],
     },
   ]);
+  const mockCreate = vi.fn().mockImplementation((data) =>
+    Promise.resolve({ _id: "new123", ...data })
+  );
+  const mockFindByIdAndUpdate = vi.fn().mockResolvedValue({
+    _id: "abc123",
+    usageCount: 6,
+  });
   return {
-    default: { aggregate: mockAggregate },
+    default: {
+      aggregate: mockAggregate,
+      create: mockCreate,
+      findByIdAndUpdate: mockFindByIdAndUpdate,
+    },
     __mockAggregate: mockAggregate,
   };
 });
@@ -138,5 +149,95 @@ describe("searchSimilarTemplates", () => {
     const pipeline = (SectionTemplate.aggregate as ReturnType<typeof vi.fn>).mock.calls[0][0];
     const vectorStage = pipeline.find((s: Record<string, unknown>) => "$vectorSearch" in s);
     expect(vectorStage.$vectorSearch.limit).toBe(5);
+  });
+});
+
+describe("saveOrDedup", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("creates a new template when no source (generated from scratch)", async () => {
+    vi.resetModules();
+    const { saveOrDedup } = await import("@/lib/embeddings");
+    const SectionTemplate = (await import("@/lib/models/section-template")).default;
+
+    const templateData = {
+      name: "Stamp Collection",
+      slug: "stamp-collection",
+      icon: "Star",
+      description: "Track stamps",
+      fields: [] as any[],
+      viewType: "table" as const,
+      embedding: new Array(1536).fill(0.2),
+      sourcePrompt: "I collect stamps",
+      createdBy: "user123",
+    };
+
+    const result = await saveOrDedup(templateData, null);
+    expect(SectionTemplate.create).toHaveBeenCalled();
+    expect(result.action).toBe("created");
+  });
+
+  it("increments usageCount when fork is not significantly different", async () => {
+    vi.resetModules();
+    const { saveOrDedup } = await import("@/lib/embeddings");
+    const SectionTemplate = (await import("@/lib/models/section-template")).default;
+
+    const templateData = {
+      name: "Pet Breeding Tracker",
+      slug: "pet-breeding-tracker-2",
+      icon: "PawPrint",
+      description: "Track pet breeding",
+      fields: [] as any[],
+      viewType: "table" as const,
+      embedding: new Array(1536).fill(0.1), // same as source = not different
+      sourcePrompt: "I breed dogs",
+      createdBy: "user456",
+    };
+
+    const sourceTemplate = {
+      _id: "abc123",
+      embedding: new Array(1536).fill(0.1),
+    };
+
+    const result = await saveOrDedup(templateData, sourceTemplate);
+    expect(result.action).toBe("reused");
+    expect(SectionTemplate.findByIdAndUpdate).toHaveBeenCalledWith(
+      "abc123",
+      { $inc: { usageCount: 1 } }
+    );
+  });
+
+  it("creates new template and increments forkCount when significantly different", async () => {
+    vi.resetModules();
+    const { saveOrDedup } = await import("@/lib/embeddings");
+    const SectionTemplate = (await import("@/lib/models/section-template")).default;
+
+    // Use orthogonal vectors: alternating 1/0 vs 0/1 → cosine distance = 1 (> 0.10 threshold)
+    const templateData = {
+      name: "Cat Breeding Tracker",
+      slug: "cat-breeding-tracker",
+      icon: "PawPrint",
+      description: "Track cat breeding",
+      fields: [] as any[],
+      viewType: "table" as const,
+      embedding: new Array(1536).fill(0).map((_, i) => (i % 2 === 0 ? 1 : 0)), // orthogonal to source
+      sourcePrompt: "I breed cats",
+      createdBy: "user789",
+    };
+
+    const sourceTemplate = {
+      _id: "abc123",
+      embedding: new Array(1536).fill(0).map((_, i) => (i % 2 === 0 ? 0 : 1)), // orthogonal to templateData
+    };
+
+    const result = await saveOrDedup(templateData, sourceTemplate);
+    expect(result.action).toBe("created");
+    expect(SectionTemplate.create).toHaveBeenCalled();
+    expect(SectionTemplate.findByIdAndUpdate).toHaveBeenCalledWith(
+      "abc123",
+      { $inc: { forkCount: 1 } }
+    );
   });
 });
