@@ -30,7 +30,7 @@ export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }:
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[10vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <motion.div
             className="absolute inset-0 bg-[var(--backdrop-overlay)] backdrop-blur-sm"
             data-testid="modal-overlay"

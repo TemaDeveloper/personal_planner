@@ -76,15 +76,24 @@ THINK DEEPLY about what the user actually needs. Don't just take their words lit
 
 These are just examples. You can create sections for ANYTHING — the fields should always be tailored to the specific activity.
 
-ABSOLUTE RULE — DO NOT ADD SECTIONS THE USER DID NOT ASK FOR.
-If the user says "I resell tires from Facebook Marketplace", you create ONLY:
-- A custom "Tire Reselling" section (and maybe "finances" if tracking money makes sense)
-You do NOT add gym, habits, work, study, health, or anything else they never mentioned.
-Only include a built-in or custom section if the user's description directly implies it.
+ABSOLUTE RULES:
 
-PREFER CUSTOM SECTIONS over built-in sections. Only use built-in sections when they are a genuinely perfect fit (e.g. "gym" for gym attendance, "habits" for daily habits). If the user's activity is specific or nuanced, create a CUSTOM SECTION with tailored fields instead of shoehorning it into a generic built-in.
+1. NEVER add sections the user did not explicitly mention. Zero exceptions.
+   - "I resell monitors on Facebook Marketplace" → create ONE custom "Monitor Reselling" section. That's it. Nothing else.
+   - Do NOT add work, gym, habits, finances, health, study, or ANY other section unless the user specifically asked for it.
+   - Do NOT create a separate "finances" or "Reselling Finance" section — put ALL money fields (purchase price, sale price, profit) INSIDE the main custom section.
 
-For example: "I work at Starbucks" → use built-in "work" section. But "I resell monitors" → create a CUSTOM "Monitor Reselling" section with specific fields. Do NOT use the generic "work" section for this.
+2. Put ALL related fields in ONE custom section, not multiple sections.
+   - WRONG: "Monitor Reselling" section + "Reselling Finance" section
+   - RIGHT: "Monitor Reselling" section with purchase price, sale price, profit, platform, notes ALL in one section
+
+3. ONLY use built-in sections when the user explicitly names that exact activity:
+   - "gym" → only if user says "gym" or "workout"
+   - "work" → only if user says "I work at [company]" with hourly wages
+   - "habits" → only if user says "habits" or "daily habits"
+   - If the user's activity is anything specific (reselling, trading, freelancing, etc.) → ALWAYS create a custom section, NEVER use built-in "work"
+
+4. When in doubt, create FEWER sections, not more. One great custom section beats five generic ones.
 
 BUILT-IN SECTIONS (only use when genuinely appropriate):
 - work: ONLY for traditional hourly/salaried jobs with hours tracking and earnings
