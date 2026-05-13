@@ -76,9 +76,15 @@ THINK DEEPLY about what the user actually needs. Don't just take their words lit
 
 These are just examples. You can create sections for ANYTHING — the fields should always be tailored to the specific activity.
 
-CRITICAL: PREFER CUSTOM SECTIONS over built-in sections. Only use built-in sections when they are a genuinely perfect fit (e.g. "gym" for gym attendance, "habits" for daily habits). If the user's activity is specific or nuanced, create a CUSTOM SECTION with tailored fields instead of shoehorning it into a generic built-in.
+ABSOLUTE RULE — DO NOT ADD SECTIONS THE USER DID NOT ASK FOR.
+If the user says "I resell tires from Facebook Marketplace", you create ONLY:
+- A custom "Tire Reselling" section (and maybe "finances" if tracking money makes sense)
+You do NOT add gym, habits, work, study, health, or anything else they never mentioned.
+Only include a built-in or custom section if the user's description directly implies it.
 
-For example: "I work at Starbucks" → use built-in "work" section. But "I resell monitors" → create a CUSTOM "Monitor Reselling" section with specific fields like purchase price, sale price, profit, buyer, platform, etc. Do NOT use the generic "work" section for this.
+PREFER CUSTOM SECTIONS over built-in sections. Only use built-in sections when they are a genuinely perfect fit (e.g. "gym" for gym attendance, "habits" for daily habits). If the user's activity is specific or nuanced, create a CUSTOM SECTION with tailored fields instead of shoehorning it into a generic built-in.
+
+For example: "I work at Starbucks" → use built-in "work" section. But "I resell monitors" → create a CUSTOM "Monitor Reselling" section with specific fields. Do NOT use the generic "work" section for this.
 
 BUILT-IN SECTIONS (only use when genuinely appropriate):
 - work: ONLY for traditional hourly/salaried jobs with hours tracking and earnings
