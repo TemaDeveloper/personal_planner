@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { computeDistance, isSignificantlyDifferent, templateToEmbeddingInput, saveOrDedup } from "@/lib/embeddings";
+import { computeDistance, isSignificantlyDifferent, templateToEmbeddingInput } from "@/lib/embeddings";
+import type { IFieldDefinition } from "@/lib/models/section-template";
 
 vi.mock("@/lib/models/section-template", () => {
   const mockAggregate = vi.fn().mockResolvedValue([
@@ -167,7 +168,7 @@ describe("saveOrDedup", () => {
       slug: "stamp-collection",
       icon: "Star",
       description: "Track stamps",
-      fields: [] as any[],
+      fields: [] as IFieldDefinition[],
       viewType: "table" as const,
       embedding: new Array(1536).fill(0.2),
       sourcePrompt: "I collect stamps",
@@ -189,7 +190,7 @@ describe("saveOrDedup", () => {
       slug: "pet-breeding-tracker-2",
       icon: "PawPrint",
       description: "Track pet breeding",
-      fields: [] as any[],
+      fields: [] as IFieldDefinition[],
       viewType: "table" as const,
       embedding: new Array(1536).fill(0.1), // same as source = not different
       sourcePrompt: "I breed dogs",
@@ -220,7 +221,7 @@ describe("saveOrDedup", () => {
       slug: "cat-breeding-tracker",
       icon: "PawPrint",
       description: "Track cat breeding",
-      fields: [] as any[],
+      fields: [] as IFieldDefinition[],
       viewType: "table" as const,
       embedding: new Array(1536).fill(0).map((_, i) => (i % 2 === 0 ? 1 : 0)), // orthogonal to source
       sourcePrompt: "I breed cats",
