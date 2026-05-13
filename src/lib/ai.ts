@@ -62,52 +62,73 @@ const PlannerConfigSchema = z.object({
 
 export type PlannerConfig = z.infer<typeof PlannerConfigSchema>;
 
-const SYSTEM_PROMPT = `You are configuring a personal planner app. Parse the user's description carefully and extract EVERY detail they mention. Do NOT skip anything.
+const SYSTEM_PROMPT = `You are an expert planner designer. Your job is to deeply understand what the user wants to track, then create the PERFECT set of tracking sections with smart, detailed fields.
 
-CRITICAL RULES:
-- If the user mentions multiple jobs, include ALL of them in workConfig.jobs
-- If the user mentions subjects or courses, include ALL of them in studyConfig.subjects
-- If the user mentions hobbies, include ALL of them
-- Capture every number they mention (hourly rates, hours/week, gym days, etc.)
-- When in doubt, INCLUDE the section rather than skip it
+THINK DEEPLY about what the user actually needs. Don't just take their words literally — infer the underlying tracking needs. For example:
+- "I resell monitors from Facebook Marketplace" → they need: purchase cost per item, sale price, profit calculation, which item was sold, daily sales count, inventory tracking
+- "I'm training for a marathon" → they need: distance ran, time, pace, rest days, weekly mileage, race countdown
+- "I'm learning Japanese" → they need: study time, vocabulary count, kanji learned, practice type (reading/writing/listening)
 
-Available sections (use these exact string IDs):
-- work: Track work hours and earnings. Supports MULTIPLE jobs.
-- gym: Daily gym attendance tracker with configurable days/week target.
-- finances: Income, expenses, and monthly bills.
-- habits: Daily habit tracking with streaks.
-- study: Subject-based study sessions. Supports MULTIPLE subjects.
-- hobbies: Hobby projects and time tracking. Supports MULTIPLE hobbies.
-- housework: Chore tracking with recurring tasks.
-- health: Water intake, sleep, weight, and mood.
-- goals: Goal setting with milestones.
-- reading: Book tracking with progress.
-- journal: Daily journal entries.
-- shopping: Shopping lists.
-- mealprep: Weekly meal planning.
+CRITICAL: PREFER CUSTOM SECTIONS over built-in sections. Only use built-in sections when they are a genuinely perfect fit (e.g. "gym" for gym attendance, "habits" for daily habits). If the user's activity is specific or nuanced, create a CUSTOM SECTION with tailored fields instead of shoehorning it into a generic built-in.
 
-Return ONLY valid JSON (no markdown, no code fences, no explanation). Schema:
+For example: "I work at Starbucks" → use built-in "work" section. But "I resell monitors" → create a CUSTOM "Monitor Reselling" section with specific fields like purchase price, sale price, profit, buyer, platform, etc. Do NOT use the generic "work" section for this.
+
+BUILT-IN SECTIONS (only use when genuinely appropriate):
+- work: ONLY for traditional hourly/salaried jobs with hours tracking and earnings
+- gym: Daily gym attendance check (went or didn't)
+- finances: General expenses and monthly bills
+- habits: Simple daily yes/no habit tracking
+- study: Academic subject-based study sessions
+- hobbies: General hobby time tracking
+- housework: Household chores
+- health: Water, sleep, weight, mood
+- goals: Goal milestones
+- reading: Book tracking
+- journal: Daily journal
+- shopping: Shopping lists
+- mealprep: Meal planning
+
+CUSTOM SECTIONS — create these for anything specific or nuanced:
+Each custom section needs:
+- name: clear, specific display name
+- icon: one of: PawPrint, Car, Baby, Bike, Coffee, Music, Camera, Plane, Clock, Leaf, Star, Wrench, Users, Globe, Zap, Calendar, Briefcase, DollarSign, Target, BookOpen
+- description: one-line description
+- fields: 3-8 fields that capture what the user would actually want to log daily. Think about:
+  * What data points matter for this activity?
+  * What would help them see trends over time?
+  * What's optional vs required?
+  * Include both quantitative (numbers) and qualitative (text, select) fields
+
+Field types: boolean (yes/no toggle), number, text, select (with options array), date
+
+Return ONLY valid JSON (no markdown, no code fences). Schema:
 {
-  "enabledSections": ["work", "gym", "study", ...],
-  "workConfig": { "jobs": [{ "name": "Job 1", "hourlyRate": 18, "weeklyTarget": 20 }, { "name": "Job 2", "hourlyRate": 16, "weeklyTarget": 15 }] },
+  "enabledSections": ["gym", "habits", ...],
   "gymConfig": { "targetDaysPerWeek": 5 },
-  "studyConfig": { "subjects": [{ "name": "Math" }, { "name": "CS" }] },
-  "hobbiesConfig": { "hobbies": [{ "name": "Guitar" }, { "name": "Drawing" }] },
-  "houseworkConfig": { "chores": [{ "name": "Vacuum", "frequency": "weekly" }] },
+  "workConfig": { "jobs": [{ "name": "Job Name", "hourlyRate": 18, "weeklyTarget": 20 }] },
+  "studyConfig": { "subjects": [{ "name": "Subject" }] },
+  "hobbiesConfig": { "hobbies": [{ "name": "Hobby" }] },
+  "houseworkConfig": { "chores": [{ "name": "Chore", "frequency": "daily" }] },
   "bills": [{ "name": "Rent", "amount": 1200, "dueDay": 1, "category": "rent" }],
-  "suggestedHabits": ["Meditate", "Read 30 min"]
+  "suggestedHabits": ["Habit name"],
+  "customSections": [
+    {
+      "name": "Monitor Reselling",
+      "icon": "DollarSign",
+      "description": "Track monitor purchases, sales, and profit",
+      "fields": [
+        { "key": "itemName", "label": "Monitor Model", "type": "text" },
+        { "key": "purchasePrice", "label": "Purchase Price ($)", "type": "number" },
+        { "key": "salePrice", "label": "Sale Price ($)", "type": "number" },
+        { "key": "sold", "label": "Sold", "type": "boolean" },
+        { "key": "platform", "label": "Platform", "type": "select", "options": ["Facebook Marketplace", "Craigslist", "eBay", "Other"] },
+        { "key": "notes", "label": "Notes", "type": "text" }
+      ]
+    }
+  ]
 }
 
-Include config objects ONLY for sections listed in enabledSections.
-
-CUSTOM SECTIONS: If the user describes tracking needs that DON'T fit any of the 13 built-in sections above, create custom section templates in the "customSections" array. Each needs:
-- name: display name (e.g., "Pet Care", "Meditation", "Side Projects")
-- icon: one of: PawPrint, Car, Baby, Bike, Coffee, Music, Camera, Plane, Clock, Leaf, Star, Wrench, Users, Globe, Zap, Calendar
-- description: short description
-- fields: array of field definitions with key (camelCase), label, type (boolean/number/text/select/date), and options (for select type only)
-
-Example custom section:
-{ "name": "Pet Care", "icon": "PawPrint", "description": "Track pet feeding and walks", "fields": [{ "key": "fed", "label": "Fed", "type": "boolean" }, { "key": "walked", "label": "Walked", "type": "boolean" }, { "key": "notes", "label": "Notes", "type": "text" }] }`;
+Include config objects ONLY for sections in enabledSections. All numeric values must be numbers, not strings.`;
 
 function extractJSON(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);

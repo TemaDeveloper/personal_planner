@@ -82,10 +82,17 @@ export function ThemeProvider({
   // Initialize and listen for system color scheme changes
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    const stored = localStorage.getItem("planner-color-mode") as ColorMode | null;
-    if (stored && ["light", "dark", "system"].includes(stored)) {
-      setPreferences((prev) => ({ ...prev, colorMode: stored }));
-    }
+    const storedMode = localStorage.getItem("planner-color-mode") as ColorMode | null;
+    const storedTheme = localStorage.getItem("planner-theme");
+    const storedFont = localStorage.getItem("planner-font");
+    const storedLayout = localStorage.getItem("planner-layout");
+    setPreferences((prev) => ({
+      ...prev,
+      ...(storedMode && ["light", "dark", "system"].includes(storedMode) ? { colorMode: storedMode } : {}),
+      ...(storedTheme ? { accentTheme: storedTheme } : {}),
+      ...(storedFont ? { fontStyle: storedFont } : {}),
+      ...(storedLayout ? { layoutDensity: storedLayout } : {}),
+    }));
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
@@ -114,9 +121,18 @@ export function ThemeProvider({
   const updatePreferences = useCallback((prefs: Partial<Preferences>) => {
     setPreferences((prev) => {
       const next = { ...prev, ...prefs };
-      // Persist color mode separately for FOUC prevention script
+      // Persist to localStorage for FOUC prevention script
       if (prefs.colorMode !== undefined) {
         localStorage.setItem("planner-color-mode", prefs.colorMode);
+      }
+      if (prefs.accentTheme !== undefined) {
+        localStorage.setItem("planner-theme", prefs.accentTheme);
+      }
+      if (prefs.fontStyle !== undefined) {
+        localStorage.setItem("planner-font", prefs.fontStyle);
+      }
+      if (prefs.layoutDensity !== undefined) {
+        localStorage.setItem("planner-layout", prefs.layoutDensity);
       }
       return next;
     });
