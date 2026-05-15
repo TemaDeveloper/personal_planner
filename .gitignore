@@ -52,3 +52,11 @@ design-system/
 # skills cache
 __pycache__/
 skills-lock.json
+
+# promo video generation
+promo-video/
+
+# superpowers & agents
+.superpowers/
+.agents/
+AGENTS.md
