@@ -1,5 +1,7 @@
 # Personal Planner
 
+https://github.com/user-attachments/assets/0df30307-bcf9-4a1c-9974-864836a9f1cc
+
 A free, open-source personal planner to track your daily life -- gym, work, habits, finances, study, and more. Self-hostable, no subscription needed.
 
 [![CI](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml/badge.svg)](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml)
