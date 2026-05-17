@@ -207,6 +207,7 @@ export function WorkTracker({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Delete session"
                       onClick={async () => {
                         await fetch(`/api/work/sessions/${s._id}`, { method: "DELETE" });
                         toast.success("Session deleted");
@@ -269,6 +270,7 @@ export function WorkTracker({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Delete expense"
                       onClick={async () => {
                         await fetch(`/api/expenses/${e._id}`, { method: "DELETE" });
                         toast.success("Expense deleted");
@@ -354,6 +356,7 @@ export function WorkTracker({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Delete route"
                       onClick={async () => {
                         await fetch(`/api/routes/${r._id}`, { method: "DELETE" });
                         toast.success("Route deleted");

@@ -309,6 +309,7 @@ export default function SettingsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Delete subject"
                       onClick={() => setSubjects(subjects.filter((_, i) => i !== idx))}
                     >
                       <Trash2 size={14} />
@@ -516,6 +517,7 @@ export default function SettingsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Delete job"
                     onClick={() => setJobs(jobs.filter((_, i) => i !== idx))}
                   >
                     <Trash2 size={14} />
@@ -644,6 +646,7 @@ export default function SettingsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Delete bill"
                       onClick={() => setBills(bills.filter((_, i) => i !== idx))}
                     >
                       <Trash2 size={14} />

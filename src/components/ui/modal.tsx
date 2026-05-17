@@ -64,6 +64,7 @@ export function Modal({ open, onClose, title, maxWidth = "max-w-sm", children }:
               <button
                 onClick={onClose}
                 className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--surface-1)] transition-colors cursor-pointer"
+                aria-label="Close"
               >
                 <X size={16} className="text-muted-foreground" />
               </button>

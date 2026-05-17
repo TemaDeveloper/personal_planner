@@ -11,7 +11,7 @@ const variantClasses = {
   destructive:
     "bg-destructive text-destructive-foreground hover:brightness-110",
   outline:
-    "border text-foreground bg-transparent",
+    "border border-[var(--border-subtle)] text-foreground bg-transparent hover:bg-[var(--surface-1)]",
 } as const;
 
 const sizeClasses = {

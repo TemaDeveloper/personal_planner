@@ -206,6 +206,7 @@ export default function ShoppingPage() {
                         <button
                           onClick={() => toggleItem(activeList._id, idx)}
                           className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border-2 border-[var(--border-subtle)]"
+                          aria-label="Mark as complete"
                         />
                         <span className="text-sm flex-1 text-[var(--text-primary)]">{item.name}</span>
                         {item.quantity > 1 && (
@@ -216,6 +217,7 @@ export default function ShoppingPage() {
                           size="icon"
                           onClick={() => removeItem(activeList._id, idx)}
                           className="hover:text-destructive h-7 w-7"
+                          aria-label="Remove item"
                         >
                           <X size={12} />
                         </Button>
@@ -239,6 +241,7 @@ export default function ShoppingPage() {
                     type="submit"
                     disabled={!newItemName.trim()}
                     size="icon"
+                    aria-label="Add item"
                   >
                     <Plus size={14} />
                   </Button>
@@ -256,6 +259,7 @@ export default function ShoppingPage() {
                           <button
                             onClick={() => toggleItem(activeList._id, idx)}
                             className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 bg-[var(--accent-color)] border-2 border-[var(--accent-color)]"
+                            aria-label="Mark as incomplete"
                           >
                             <Check size={12} className="text-[var(--background)]" />
                           </button>
@@ -265,6 +269,7 @@ export default function ShoppingPage() {
                             size="icon"
                             onClick={() => removeItem(activeList._id, idx)}
                             className="hover:text-destructive h-7 w-7"
+                            aria-label="Remove item"
                           >
                             <X size={12} />
                           </Button>

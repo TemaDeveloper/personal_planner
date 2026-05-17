@@ -80,6 +80,7 @@ export default function MealPrepPage() {
           variant="outline"
           size="icon"
           onClick={() => setWeekOffset((p) => p - 1)}
+          aria-label="Previous week"
         >
           <ChevronLeft size={16} />
         </Button>
@@ -88,6 +89,7 @@ export default function MealPrepPage() {
           variant="outline"
           size="icon"
           onClick={() => setWeekOffset((p) => p + 1)}
+          aria-label="Next week"
         >
           <ChevronRight size={16} />
         </Button>
@@ -125,6 +127,7 @@ export default function MealPrepPage() {
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
+                  aria-label="Edit meal plan"
                   onClick={() => {
                     setEditDay(idx);
                     setShowForm(true);
@@ -260,6 +263,7 @@ function MealFormContent({
                 variant="ghost"
                 size="icon"
                 className="ml-auto h-6 w-6"
+                aria-label="Remove meal"
                 onClick={() => setMeals(meals.filter((_, i) => i !== idx))}
               >
                 <Trash2 size={12} />

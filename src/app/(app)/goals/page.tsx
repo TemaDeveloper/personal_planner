@@ -239,6 +239,7 @@ export default function GoalsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setExpandedGoal(expanded ? null : goal._id)}
+                        aria-label={expanded ? "Collapse milestones" : "Expand milestones"}
                       >
                         {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </Button>
@@ -275,6 +276,7 @@ export default function GoalsPage() {
                         toast.success("Goal deleted");
                       }}
                       className="hover:text-destructive"
+                      aria-label="Delete goal"
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -402,6 +404,7 @@ function GoalModal({
                     type="button"
                     variant="ghost"
                     size="icon"
+                    aria-label="Remove milestone"
                     onClick={() => setMilestones(milestones.filter((_, j) => j !== i))}
                   >
                     <X size={14} />

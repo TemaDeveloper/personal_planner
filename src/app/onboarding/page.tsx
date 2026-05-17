@@ -368,7 +368,7 @@ export default function OnboardingPage() {
                     className="w-16"
                     placeholder="$/hr"
                   />
-                  <Button variant="ghost" size="icon" onClick={() => setJobs(jobs.filter((_, i) => i !== idx))}>
+                  <Button variant="ghost" size="icon" aria-label="Remove job" onClick={() => setJobs(jobs.filter((_, i) => i !== idx))}>
                     <Trash2 size={12} />
                   </Button>
                 </div>
@@ -418,7 +418,7 @@ export default function OnboardingPage() {
                     onChange={(e) => { const u = [...subjects]; u[idx].name = e.target.value; setSubjects(u); }}
                     className="flex-1"
                   />
-                  <Button variant="ghost" size="icon" onClick={() => setSubjects(subjects.filter((_, i) => i !== idx))}>
+                  <Button variant="ghost" size="icon" aria-label="Remove subject" onClick={() => setSubjects(subjects.filter((_, i) => i !== idx))}>
                     <Trash2 size={12} />
                   </Button>
                 </div>
@@ -437,7 +437,7 @@ export default function OnboardingPage() {
                     onChange={(e) => { const u = [...hobbies]; u[idx].name = e.target.value; setHobbies(u); }}
                     className="flex-1"
                   />
-                  <Button variant="ghost" size="icon" onClick={() => setHobbies(hobbies.filter((_, i) => i !== idx))}>
+                  <Button variant="ghost" size="icon" aria-label="Remove hobby" onClick={() => setHobbies(hobbies.filter((_, i) => i !== idx))}>
                     <Trash2 size={12} />
                   </Button>
                 </div>
@@ -465,7 +465,7 @@ export default function OnboardingPage() {
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
                   </FormSelect>
-                  <Button variant="ghost" size="icon" onClick={() => setChores(chores.filter((_, i) => i !== idx))}>
+                  <Button variant="ghost" size="icon" aria-label="Remove chore" onClick={() => setChores(chores.filter((_, i) => i !== idx))}>
                     <Trash2 size={12} />
                   </Button>
                 </div>
@@ -492,7 +492,7 @@ export default function OnboardingPage() {
                     className="w-20"
                     placeholder="$"
                   />
-                  <Button variant="ghost" size="icon" onClick={() => setBills(bills.filter((_, i) => i !== idx))}>
+                  <Button variant="ghost" size="icon" aria-label="Remove bill" onClick={() => setBills(bills.filter((_, i) => i !== idx))}>
                     <Trash2 size={12} />
                   </Button>
                 </div>
@@ -509,7 +509,7 @@ export default function OnboardingPage() {
                   <div key={idx} className="flex items-center gap-2">
                     <Check size={12} style={{ color: "var(--accent-color)" }} />
                     <span className="text-sm" style={{ color: "var(--text-primary)" }}>{h}</span>
-                    <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setSuggestedHabits(suggestedHabits.filter((_, i) => i !== idx))}>
+                    <Button variant="ghost" size="icon" className="ml-auto" aria-label="Remove habit" onClick={() => setSuggestedHabits(suggestedHabits.filter((_, i) => i !== idx))}>
                       <Trash2 size={12} />
                     </Button>
                   </div>
@@ -531,7 +531,7 @@ export default function OnboardingPage() {
                       <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{tpl.name}</p>
                       <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{tpl.fields.length} fields: {tpl.fields.map((f) => f.label).join(", ")}</p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => setCustomSectionTemplates(customSectionTemplates.filter((_, i) => i !== idx))}>
+                    <Button variant="ghost" size="icon" aria-label="Remove section" onClick={() => setCustomSectionTemplates(customSectionTemplates.filter((_, i) => i !== idx))}>
                       <Trash2 size={12} />
                     </Button>
                   </Card>

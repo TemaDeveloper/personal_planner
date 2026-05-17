@@ -130,6 +130,7 @@ export default function CustomSectionPage() {
           variant="outline"
           size="icon"
           onClick={() => setWeekOffset((p) => p - 1)}
+          aria-label="Previous week"
         >
           <ChevronLeft size={16} />
         </Button>
@@ -138,6 +139,7 @@ export default function CustomSectionPage() {
           variant="outline"
           size="icon"
           onClick={() => setWeekOffset((p) => p + 1)}
+          aria-label="Next week"
         >
           <ChevronRight size={16} />
         </Button>

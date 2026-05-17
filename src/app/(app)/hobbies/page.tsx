@@ -171,6 +171,7 @@ export default function HobbiesPage() {
             variant={showManage ? "primary" : "secondary"}
             size="icon"
             onClick={() => setShowManage((v) => !v)}
+            aria-label="Manage hobbies"
           >
             <Settings2 size={16} />
           </Button>
@@ -193,6 +194,7 @@ export default function HobbiesPage() {
                   size="icon"
                   onClick={() => removeHobby(h.name)}
                   className="hover:text-destructive"
+                  aria-label="Delete hobby"
                 >
                   <Trash2 size={14} />
                 </Button>
@@ -361,6 +363,7 @@ export default function HobbiesPage() {
                       toast.success("Deleted");
                     }}
                     className="hover:text-destructive"
+                    aria-label="Delete session"
                   >
                     <Trash2 size={14} />
                   </Button>
@@ -448,6 +451,7 @@ export default function HobbiesPage() {
                           toast.success("Deleted");
                         }}
                         className="hover:text-destructive"
+                        aria-label="Delete project"
                       >
                         <Trash2 size={14} />
                       </Button>

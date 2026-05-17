@@ -177,6 +177,7 @@ export default function JournalPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Delete entry"
                     onClick={async () => {
                       await fetch(`/api/journal/${entry._id}`, { method: "DELETE" });
                       setEntries((prev) => prev.filter((e) => e._id !== entry._id));

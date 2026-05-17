@@ -54,6 +54,7 @@ export function DashboardCalendar({ weekStart }: DashboardCalendarProps) {
             size="icon"
             onClick={() => setMonth(subMonths(month, 1))}
             className="w-7 h-7"
+            aria-label="Previous month"
           >
             <ChevronLeft size={14} />
           </Button>
@@ -65,6 +66,7 @@ export function DashboardCalendar({ weekStart }: DashboardCalendarProps) {
             size="icon"
             onClick={() => setMonth(addMonths(month, 1))}
             className="w-7 h-7"
+            aria-label="Next month"
           >
             <ChevronRight size={14} />
           </Button>

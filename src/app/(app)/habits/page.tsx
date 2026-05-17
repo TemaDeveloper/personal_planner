@@ -96,11 +96,11 @@ export default function HabitsPage() {
         <Card className="flex-1 overflow-x-auto">
           {/* Month navigation */}
           <div className="flex items-center justify-between mb-4">
-            <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p - 1)}>
+            <Button variant="secondary" size="icon" className="w-7 h-7" aria-label="Previous month" onClick={() => setMonthOffset((p) => p - 1)}>
               <ChevronLeft size={14} />
             </Button>
             <span className="text-sm font-semibold">{format(currentMonth, "MMMM yyyy")}</span>
-            <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p + 1)}>
+            <Button variant="secondary" size="icon" className="w-7 h-7" aria-label="Next month" onClick={() => setMonthOffset((p) => p + 1)}>
               <ChevronRight size={14} />
             </Button>
           </div>

@@ -169,6 +169,7 @@ export default function HouseworkPage() {
             onClick={() => setShowManage((v) => !v)}
             variant={showManage ? "primary" : "outline"}
             size="icon"
+            aria-label="Manage chores"
           >
             <Settings2 size={16} />
           </Button>
@@ -199,6 +200,7 @@ export default function HouseworkPage() {
                 size="icon"
                 onClick={() => removeChore(c.name)}
                 className="hover:text-destructive"
+                aria-label="Delete chore"
               >
                 <Trash2 size={14} />
               </Button>
@@ -242,6 +244,7 @@ export default function HouseworkPage() {
           variant="outline"
           size="icon"
           onClick={() => setDate((d) => addDays(d, -1))}
+          aria-label="Previous day"
         >
           <ChevronLeft size={16} />
         </Button>
@@ -260,6 +263,7 @@ export default function HouseworkPage() {
           variant="outline"
           size="icon"
           onClick={() => setDate((d) => addDays(d, 1))}
+          aria-label="Next day"
         >
           <ChevronRight size={16} />
         </Button>
@@ -332,6 +336,7 @@ export default function HouseworkPage() {
                       toast.success("Removed");
                     }}
                     className="hover:text-destructive"
+                    aria-label="Delete item"
                   >
                     <Trash2 size={14} />
                   </Button>

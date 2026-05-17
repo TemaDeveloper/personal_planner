@@ -394,6 +394,7 @@ function LogTimeTab({
                 size="icon"
                 onClick={() => handleDelete(s._id)}
                 className="hover:text-destructive"
+                aria-label="Delete session"
               >
                 <Trash2 size={14} />
               </Button>
@@ -524,6 +525,7 @@ function HomeworkTab({
               onClick={() => toggleComplete(h._id, h.completed)}
               className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-all"
               style={{ border: "2px solid var(--border-subtle)" }}
+              aria-label="Mark as complete"
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{h.title}</p>
@@ -537,6 +539,7 @@ function HomeworkTab({
               size="icon"
               onClick={() => handleDelete(h._id)}
               className="hover:text-destructive"
+              aria-label="Delete homework"
             >
               <Trash2 size={14} />
             </Button>
@@ -554,6 +557,7 @@ function HomeworkTab({
                   onClick={() => toggleComplete(h._id, h.completed)}
                   className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center"
                   style={{ background: "var(--accent-color)" }}
+                  aria-label="Mark as incomplete"
                 >
                   <Check size={12} className="text-white" />
                 </button>
@@ -566,6 +570,7 @@ function HomeworkTab({
                   size="icon"
                   onClick={() => handleDelete(h._id)}
                   className="hover:text-destructive"
+                  aria-label="Delete homework"
                 >
                   <Trash2 size={14} />
                 </Button>
@@ -735,6 +740,7 @@ function AcademicTab({
                 background: item.completed ? "var(--accent-color)" : "transparent",
                 border: item.completed ? "none" : "2px solid var(--border-subtle)",
               }}
+              aria-label={item.completed ? "Mark as incomplete" : "Mark as complete"}
             >
               {item.completed && <Check size={12} className="text-white" />}
             </button>
@@ -756,6 +762,7 @@ function AcademicTab({
                 size="icon"
                 onClick={() => handleDelete(item._id)}
                 className="hover:text-destructive"
+                aria-label="Delete item"
               >
                 <Trash2 size={14} />
               </Button>
