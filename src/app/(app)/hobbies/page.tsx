@@ -18,6 +18,8 @@ import {
   Settings2,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface HobbySession {
   _id: string;
@@ -160,7 +162,7 @@ export default function HobbiesPage() {
   }
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Hobbies"
         description="Track hobby time & projects"
@@ -234,15 +236,11 @@ export default function HobbiesPage() {
       )}
 
       {activeHobbies.length === 0 && !showManage && (
-        <Card className="text-center mb-6">
-          <Palette size={32} className="mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
-          <p className="text-sm mb-3" style={{ color: "var(--text-muted)" }}>
-            No hobbies configured yet.
-          </p>
-          <Button onClick={() => setShowManage(true)}>
-            Add your first hobby
-          </Button>
-        </Card>
+        <EmptyState
+          icon={Palette}
+          title="No hobby sessions yet"
+          description="Log time spent on your hobbies and projects."
+        />
       )}
 
       {/* Tabs */}
@@ -485,7 +483,7 @@ export default function HobbiesPage() {
           }}
         />
       </Modal>
-    </div>
+    </PageTransition>
   );
 }
 

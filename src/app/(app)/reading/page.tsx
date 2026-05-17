@@ -9,6 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
 import { Plus, Trash2, BookOpen, Star } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface Book {
   _id: string;
@@ -71,7 +73,7 @@ export default function ReadingPage() {
   }
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Reading"
         description="Reading list & progress"
@@ -99,12 +101,20 @@ export default function ReadingPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="text-center">
-          <BookOpen size={32} className="mx-auto mb-3 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            {books.length === 0 ? "No books yet. Add your first!" : "No books match this filter."}
-          </p>
-        </Card>
+        books.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title="No books yet"
+            description="Add a book you're reading or want to read."
+            actionLabel="Add Book"
+            onAction={() => setShowForm(true)}
+          />
+        ) : (
+          <Card className="text-center">
+            <BookOpen size={32} className="mx-auto mb-3 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">No books match this filter.</p>
+          </Card>
+        )
       ) : (
         <div className="space-y-3">
           {filtered.map((book) => {
@@ -211,7 +221,7 @@ export default function ReadingPage() {
           }}
         />
       </Modal>
-    </div>
+    </PageTransition>
   );
 }
 

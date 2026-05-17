@@ -9,6 +9,8 @@ import { FormInput } from "@/components/ui/form-input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProgressPie } from "@/components/ui/progress-pie";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 import { addMonths, format, getDaysInMonth } from "date-fns";
 
 interface HabitGrid {
@@ -77,7 +79,7 @@ export default function HabitsPage() {
   const totalCompleted = habits.reduce((sum, h) => sum + h.dates.length, 0);
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Habits"
         description={`${totalCompleted} completions this month`}
@@ -106,10 +108,13 @@ export default function HabitsPage() {
           {loading ? (
             <div className="h-40 animate-pulse rounded-lg" style={{ background: "var(--surface-1)" }} />
           ) : habits.length === 0 ? (
-            <div className="text-center py-12">
-              <Flame size={32} className="mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">No habits yet. Add one to start tracking.</p>
-            </div>
+            <EmptyState
+              icon={Flame}
+              title="No habits yet"
+              description="Start building habits — add your first one to track daily."
+              actionLabel="Add Habit"
+              onAction={() => setShowAdd(true)}
+            />
           ) : (
             <div className="min-w-[700px]">
               {/* Day number headers */}
@@ -230,7 +235,7 @@ export default function HabitsPage() {
           }}
         />
       )}
-    </div>
+    </PageTransition>
   );
 }
 

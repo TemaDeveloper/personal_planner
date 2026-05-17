@@ -12,6 +12,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProgressPie } from "@/components/ui/progress-pie";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface AttendanceRecord {
   _id: string;
@@ -109,119 +111,141 @@ export default function GymPage() {
   const monthlyTarget = targetDays * weeksInMonth;
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Gym"
         description={`${attendedCount} days this month`}
       />
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Monthly grid */}
-        <Card className="flex-1">
-          {/* Month navigation */}
-          <div className="flex items-center justify-between mb-4">
-            <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p - 1)}>
-              <ChevronLeft size={14} />
-            </Button>
-            <span className="text-sm font-semibold">{format(currentMonth, "MMMM yyyy")}</span>
-            <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p + 1)}>
-              <ChevronRight size={14} />
-            </Button>
-          </div>
-
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {DAY_HEADERS.map((d) => (
-              <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider py-1" style={{ color: "var(--text-muted)" }}>
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar cells */}
-          {loading ? (
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 35 }).map((_, i) => (
-                <div key={i} className="aspect-square rounded-lg animate-pulse" style={{ background: "var(--surface-1)" }} />
-              ))}
+      {!loading && attendedCount === 0 && calendarWeeks.every((w) => w.every((d) => !d || !isAttended(d))) ? (
+        <div className="flex flex-col lg:flex-row gap-6">
+          <Card className="flex-1">
+            {/* Month navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p - 1)}>
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-sm font-semibold">{format(currentMonth, "MMMM yyyy")}</span>
+              <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p + 1)}>
+                <ChevronRight size={14} />
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-1">
-              {calendarWeeks.map((week, wi) => (
-                <div key={wi} className="grid grid-cols-7 gap-1">
-                  {week.map((day, di) => {
-                    if (!day) {
-                      return <div key={di} className="aspect-square" />;
-                    }
+            <EmptyState
+              icon={Dumbbell}
+              title="No workouts this month"
+              description="Tap any day on the calendar to log a workout."
+            />
+          </Card>
+        </div>
+      ) : (
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Monthly grid */}
+          <Card className="flex-1">
+            {/* Month navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p - 1)}>
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-sm font-semibold">{format(currentMonth, "MMMM yyyy")}</span>
+              <Button variant="secondary" size="icon" className="w-7 h-7" onClick={() => setMonthOffset((p) => p + 1)}>
+                <ChevronRight size={14} />
+              </Button>
+            </div>
 
-                    const attended = isAttended(day);
-                    const today = isToday(day);
-                    const future = isAfter(startOfDay(day), startOfDay(new Date()));
-                    const key = format(day, "yyyy-MM-dd");
-                    const isDisabled = toggling === key || future;
-
-                    return (
-                      <button
-                        key={di}
-                        onClick={() => !future && toggleDay(day)}
-                        disabled={isDisabled}
-                        className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all ${future ? "opacity-30 cursor-not-allowed" : "cursor-pointer hover:scale-105"} disabled:opacity-30`}
-                        style={{
-                          background: attended ? "var(--accent-color)" : today ? "var(--surface-2)" : "var(--surface-1)",
-                          border: today && !attended ? "1px solid var(--accent-color)" : "1px solid transparent",
-                        }}
-                      >
-                        <span
-                          className="text-xs font-semibold"
-                          style={{ color: attended ? "var(--primary-foreground)" : "var(--text-primary)" }}
-                        >
-                          {day.getDate()}
-                        </span>
-                        {attended && <Check size={10} style={{ color: "var(--primary-foreground)" }} />}
-                      </button>
-                    );
-                  })}
+            {/* Day headers */}
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {DAY_HEADERS.map((d) => (
+                <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider py-1" style={{ color: "var(--text-muted)" }}>
+                  {d}
                 </div>
               ))}
             </div>
-          )}
-        </Card>
 
-        {/* Stats sidebar */}
-        <div className="lg:w-56 flex flex-col gap-4">
-          <Card className="flex items-center justify-center py-6">
-            <ProgressPie
-              completed={attendedCount}
-              target={monthlyTarget}
-              label="monthly"
-            />
+            {/* Calendar cells */}
+            {loading ? (
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-lg animate-pulse" style={{ background: "var(--surface-1)" }} />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {calendarWeeks.map((week, wi) => (
+                  <div key={wi} className="grid grid-cols-7 gap-1">
+                    {week.map((day, di) => {
+                      if (!day) {
+                        return <div key={di} className="aspect-square" />;
+                      }
+
+                      const attended = isAttended(day);
+                      const today = isToday(day);
+                      const future = isAfter(startOfDay(day), startOfDay(new Date()));
+                      const key = format(day, "yyyy-MM-dd");
+                      const isDisabled = toggling === key || future;
+
+                      return (
+                        <button
+                          key={di}
+                          onClick={() => !future && toggleDay(day)}
+                          disabled={isDisabled}
+                          className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all ${future ? "opacity-30 cursor-not-allowed" : "cursor-pointer hover:scale-105"} disabled:opacity-30`}
+                          style={{
+                            background: attended ? "var(--accent-color)" : today ? "var(--surface-2)" : "var(--surface-1)",
+                            border: today && !attended ? "1px solid var(--accent-color)" : "1px solid transparent",
+                          }}
+                        >
+                          <span
+                            className="text-xs font-semibold"
+                            style={{ color: attended ? "var(--primary-foreground)" : "var(--text-primary)" }}
+                          >
+                            {day.getDate()}
+                          </span>
+                          {attended && <Check size={10} style={{ color: "var(--primary-foreground)" }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
-          <Card>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>This month</span>
-                <span className="text-sm font-bold">{attendedCount} days</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Target / week</span>
-                <span className="text-sm font-bold">{targetDays} days</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Monthly target</span>
-                <span className="text-sm font-bold">{monthlyTarget} days</span>
-              </div>
-            </div>
-          </Card>
+          {/* Stats sidebar */}
+          <div className="lg:w-56 flex flex-col gap-4">
+            <Card className="flex items-center justify-center py-6">
+              <ProgressPie
+                completed={attendedCount}
+                target={monthlyTarget}
+                label="monthly"
+              />
+            </Card>
 
-          <Card className="text-center py-4">
-            <Dumbbell size={24} className="mx-auto mb-2" style={{ color: "var(--accent-color)" }} />
-            <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-              Click any day to toggle attendance
-            </p>
-          </Card>
+            <Card>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>This month</span>
+                  <span className="text-sm font-bold">{attendedCount} days</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Target / week</span>
+                  <span className="text-sm font-bold">{targetDays} days</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Monthly target</span>
+                  <span className="text-sm font-bold">{monthlyTarget} days</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="text-center py-4">
+              <Dumbbell size={24} className="mx-auto mb-2" style={{ color: "var(--accent-color)" }} />
+              <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+                Click any day to toggle attendance
+              </p>
+            </Card>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </PageTransition>
   );
 }

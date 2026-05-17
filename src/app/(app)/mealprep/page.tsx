@@ -12,8 +12,11 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  UtensilsCrossed,
 } from "lucide-react";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface Meal {
   type: "breakfast" | "lunch" | "dinner" | "snack";
@@ -65,8 +68,10 @@ export default function MealPrepPage() {
   const weekEnd = addDays(weekStart, 6);
   const weekLabel = `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
 
+  const hasAnyMeals = plans.some((p) => p.meals.length > 0);
+
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader title="Meal Prep" description="Weekly meal planning" />
 
       {/* Week navigation */}
@@ -87,6 +92,17 @@ export default function MealPrepPage() {
           <ChevronRight size={16} />
         </Button>
       </div>
+
+      {/* Empty state when no meals */}
+      {!hasAnyMeals && (
+        <EmptyState
+          icon={UtensilsCrossed}
+          title="No meal plans this week"
+          description="Plan your meals for the week ahead."
+          actionLabel="Plan Meals"
+          onAction={() => { setEditDay(0); setShowForm(true); }}
+        />
+      )}
 
       {/* Weekly grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
@@ -168,7 +184,7 @@ export default function MealPrepPage() {
           />
         )}
       </Modal>
-    </div>
+    </PageTransition>
   );
 }
 

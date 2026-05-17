@@ -6,8 +6,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/ui/form-input";
-import { Droplets, Moon, Weight, Smile } from "lucide-react";
+import { Droplets, Moon, Weight, Smile, Heart } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface HealthLog {
   _id: string;
@@ -119,7 +121,7 @@ export default function HealthPage() {
   }
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader title="Health" description="Water, sleep & wellness" />
 
       {/* Log today */}
@@ -233,7 +235,11 @@ export default function HealthPage() {
       <Card>
         <h3 className="text-sm font-semibold mb-4">Recent History</h3>
         {logs.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No entries yet.</p>
+          <EmptyState
+            icon={Heart}
+            title="No health logs yet"
+            description="Start logging water, sleep, weight, and mood."
+          />
         ) : (
           <div className="space-y-2">
             {logs.slice(0, 14).map((log) => (
@@ -261,6 +267,6 @@ export default function HealthPage() {
           </div>
         )}
       </Card>
-    </div>
+    </PageTransition>
   );
 }

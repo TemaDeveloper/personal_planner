@@ -15,6 +15,8 @@ import {
   Archive,
   X,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface ShoppingItem {
   name: string;
@@ -98,7 +100,7 @@ export default function ShoppingPage() {
   }
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Shopping"
         description="Shopping lists"
@@ -111,10 +113,13 @@ export default function ShoppingPage() {
       />
 
       {lists.length === 0 ? (
-        <Card padding="lg" className="text-center">
-          <ShoppingCart size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
-          <p className="text-sm text-[var(--text-muted)]">No shopping lists yet.</p>
-        </Card>
+        <EmptyState
+          icon={ShoppingCart}
+          title="No shopping lists"
+          description="Create a list to keep track of what you need."
+          actionLabel="New List"
+          onAction={() => setShowNewList(true)}
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* List selector */}
@@ -284,7 +289,7 @@ export default function ShoppingPage() {
           setShowNewList(false);
         }}
       />
-    </div>
+    </PageTransition>
   );
 }
 

@@ -17,6 +17,8 @@ import {
   Check,
 } from "lucide-react";
 import { ACADEMIC_ITEM_TYPES } from "@/lib/constants";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface StudySession {
   _id: string;
@@ -113,7 +115,7 @@ export default function StudyPage() {
   }
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader title="Study" description="Subjects, homework & grades" />
 
       {/* Tabs */}
@@ -126,19 +128,11 @@ export default function StudyPage() {
       />
 
       {subjects.length === 0 && (
-        <Card className="text-center mb-6">
-          <GraduationCap size={32} className="mx-auto mb-4" style={{ color: "var(--text-muted)" }} />
-          <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-            No subjects configured yet.
-          </p>
-          <a
-            href="/settings"
-            className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
-            style={{ color: "var(--accent-color)" }}
-          >
-            Add subjects in Settings
-          </a>
-        </Card>
+        <EmptyState
+          icon={GraduationCap}
+          title="No study sessions yet"
+          description="Log your first study session to start tracking."
+        />
       )}
 
       {tab === "overview" && (
@@ -171,7 +165,7 @@ export default function StudyPage() {
           subjects={subjects}
         />
       )}
-    </div>
+    </PageTransition>
   );
 }
 

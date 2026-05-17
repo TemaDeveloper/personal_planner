@@ -18,6 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { format } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface Milestone {
   title: string;
@@ -100,7 +102,7 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Goals"
         description="Goals & milestones"
@@ -140,12 +142,20 @@ export default function GoalsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="text-center" padding="lg">
-          <Target size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
-          <p className="text-sm text-[var(--text-muted)]">
-            {goals.length === 0 ? "No goals yet. Create your first goal!" : "No goals match filters."}
-          </p>
-        </Card>
+        goals.length === 0 ? (
+          <EmptyState
+            icon={Target}
+            title="No goals yet"
+            description="Set your first goal and track progress with milestones."
+            actionLabel="Add Goal"
+            onAction={() => setShowForm(true)}
+          />
+        ) : (
+          <Card className="text-center" padding="lg">
+            <Target size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
+            <p className="text-sm text-[var(--text-muted)]">No goals match filters.</p>
+          </Card>
+        )
       ) : (
         <div className="space-y-3">
           {filtered.map((goal) => {
@@ -284,7 +294,7 @@ export default function GoalsPage() {
           setShowForm(false);
         }}
       />
-    </div>
+    </PageTransition>
   );
 }
 

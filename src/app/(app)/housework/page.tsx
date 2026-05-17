@@ -19,6 +19,8 @@ import {
   Settings2,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 
 interface ChecklistItem {
   _id: string | null;
@@ -158,7 +160,7 @@ export default function HouseworkPage() {
   };
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Housework"
         description="Chores & recurring tasks"
@@ -338,21 +340,13 @@ export default function HouseworkPage() {
             ))}
 
           {checklist.length === 0 && (
-            <Card padding="lg" className="text-center">
-              <Home size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
-              <p className="text-sm text-[var(--text-muted)] mb-3">
-                No tasks for this day.
-              </p>
-              {chores.length === 0 && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowManage(true)}
-                  className="border-[var(--accent-color)] text-[var(--accent-color)]"
-                >
-                  Set up recurring chores
-                </Button>
-              )}
-            </Card>
+            <EmptyState
+              icon={Home}
+              title="Nothing logged today"
+              description="Add your chores and tasks for today."
+              actionLabel="Add Task"
+              onAction={() => setShowAddForm(true)}
+            />
           )}
 
           {/* Add one-off task */}
@@ -376,7 +370,7 @@ export default function HouseworkPage() {
           setShowAddForm(false);
         }}
       />
-    </div>
+    </PageTransition>
   );
 }
 

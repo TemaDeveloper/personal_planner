@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Trash2, NotebookPen } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -99,7 +101,7 @@ export default function JournalPage() {
   }
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader title="Journal" description="Daily journal" />
 
       {/* Today's entry */}
@@ -150,10 +152,11 @@ export default function JournalPage() {
       <Card padding="lg">
         <h3 className="text-sm font-semibold mb-4">Past Entries</h3>
         {entries.length === 0 ? (
-          <div className="text-center py-6">
-            <NotebookPen size={32} className="mx-auto mb-3 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">No entries yet.</p>
-          </div>
+          <EmptyState
+            icon={NotebookPen}
+            title="No entries this month"
+            description="Write your first journal entry to start reflecting."
+          />
         ) : (
           <div className="space-y-3">
             {entries.map((entry) => (
@@ -197,6 +200,6 @@ export default function JournalPage() {
           </div>
         )}
       </Card>
-    </div>
+    </PageTransition>
   );
 }
