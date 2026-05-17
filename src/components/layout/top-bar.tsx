@@ -44,7 +44,7 @@ export function TopBar() {
 
   // Close menu on route change
   useEffect(() => {
-    setMenuOpen(false);
+    setMenuOpen(false); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: close mobile menu on navigation
   }, [pathname]);
 
   return (
