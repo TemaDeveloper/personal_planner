@@ -162,9 +162,9 @@ export default function ShoppingPage() {
           <div className="lg:col-span-3">
             {activeList ? (
               <Card padding="md">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">{activeList.name}</h3>
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center justify-between mb-4 gap-2">
+                  <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">{activeList.name}</h3>
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -175,6 +175,7 @@ export default function ShoppingPage() {
                         toast.success("List archived");
                       }}
                       title="Archive list"
+                      aria-label="Archive list"
                     >
                       <Archive size={14} />
                     </Button>
@@ -188,6 +189,7 @@ export default function ShoppingPage() {
                         toast.success("List deleted");
                       }}
                       className="hover:text-destructive"
+                      aria-label="Delete list"
                     >
                       <Trash2 size={14} />
                     </Button>

@@ -260,15 +260,15 @@ function OverviewTab({
             {upcomingItems.slice(0, 5).map((item) => (
               <div
                 key={item._id}
-                className="flex items-center justify-between text-sm"
+                className="flex items-center justify-between gap-2 text-sm"
               >
-                <div>
-                  <span className="font-medium" style={{ color: "var(--text-primary)" }}>{item.title}</span>
-                  <span className="text-xs ml-2" style={{ color: "var(--text-muted)" }}>
+                <div className="min-w-0 flex-1">
+                  <span className="font-medium truncate block" style={{ color: "var(--text-primary)" }}>{item.title}</span>
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {item.subject} · {item.type}
                   </span>
                 </div>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                <span className="text-xs flex-shrink-0" style={{ color: "var(--text-muted)" }}>
                   {new Date(item.dueDate).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -374,14 +374,14 @@ function LogTimeTab({
 
       <div className="space-y-2">
         {sessions.slice(0, 30).map((s) => (
-          <Card key={s._id} padding="md" className="flex items-center justify-between">
-            <div>
+          <Card key={s._id} padding="md" className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
               <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.subject}</span>
               <span className="text-xs ml-2" style={{ color: "var(--text-muted)" }}>
                 {new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
               {s.note && (
-                <span className="text-xs ml-2" style={{ color: "var(--text-muted)" }}>· {s.note}</span>
+                <span className="text-xs ml-2 truncate" style={{ color: "var(--text-muted)" }}>· {s.note}</span>
               )}
             </div>
             <div className="flex items-center gap-3">

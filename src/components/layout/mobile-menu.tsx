@@ -176,7 +176,7 @@ function MenuLink({
     <Link
       href={href}
       onClick={onClick}
-      className="relative flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors"
+      className="relative flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors min-w-0"
       style={{
         background: active ? "var(--accent-glow)" : undefined,
         color: active ? "var(--accent-color)" : "var(--text-muted)",
@@ -186,7 +186,7 @@ function MenuLink({
         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-[var(--accent-color)]" />
       )}
       <Icon size={18} className="flex-shrink-0" />
-      <span>{label}</span>
+      <span className="truncate">{label}</span>
     </Link>
   );
 }

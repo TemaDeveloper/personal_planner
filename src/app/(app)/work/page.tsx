@@ -42,12 +42,12 @@ export default async function WorkPage() {
               className="block"
             >
               <Card interactive padding="md" className="flex items-center justify-between group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--accent-glow)]">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--accent-glow)]">
                     <Briefcase size={18} className="text-[var(--accent-color)]" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">{job.name}</h3>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-sm truncate">{job.name}</h3>
                     <p className="text-xs text-muted-foreground">
                       {job.weeklyTarget}h/week
                       {job.hourlyRate > 0 && ` · $${job.hourlyRate}/hr`}

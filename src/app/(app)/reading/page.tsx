@@ -124,7 +124,7 @@ export default function ReadingPage() {
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <span className="text-sm font-semibold">{book.title}</span>
+                      <span className="text-sm font-semibold truncate max-w-[200px] sm:max-w-none">{book.title}</span>
                       <span
                         className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize"
                         style={{
@@ -190,6 +190,7 @@ export default function ReadingPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Delete book"
                       onClick={async () => {
                         await fetch(`/api/reading/${book._id}`, { method: "DELETE" });
                         setBooks((prev) => prev.filter((b) => b._id !== book._id));

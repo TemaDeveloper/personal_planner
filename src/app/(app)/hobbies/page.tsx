@@ -187,7 +187,7 @@ export default function HobbiesPage() {
             {hobbies.map((h) => (
               <Card key={h.name} variant="inset" padding="sm" className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: h.color }} />
-                <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{h.name}</span>
+                <span className="flex-1 text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{h.name}</span>
                 <Button
                   variant="ghost"
                   size="icon"

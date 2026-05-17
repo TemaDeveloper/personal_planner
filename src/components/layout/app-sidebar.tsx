@@ -127,7 +127,7 @@ function NavItem({
   return (
     <Link
       href={href}
-      className="relative flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium transition-colors"
+      className="relative flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium transition-colors min-w-0"
       style={{
         background: active ? "var(--accent-glow)" : undefined,
         color: active ? "var(--accent-color)" : "var(--text-muted)",
@@ -139,7 +139,7 @@ function NavItem({
         />
       )}
       <Icon size={18} className="flex-shrink-0" />
-      <span>{label}</span>
+      <span className="truncate">{label}</span>
     </Link>
   );
 }

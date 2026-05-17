@@ -158,8 +158,8 @@ function WorkCard({ work, currency }: { work: WorkSummary; currency: string }) {
 
   return (
     <Card padding="lg">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">{work.name}</h3>
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <h3 className="text-sm font-semibold truncate">{work.name}</h3>
         <span className="text-xs text-[var(--text-muted)]">
           {work.hourlyRate > 0 ? `${formatCurrency(work.hourlyRate, currency)}/hr` : "No rate set"}
         </span>

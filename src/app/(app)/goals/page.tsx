@@ -173,7 +173,7 @@ export default function GoalsPage() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-sm font-semibold text-[var(--text-primary)]">{goal.title}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate max-w-[200px] sm:max-w-none">{goal.title}</span>
                       <span
                         className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize"
                         style={{
