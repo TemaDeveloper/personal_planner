@@ -6,7 +6,6 @@ import User from "@/lib/models/user";
 import SectionTemplate from "@/lib/models/section-template";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
-import { MobileNav } from "@/components/layout/mobile-nav";
 import { SectionsProvider, type CustomSectionNav } from "@/components/providers/sections-provider";
 import { DEFAULT_ENABLED_SECTIONS } from "@/lib/constants";
 import type { SectionId } from "@/lib/constants";
@@ -60,7 +59,6 @@ export default async function AppLayout({
               {children}
             </div>
           </div>
-          <MobileNav />
         </main>
       </div>
     </SectionsProvider>
