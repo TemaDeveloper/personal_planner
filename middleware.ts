@@ -32,6 +32,7 @@ export const config = {
     "/mealprep/:path*",
     "/settings/:path*",
     "/export/:path*",
+    "/sections/:path*",
     "/onboarding",
   ],
 };
