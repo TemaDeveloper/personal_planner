@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import HouseworkLog from "@/lib/models/housework-log";
+import { createHouseworkSchema } from "@/lib/validations";
 
 export async function PATCH(
   req: NextRequest,
@@ -18,10 +19,17 @@ export async function PATCH(
   await connectDB();
   const { id } = await params;
   const body = await req.json();
+  const parsed = createHouseworkSchema.partial().safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
+  }
 
   const updated = await HouseworkLog.findOneAndUpdate(
     { _id: id, userId },
-    pickFields(body, ["choreName","date","completed","isRecurring"]),
+    pickFields(parsed.data, ["choreName","date","completed","isRecurring"]),
     { new: true }
   );
 

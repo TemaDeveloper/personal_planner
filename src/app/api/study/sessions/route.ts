@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import StudySession from "@/lib/models/study-session";
+import { createStudySessionSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to");
 
   const filter: Record<string, unknown> = { userId };
-  if (subject) filter.subject = subject;
+  if (subject) filter.subject = String(subject);
   if (from || to) {
     filter.date = {};
     if (from) (filter.date as Record<string, Date>).$gte = new Date(from);
@@ -41,14 +42,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { subject, date, minutes, note } = body;
-
-  if (!subject || !date || !minutes) {
+  const parsed = createStudySessionSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "subject, date, and minutes are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { subject, date, minutes, note } = parsed.data;
 
   const studySession = await StudySession.create({
     userId,

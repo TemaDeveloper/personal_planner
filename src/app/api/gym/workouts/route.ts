@@ -5,6 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import GymAttendance from "@/lib/models/gym-attendance";
 import User from "@/lib/models/user";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay } from "date-fns";
+import { createWorkoutSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -59,11 +60,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { date } = body;
-
-  if (!date) {
-    return NextResponse.json({ error: "date is required" }, { status: 400 });
+  const parsed = createWorkoutSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
   }
+  const { date } = parsed.data;
 
   const d = startOfDay(new Date(date));
 

@@ -5,6 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import SectionTemplate from "@/lib/models/section-template";
 import CustomEntry from "@/lib/models/custom-entry";
 import { startOfWeek, endOfWeek, startOfDay } from "date-fns";
+import { createCustomEntrySchema } from "@/lib/validations";
 
 export async function GET(
   req: NextRequest,
@@ -67,11 +68,14 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { date, data } = body;
-
-  if (!date) {
-    return NextResponse.json({ error: "Date is required" }, { status: 400 });
+  const parsed = createCustomEntrySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
   }
+  const { date, data } = parsed.data;
 
   // Validate data keys against template fields
   const validKeys = new Set(template.fields.map((f) => f.key));

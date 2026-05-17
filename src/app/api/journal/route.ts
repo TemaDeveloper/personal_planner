@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import JournalEntry from "@/lib/models/journal-entry";
 import { startOfDay } from "date-fns";
+import { createJournalSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -44,11 +45,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { date, content, mood } = body;
-
-  if (!date || !content) {
-    return NextResponse.json({ error: "date and content are required" }, { status: 400 });
+  const parsed = createJournalSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
   }
+  const { date, content, mood } = parsed.data;
 
   const dayStart = startOfDay(new Date(date));
 

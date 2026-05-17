@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import HobbyProject from "@/lib/models/hobby-project";
+import { createHobbyProjectSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -18,8 +19,8 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
 
   const filter: Record<string, unknown> = { userId };
-  if (hobby) filter.hobby = hobby;
-  if (status) filter.status = status;
+  if (hobby) filter.hobby = String(hobby);
+  if (status) filter.status = String(status);
 
   const projects = await HobbyProject.find(filter).sort({ createdAt: -1 }).lean();
 
@@ -36,14 +37,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { hobby, name, description } = body;
-
-  if (!hobby || !name) {
+  const parsed = createHobbyProjectSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "hobby and name are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { hobby, name, description } = parsed.data;
 
   const project = await HobbyProject.create({
     userId,

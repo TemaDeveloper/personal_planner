@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import Expense from "@/lib/models/expense";
+import { createExpenseSchema } from "@/lib/validations";
 
 export async function PATCH(
   req: NextRequest,
@@ -18,10 +19,17 @@ export async function PATCH(
   await connectDB();
   const { id } = await params;
   const body = await req.json();
+  const parsed = createExpenseSchema.partial().safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
+  }
 
   const updated = await Expense.findOneAndUpdate(
     { _id: id, userId },
-    pickFields(body, ["date","amount","currency","description","category","reimbursed"]),
+    pickFields(parsed.data, ["date","amount","currency","description","category","reimbursed"]),
     { new: true }
   );
 

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import Homework from "@/lib/models/homework";
+import { createHomeworkSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const filter: Record<string, unknown> = { userId };
   if (completed !== null) filter.completed = completed === "true";
-  if (subject) filter.subject = subject;
+  if (subject) filter.subject = String(subject);
 
   const homework = await Homework.find(filter).sort({ dueDate: 1, createdAt: -1 }).limit(200).lean();
 
@@ -36,14 +37,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { subject, title, dueDate } = body;
-
-  if (!subject || !title) {
+  const parsed = createHomeworkSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "subject and title are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { subject, title, dueDate } = parsed.data;
 
   const homework = await Homework.create({
     userId,

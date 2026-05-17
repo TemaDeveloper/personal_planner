@@ -2,24 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/lib/models/user";
+import { registerSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
-
-    if (!name || !email || !password) {
+    const body = await req.json();
+    const parsed = registerSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Name, email, and password are required" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid input" },
         { status: 400 }
       );
     }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
+    const { name, email, password } = parsed.data;
 
     await connectDB();
 

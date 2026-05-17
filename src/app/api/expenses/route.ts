@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import Expense from "@/lib/models/expense";
+import { createExpenseSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -39,14 +40,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { amount, currency, description, date, category } = body;
-
-  if (!amount || !description || !date) {
+  const parsed = createExpenseSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "amount, description, and date are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { amount, currency, description, date, category } = parsed.data;
 
   const expense = await Expense.create({
     userId,

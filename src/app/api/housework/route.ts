@@ -5,6 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import HouseworkLog from "@/lib/models/housework-log";
 import User from "@/lib/models/user";
 import { startOfDay, endOfDay, getDay, getDate } from "date-fns";
+import { createHouseworkSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -78,14 +79,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { choreName, date, isRecurring } = body;
-
-  if (!choreName || !date) {
+  const parsed = createHouseworkSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "choreName and date are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { choreName, date, isRecurring } = parsed.data;
 
   const log = await HouseworkLog.create({
     userId,

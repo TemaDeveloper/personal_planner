@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import AcademicItem from "@/lib/models/academic-item";
+import { createAcademicSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -18,8 +19,8 @@ export async function GET(req: NextRequest) {
   const subject = searchParams.get("subject");
 
   const filter: Record<string, unknown> = { userId };
-  if (type) filter.type = type;
-  if (subject) filter.subject = subject;
+  if (type) filter.type = String(type);
+  if (subject) filter.subject = String(subject);
 
   const items = await AcademicItem.find(filter).sort({ dueDate: 1 }).limit(200).lean();
 
@@ -36,14 +37,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { type, subject, title, dueDate, grade, note } = body;
-
-  if (!type || !subject || !title || !dueDate) {
+  const parsed = createAcademicSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "type, subject, title, and dueDate are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { type, subject, title, dueDate, grade, note } = parsed.data;
 
   const item = await AcademicItem.create({
     userId,

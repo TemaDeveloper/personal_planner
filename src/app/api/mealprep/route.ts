@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import MealPlan from "@/lib/models/meal-plan";
 import { startOfWeek, endOfWeek } from "date-fns";
+import { createMealPlanSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -39,14 +40,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { date, dayOfWeek, meals } = body;
-
-  if (!date || !dayOfWeek) {
+  const parsed = createMealPlanSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "date and dayOfWeek are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { date, dayOfWeek, meals } = parsed.data;
 
   const plan = await MealPlan.findOneAndUpdate(
     { userId, date: new Date(date) },

@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import { Habit, HabitLog } from "@/lib/models/habit";
 import { startOfDay, subDays } from "date-fns";
+import { createHabitSchema } from "@/lib/validations";
 
 export async function GET() {
   const session = await auth();
@@ -65,11 +66,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { name, emoji, color } = body;
-
-  if (!name) {
-    return NextResponse.json({ error: "name is required" }, { status: 400 });
+  const parsed = createHabitSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
   }
+  const { name, emoji, color } = parsed.data;
 
   const habit = await Habit.create({
     userId,

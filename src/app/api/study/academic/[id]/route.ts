@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import AcademicItem from "@/lib/models/academic-item";
+import { createAcademicSchema } from "@/lib/validations";
 
 export async function PATCH(
   req: NextRequest,
@@ -18,10 +19,17 @@ export async function PATCH(
   await connectDB();
   const { id } = await params;
   const body = await req.json();
+  const parsed = createAcademicSchema.partial().safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
+  }
 
   const updated = await AcademicItem.findOneAndUpdate(
     { _id: id, userId },
-    pickFields(body, ["title","subject","type","dueDate","completed","grade","note"]),
+    pickFields(parsed.data, ["title","subject","type","dueDate","completed","grade","note"]),
     { new: true }
   );
 

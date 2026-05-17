@@ -68,7 +68,7 @@ export const createBookSchema = z.object({
   author: z.string().max(200).optional(),
   totalPages: z.number().int().min(1).max(50000).optional(),
   currentPage: z.number().int().min(0).max(50000).optional(),
-  status: z.enum(["reading", "completed", "want-to-read", "dropped"]).optional(),
+  status: z.enum(["reading", "completed", "want-to-read"]).optional(),
   rating: z.number().int().min(1).max(5).optional(),
   notes: z.string().max(5000).optional(),
 });
@@ -89,9 +89,9 @@ export const createShoppingSchema = z.object({
 // -- Housework --
 export const createHouseworkSchema = z.object({
   date: z.string().min(1, "Date is required"),
-  task: z.string().min(1, "Task is required").max(200),
+  choreName: z.string().min(1, "Task is required").max(200),
   completed: z.boolean().optional(),
-  recurring: z.boolean().optional(),
+  isRecurring: z.boolean().optional(),
 });
 
 // -- Meal Prep --
@@ -103,15 +103,17 @@ const mealSchema = z.object({
 
 export const createMealPlanSchema = z.object({
   date: z.string().min(1, "Date is required"),
-  meals: z.array(mealSchema).max(20),
+  dayOfWeek: z.string().min(1, "Day of week is required").max(20),
+  meals: z.array(mealSchema).max(20).optional(),
 });
 
 // -- Expenses --
 export const createExpenseSchema = z.object({
   date: z.string().min(1, "Date is required"),
   amount: z.number().min(0, "Amount must be positive").max(10000000),
-  category: z.string().min(1, "Category is required").max(100),
-  description: z.string().max(500).optional(),
+  currency: z.string().max(10).optional(),
+  description: z.string().min(1, "Description is required").max(500),
+  category: z.string().max(100).optional(),
   jobName: z.string().max(100).optional(),
   reimbursable: z.boolean().optional(),
 });
@@ -119,9 +121,10 @@ export const createExpenseSchema = z.object({
 // -- Routes --
 export const createRouteSchema = z.object({
   date: z.string().min(1, "Date is required"),
+  origin: z.string().min(1, "Origin is required").max(200),
+  destination: z.string().min(1, "Destination is required").max(200),
   distanceKm: z.number().min(0).max(100000),
-  description: z.string().max(500).optional(),
-  jobName: z.string().max(100).optional(),
+  note: z.string().max(500).optional(),
 });
 
 // -- Work Sessions --
@@ -129,7 +132,7 @@ export const createWorkSessionSchema = z.object({
   date: z.string().min(1, "Date is required"),
   hours: z.number().min(0).max(24),
   jobName: z.string().min(1, "Job name is required").max(100),
-  notes: z.string().max(1000).optional(),
+  note: z.string().max(1000).optional(),
 });
 
 // -- Gym --
@@ -143,7 +146,7 @@ export const createStudySessionSchema = z.object({
   date: z.string().min(1, "Date is required"),
   subject: z.string().min(1, "Subject is required").max(100),
   minutes: z.number().int().min(1).max(1440),
-  notes: z.string().max(1000).optional(),
+  note: z.string().max(1000).optional(),
 });
 
 export const createHomeworkSchema = z.object({
@@ -156,12 +159,11 @@ export const createHomeworkSchema = z.object({
 
 export const createAcademicSchema = z.object({
   subject: z.string().min(1, "Subject is required").max(100),
-  type: z.enum(["test", "quiz", "assignment", "lab", "other"]),
+  type: z.enum(["test", "quiz", "assignment", "lab"]),
   title: z.string().min(1, "Title is required").max(300),
-  date: z.string().optional(),
-  grade: z.string().max(20).optional(),
-  weight: z.number().min(0).max(100).optional(),
-  notes: z.string().max(2000).optional(),
+  dueDate: z.string().min(1, "Due date is required"),
+  grade: z.number().min(0).max(100).optional(),
+  note: z.string().max(2000).optional(),
 });
 
 // -- Hobbies --
@@ -169,7 +171,7 @@ export const createHobbySessionSchema = z.object({
   date: z.string().min(1, "Date is required"),
   hobby: z.string().min(1, "Hobby is required").max(100),
   minutes: z.number().int().min(1).max(1440),
-  notes: z.string().max(1000).optional(),
+  note: z.string().max(1000).optional(),
   projectId: z.string().max(100).optional(),
 });
 

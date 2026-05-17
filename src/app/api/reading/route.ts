@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import Book from "@/lib/models/book";
+import { createBookSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
 
   const filter: Record<string, unknown> = { userId };
-  if (status) filter.status = status;
+  if (status) filter.status = String(status);
 
   const books = await Book.find(filter).sort({ createdAt: -1 }).lean();
 
@@ -34,11 +35,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { title, author, totalPages, status } = body;
-
-  if (!title) {
-    return NextResponse.json({ error: "title is required" }, { status: 400 });
+  const parsed = createBookSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
   }
+  const { title, author, totalPages, status } = parsed.data;
 
   const book = await Book.create({
     userId,

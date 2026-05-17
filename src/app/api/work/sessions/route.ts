@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import WorkSession from "@/lib/models/work-session";
+import { createWorkSessionSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to");
 
   const filter: Record<string, unknown> = { userId };
-  if (jobName) filter.jobName = jobName;
+  if (jobName) filter.jobName = String(jobName);
   if (from || to) {
     filter.date = {};
     if (from) (filter.date as Record<string, Date>).$gte = new Date(from);
@@ -41,14 +42,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { jobName, date, hours, note } = body;
-
-  if (!jobName || !date || hours === undefined) {
+  const parsed = createWorkSessionSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "jobName, date, and hours are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { jobName, date, hours, note } = parsed.data;
 
   const workSession = await WorkSession.create({
     userId,

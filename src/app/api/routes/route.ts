@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import Route from "@/lib/models/route";
+import { createRouteSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -39,14 +40,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { date, origin, destination, distanceKm, note } = body;
-
-  if (!date || !origin || !destination || distanceKm === undefined) {
+  const parsed = createRouteSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "date, origin, destination, and distanceKm are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { date, origin, destination, distanceKm, note } = parsed.data;
 
   const route = await Route.create({
     userId,

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import HobbySession from "@/lib/models/hobby-session";
+import { createHobbySessionSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to");
 
   const filter: Record<string, unknown> = { userId };
-  if (hobby) filter.hobby = hobby;
+  if (hobby) filter.hobby = String(hobby);
   if (from || to) {
     filter.date = {};
     if (from) (filter.date as Record<string, Date>).$gte = new Date(from);
@@ -41,14 +42,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { hobby, date, minutes, note } = body;
-
-  if (!hobby || !date || !minutes) {
+  const parsed = createHobbySessionSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "hobby, date, and minutes are required" },
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { hobby, date, minutes, note } = parsed.data;
 
   const hobbySession = await HobbySession.create({
     userId,

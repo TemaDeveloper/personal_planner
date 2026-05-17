@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import Goal from "@/lib/models/goal";
+import { createGoalSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -18,8 +19,8 @@ export async function GET(req: NextRequest) {
   const category = searchParams.get("category");
 
   const filter: Record<string, unknown> = { userId };
-  if (status) filter.status = status;
-  if (category) filter.category = category;
+  if (status) filter.status = String(status);
+  if (category) filter.category = String(category);
 
   const goals = await Goal.find(filter).sort({ createdAt: -1 }).lean();
 
@@ -36,11 +37,14 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { title, description, targetDate, category, milestones } = body;
-
-  if (!title) {
-    return NextResponse.json({ error: "title is required" }, { status: 400 });
+  const parsed = createGoalSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
   }
+  const { title, description, targetDate, category, milestones } = parsed.data;
 
   const goal = await Goal.create({
     userId,
