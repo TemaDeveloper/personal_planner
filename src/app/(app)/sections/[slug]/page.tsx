@@ -10,6 +10,7 @@ import { CustomEntryForm } from "@/components/sections/custom-entry-form";
 import { TableView } from "@/components/sections/table-view";
 import { Plus, Trash2, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
+import { RenderedLayout } from "@/components/sections/rendered-layout";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 
 interface FieldDef {
@@ -27,6 +28,7 @@ interface Template {
   icon: string;
   description: string;
   viewType?: "weekly-cards" | "table" | "grid";
+  layoutHtml?: string;
   fields: FieldDef[];
 }
 
@@ -108,8 +110,28 @@ export default function CustomSectionPage() {
         }
       />
 
-      {/* Table view for item-based sections */}
-      {template.viewType === "table" ? (
+      {/* AI-generated layout */}
+      {template.layoutHtml ? (
+        <>
+          {/* Week navigation */}
+          <div className="flex items-center justify-between mb-6">
+            <Button variant="outline" size="icon" onClick={() => setWeekOffset((p) => p - 1)} aria-label="Previous week">
+              <ChevronLeft size={16} />
+            </Button>
+            <span className="text-sm font-medium">{weekLabel}</span>
+            <Button variant="outline" size="icon" onClick={() => setWeekOffset((p) => p + 1)} aria-label="Next week">
+              <ChevronRight size={16} />
+            </Button>
+          </div>
+
+          <RenderedLayout
+            layoutHtml={template.layoutHtml}
+            data={entries.length > 0 ? entries[entries.length - 1].data : {}}
+            fields={template.fields}
+            entries={entries.map((e) => e.data)}
+          />
+        </>
+      ) : template.viewType === "table" ? (
         <TableView
           slug={slug}
           fields={template.fields}
