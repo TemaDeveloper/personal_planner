@@ -13,8 +13,9 @@ import { SECTION_META, type SectionId } from "@/lib/constants";
 import {
   Briefcase, Dumbbell, Flame, GraduationCap, Palette,
   Home, Heart, NotebookPen, DollarSign, UtensilsCrossed,
-  Plus, Trash2, Pencil, Check, X, Car,
+  Plus, Trash2, Pencil, Check, X, Car, Star,
 } from "lucide-react";
+import { ICON_MAP } from "@/lib/icon-map";
 
 // ---------- Types ----------
 
@@ -34,6 +35,11 @@ interface JournalData { _id: string; content: string; mood: number }
 interface ExpenseEntry { _id: string; amount: number; description: string; category?: string }
 interface RouteEntry { _id: string; origin: string; destination: string; distanceKm: number }
 interface MealPlanEntry { _id: string; meals: { type: string; name: string; notes?: string }[] }
+interface CustomField { key: string; label: string; type: "boolean" | "number" | "text" | "select" | "date"; options?: string[] }
+interface CustomSectionData {
+  template: { name: string; slug: string; icon: string; fields: CustomField[] };
+  entries: { _id: string; date: string; data: Record<string, unknown> }[];
+}
 
 interface DayData {
   work?: WorkEntry[];
@@ -46,6 +52,7 @@ interface DayData {
   journal?: JournalData;
   finances?: { expenses: ExpenseEntry[]; routes: RouteEntry[] };
   mealprep?: MealPlanEntry;
+  [key: `custom:${string}`]: CustomSectionData;
 }
 
 const SECTION_COLORS: Record<string, string> = {
@@ -110,8 +117,9 @@ export function DashboardDayDetail({ date, onDataChange }: DayDetailProps) {
     );
   }
 
-  const sectionOrder: string[] = ["work", "gym", "habits", "study", "hobbies", "housework", "health", "journal", "finances", "mealprep"];
-  const activeSections = sectionOrder.filter((s) => data[s as keyof DayData]);
+  const builtInOrder: string[] = ["work", "gym", "habits", "study", "hobbies", "housework", "health", "journal", "finances", "mealprep"];
+  const customKeys = Object.keys(data).filter((k) => k.startsWith("custom:"));
+  const activeSections = [...builtInOrder.filter((s) => data[s as keyof DayData]), ...customKeys];
 
   return (
     <motion.div
@@ -137,6 +145,22 @@ function SectionCard({
   sectionId: string; data: DayData; date: string;
   jobs: { name: string }[]; currency: string; onRefresh: () => void;
 }) {
+  const isCustom = sectionId.startsWith("custom:");
+
+  if (isCustom) {
+    const customData = data[sectionId as `custom:${string}`] as CustomSectionData;
+    const CustomIcon = ICON_MAP[customData.template.icon] || Star;
+    return (
+      <Card padding="md" className="space-y-2">
+        <div className="flex items-center gap-2">
+          <CustomIcon size={16} style={{ color: "var(--accent-color)" }} />
+          <span className="text-sm font-semibold">{customData.template.name}</span>
+        </div>
+        <CustomSectionRenderer data={customData} date={date} onRefresh={onRefresh} />
+      </Card>
+    );
+  }
+
   const Icon = SECTION_ICONS[sectionId] || Briefcase;
   const meta = SECTION_META[sectionId as SectionId];
   const label = meta?.label || sectionId;
@@ -575,6 +599,58 @@ function MealprepSection({ entry }: { entry: MealPlanEntry }) {
       {entry.meals.map((m, i) => (
         <div key={i} className="px-2 py-1 rounded-md text-xs surface-inset">
           <span className="font-medium capitalize">{m.type}:</span> {m.name}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------- Custom Section ----------
+
+function CustomSectionRenderer({ data, date, onRefresh }: {
+  data: CustomSectionData; date: string; onRefresh: () => void;
+}) {
+  const { template, entries } = data;
+  const displayFields = template.fields.filter((f) => f.type !== "boolean");
+  const booleanFields = template.fields.filter((f) => f.type === "boolean");
+
+  const formatValue = (field: CustomField, value: unknown): string => {
+    if (value === undefined || value === null) return "—";
+    if (field.type === "boolean") return value ? "Yes" : "No";
+    if (field.type === "number") return String(value);
+    return String(value);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {entries.map((entry) => (
+        <div key={entry._id} className="flex items-center justify-between text-sm group">
+          <div className="flex flex-wrap gap-2 items-center">
+            {displayFields.map((f) => (
+              <span key={f.key}>
+                <span className="text-[var(--text-muted)] text-xs">{f.label}:</span>{" "}
+                <span className="font-medium">{formatValue(f, entry.data[f.key])}</span>
+              </span>
+            ))}
+            {booleanFields.map((f) =>
+              entry.data[f.key] ? (
+                <span key={f.key} className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: "var(--accent-glow)", color: "var(--accent-color)" }}>
+                  {f.label}
+                </span>
+              ) : null
+            )}
+          </div>
+          <button
+            onClick={async () => {
+              await fetch(`/api/sections/${template.slug}/entries/${entry._id}`, { method: "DELETE" });
+              toast.success("Deleted");
+              onRefresh();
+            }}
+            className="p-1 rounded hover:bg-[var(--surface-1)] text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Delete entry"
+          >
+            <Trash2 size={12} />
+          </button>
         </div>
       ))}
     </div>

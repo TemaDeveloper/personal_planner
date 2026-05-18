@@ -14,6 +14,8 @@ import JournalEntry from "@/lib/models/journal-entry";
 import Expense from "@/lib/models/expense";
 import Route from "@/lib/models/route";
 import MealPlan from "@/lib/models/meal-plan";
+import CustomEntry from "@/lib/models/custom-entry";
+import SectionTemplate from "@/lib/models/section-template";
 import { startOfDay, endOfDay } from "date-fns";
 import { DEFAULT_ENABLED_SECTIONS, type SectionId } from "@/lib/constants";
 
@@ -141,6 +143,34 @@ export async function GET(req: NextRequest) {
       MealPlan.findOne({ userId, date: dateFilter }).lean()
         .then((doc) => { if (doc) result.mealprep = doc; })
     );
+  }
+
+  // Custom sections
+  const customSecs = user.customSections || [];
+  const enabledCustom = (customSecs as { templateId: { toString(): string }; enabled: boolean }[]).filter((cs) => cs.enabled);
+  if (enabledCustom.length > 0) {
+    const templateIds = enabledCustom.map((cs) => cs.templateId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const templates = await SectionTemplate.find({ _id: { $in: templateIds } } as any).lean();
+
+    for (const template of templates) {
+      queries.push(
+        CustomEntry.find({ userId, templateId: template._id, date: dateFilter }).lean()
+          .then((docs) => {
+            if (docs.length > 0) {
+              result[`custom:${template.slug}`] = {
+                template: {
+                  name: template.name,
+                  slug: template.slug,
+                  icon: template.icon,
+                  fields: template.fields,
+                },
+                entries: docs,
+              };
+            }
+          })
+      );
+    }
   }
 
   await Promise.all(queries);
