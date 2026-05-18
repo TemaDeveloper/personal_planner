@@ -117,28 +117,7 @@ export default function GymPage() {
         description={`${attendedCount} days this month`}
       />
 
-      {!loading && attendedCount === 0 && calendarWeeks.every((w) => w.every((d) => !d || !isAttended(d))) ? (
-        <div className="flex flex-col lg:flex-row gap-6">
-          <Card className="flex-1">
-            {/* Month navigation */}
-            <div className="flex items-center justify-between mb-4">
-              <Button variant="secondary" size="icon" className="w-7 h-7" aria-label="Previous month" onClick={() => setMonthOffset((p) => p - 1)}>
-                <ChevronLeft size={14} />
-              </Button>
-              <span className="text-sm font-semibold">{format(currentMonth, "MMMM yyyy")}</span>
-              <Button variant="secondary" size="icon" className="w-7 h-7" aria-label="Next month" onClick={() => setMonthOffset((p) => p + 1)}>
-                <ChevronRight size={14} />
-              </Button>
-            </div>
-            <EmptyState
-              icon={Dumbbell}
-              title="No workouts this month"
-              description="Tap any day on the calendar to log a workout."
-            />
-          </Card>
-        </div>
-      ) : (
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
           {/* Monthly grid */}
           <Card className="flex-1">
             {/* Month navigation */}
@@ -245,7 +224,6 @@ export default function GymPage() {
             </Card>
           </div>
         </div>
-      )}
     </PageTransition>
   );
 }

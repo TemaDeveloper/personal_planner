@@ -43,7 +43,7 @@ const MEAL_LABELS: Record<string, string> = {
 export default function MealPrepPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [plans, setPlans] = useState<MealPlan[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editDay, setEditDay] = useState<number | null>(null);
 
@@ -96,7 +96,7 @@ export default function MealPrepPage() {
       </div>
 
       {/* Empty state when no meals */}
-      {!hasAnyMeals && (
+      {!loading && !hasAnyMeals && (
         <EmptyState
           icon={UtensilsCrossed}
           title="No meal plans this week"
