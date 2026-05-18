@@ -164,6 +164,7 @@ export async function GET(req: NextRequest) {
                   slug: template.slug,
                   icon: template.icon,
                   fields: template.fields,
+                  layoutHtml: template.layoutHtml || "",
                 },
                 entries: docs,
               };

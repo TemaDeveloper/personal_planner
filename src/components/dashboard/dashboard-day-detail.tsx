@@ -16,6 +16,7 @@ import {
   Plus, Trash2, Pencil, Check, X, Car, Star,
 } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
+import { RenderedLayout } from "@/components/sections/rendered-layout";
 
 // ---------- Types ----------
 
@@ -37,7 +38,7 @@ interface RouteEntry { _id: string; origin: string; destination: string; distanc
 interface MealPlanEntry { _id: string; meals: { type: string; name: string; notes?: string }[] }
 interface CustomField { key: string; label: string; type: "boolean" | "number" | "text" | "select" | "date"; options?: string[] }
 interface CustomSectionData {
-  template: { name: string; slug: string; icon: string; fields: CustomField[] };
+  template: { name: string; slug: string; icon: string; fields: CustomField[]; layoutHtml?: string };
   entries: { _id: string; date: string; data: Record<string, unknown> }[];
 }
 
@@ -611,13 +612,37 @@ function CustomSectionRenderer({ data, date, onRefresh }: {
   data: CustomSectionData; date: string; onRefresh: () => void;
 }) {
   const { template, entries } = data;
+
+  if (template.layoutHtml) {
+    const summaryData: Record<string, unknown> = {};
+    // Aggregate number fields across entries for summary
+    for (const field of template.fields) {
+      if (field.type === "number") {
+        summaryData[field.key] = entries.reduce(
+          (sum, e) => sum + (Number(e.data[field.key]) || 0), 0
+        );
+      } else if (entries.length > 0) {
+        summaryData[field.key] = entries[entries.length - 1].data[field.key];
+      }
+    }
+
+    return (
+      <RenderedLayout
+        layoutHtml={template.layoutHtml}
+        data={summaryData}
+        fields={template.fields}
+        entries={entries.map((e) => e.data)}
+      />
+    );
+  }
+
+  // Fallback: generic field display (existing code)
   const displayFields = template.fields.filter((f) => f.type !== "boolean");
   const booleanFields = template.fields.filter((f) => f.type === "boolean");
 
   const formatValue = (field: CustomField, value: unknown): string => {
     if (value === undefined || value === null) return "—";
     if (field.type === "boolean") return value ? "Yes" : "No";
-    if (field.type === "number") return String(value);
     return String(value);
   };
 
