@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const { date, waterLiters, sleepHours, weight, mood } = parsed.data;
+  const { date, water, sleepHours, weight, mood } = parsed.data;
 
   const dayStart = startOfDay(new Date(date));
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     {
       userId,
       date: dayStart,
-      water: waterLiters ?? 0,
+      water: water ?? 0,
       sleepHours: sleepHours ?? 0,
       weight: weight || undefined,
       mood: mood ?? 3,

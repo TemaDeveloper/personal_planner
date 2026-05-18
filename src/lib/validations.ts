@@ -55,7 +55,7 @@ export const updateGoalSchema = z.object({
 // -- Health --
 export const createHealthSchema = z.object({
   date: z.string().min(1, "Date is required"),
-  waterLiters: z.number().min(0).max(20).optional(),
+  water: z.number().min(0).max(20).optional(),
   sleepHours: z.number().min(0).max(24).optional(),
   weight: z.number().min(0).max(1000).optional(),
   mood: z.number().int().min(1).max(5).optional(),
@@ -66,7 +66,7 @@ export const createHealthSchema = z.object({
 export const createBookSchema = z.object({
   title: z.string().min(1, "Title is required").max(300),
   author: z.string().max(200).optional(),
-  totalPages: z.number().int().min(1).max(50000).optional(),
+  totalPages: z.number().int().min(0).max(50000).optional(),
   currentPage: z.number().int().min(0).max(50000).optional(),
   status: z.enum(["reading", "completed", "want-to-read"]).optional(),
   rating: z.number().int().min(1).max(5).optional(),
@@ -103,7 +103,7 @@ const mealSchema = z.object({
 
 export const createMealPlanSchema = z.object({
   date: z.string().min(1, "Date is required"),
-  dayOfWeek: z.string().min(1, "Day of week is required").max(20),
+  dayOfWeek: z.number().int().min(1).max(7),
   meals: z.array(mealSchema).max(20).optional(),
 });
 
