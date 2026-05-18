@@ -6,11 +6,10 @@ import { format, addMonths, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SECTION_META, type SectionId } from "@/lib/constants";
-import { ICON_MAP } from "@/lib/icon-map";
+import { DashboardDayDetail } from "./dashboard-day-detail";
 
 interface DashboardCalendarProps {
-  enabledSections: SectionId[];
+  enabledSections: string[];
   weekStart: "monday" | "sunday";
 }
 
@@ -141,29 +140,16 @@ export function DashboardCalendar({ weekStart }: DashboardCalendarProps) {
         }}
       />
 
-      {selectedDay && activity[selectedDay] && (
-        <div className="mt-4 p-3 rounded-lg surface-inset space-y-2">
-          <p className="text-xs font-medium text-[var(--accent-color)]">
-            {format(new Date(selectedDay + "T00:00:00"), "EEEE, MMM d")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {activity[selectedDay].map((sectionId) => {
-              const meta = SECTION_META[sectionId as SectionId];
-              const Icon = meta ? ICON_MAP[meta.icon] : ICON_MAP.Star;
-              const label = meta ? meta.label : sectionId;
-
-              return (
-                <div
-                  key={sectionId}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs surface-inset"
-                >
-                  {Icon && <Icon size={12} style={{ color: SECTION_COLORS[sectionId] || "var(--accent-color)" }} />}
-                  <span>{label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {selectedDay && (
+        <DashboardDayDetail
+          date={selectedDay}
+          onDataChange={() => {
+            const monthStr = format(month, "yyyy-MM");
+            fetch(`/api/dashboard/activity?month=${monthStr}`)
+              .then((r) => r.json())
+              .then((d) => setActivity(d.activity || {}));
+          }}
+        />
       )}
     </Card>
   );
