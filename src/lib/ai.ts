@@ -240,6 +240,70 @@ EXAMPLE 2 — user says "I work at Starbucks and go to the gym":
 
 Include config objects ONLY for sections in enabledSections. All numeric values must be numbers, not strings.`;
 
+/**
+ * Generic AI call function.
+ * Takes a provider, API key, system prompt, and user message.
+ * Returns the raw text response from the AI.
+ */
+export async function callAI(
+  provider: AIProvider,
+  apiKey: string,
+  systemPrompt: string,
+  userMessage: string
+): Promise<string> {
+  switch (provider) {
+    case "claude": {
+      const client = new Anthropic({ apiKey });
+      const response = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      });
+      const textBlock = response.content.find((b) => b.type === "text");
+      return textBlock?.text || "";
+    }
+    case "gemini": {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: `${systemPrompt}\n\n${userMessage}`,
+      });
+      return response.text || "";
+    }
+    case "mistral": {
+      const client = new Mistral({ apiKey });
+      const response = await client.chat.complete({
+        model: "mistral-large-latest",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        maxTokens: 4096,
+      });
+      const choice = response.choices?.[0];
+      if (choice && "message" in choice && choice.message) {
+        return (choice.message.content as string) || "";
+      }
+      return "";
+    }
+    case "openai": {
+      const client = new OpenAI({ apiKey });
+      const response = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        max_tokens: 4096,
+      });
+      return response.choices[0]?.message?.content || "";
+    }
+    default:
+      throw new Error(`Unsupported AI provider: ${provider}`);
+  }
+}
+
 function extractJSON(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenced) return fenced[1].trim();
