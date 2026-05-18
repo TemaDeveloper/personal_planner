@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { name, icon, description, fields, viewType } = body;
+  const { name, icon, description, fields, viewType, layoutHtml } = body;
 
   if (!name || typeof name !== "string" || name.trim().length < 1) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
     description: description || "",
     fields: fields || [],
     viewType: viewType || "weekly-cards",
+    layoutHtml: layoutHtml || "",
     isBuiltIn: false,
     createdBy: userId,
     usageCount: 1,

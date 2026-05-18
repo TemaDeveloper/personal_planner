@@ -80,6 +80,7 @@ interface TemplateSaveData {
   description: string;
   fields: ISectionTemplate["fields"];
   viewType: ISectionTemplate["viewType"];
+  layoutHtml?: string;
   embedding: number[];
   sourcePrompt: string;
   createdBy: string;

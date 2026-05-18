@@ -71,6 +71,7 @@ export default function OnboardingPage() {
   const [customSectionTemplates, setCustomSectionTemplates] = useState<{
     name: string; icon: string; description: string;
     fields: { key: string; label: string; type: string; options?: string[] }[];
+    layoutHtml?: string;
   }[]>([]);
 
   const toggleSection = (id: SectionId) => {

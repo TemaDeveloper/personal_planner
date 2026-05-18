@@ -103,6 +103,7 @@ const PlannerConfigSchema = z.object({
       options: z.array(z.string()).optional(),
       formula: z.string().optional(),
     })),
+    layoutHtml: z.string().optional(),
   })).optional(),
 });
 
@@ -172,6 +173,38 @@ Each custom section needs:
 Field types: boolean (yes/no toggle), number, text, select (with options array), date
 Formula: optional string expression for auto-calculated fields (e.g. "salePrice - purchasePrice")
 
+layoutHtml: REQUIRED for custom sections. Generate a Tailwind CSS HTML layout that renders beautifully in dark mode.
+  Rules for layoutHtml:
+  - Use {fieldName} syntax for data binding (e.g., {salePrice}, {itemName})
+  - Use {fieldA - fieldB} for arithmetic (e.g., {salePrice - purchasePrice})
+  - Use data-each="entries" attribute for looping: <div data-each="entries"><span>{entry.fieldName}</span></div>
+  - Use Tailwind CSS classes (dark theme: bg-white/5, text-white, text-white/60, etc.)
+  - Use rounded corners (rounded-xl, rounded-2xl), subtle borders (border border-white/10)
+  - Make it visually unique and beautiful — each section should feel custom-designed
+  - No <script> tags, no onclick/onevent attributes
+  - Keep it concise — dashboard card style, not a full page
+
+EXAMPLE layoutHtml for a tire reselling section:
+<div class="space-y-3">
+  <div class="grid grid-cols-2 gap-3">
+    <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+      <p class="text-xs text-emerald-400 mb-1">Revenue</p>
+      <p class="text-2xl font-bold text-white">\${salePrice}</p>
+    </div>
+    <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+      <p class="text-xs text-blue-400 mb-1">Profit</p>
+      <p class="text-2xl font-bold text-white">\${salePrice - purchasePrice}</p>
+    </div>
+  </div>
+  <div data-each="entries">
+    <div class="flex items-center justify-between py-2 border-b border-white/5 text-sm">
+      <span class="text-white">{entry.itemName}</span>
+      <span class="text-emerald-400 font-medium">\${entry.salePrice}</span>
+    </div>
+  </div>
+</div>
+Note: The $ before expressions are visual currency symbols — the {…} part is what gets interpolated.
+
 Return ONLY valid JSON (no markdown, no code fences).
 
 EXAMPLE 1 — user says "I resell tires on Facebook Marketplace":
@@ -191,7 +224,8 @@ EXAMPLE 1 — user says "I resell tires on Facebook Marketplace":
         { "key": "sold", "label": "Sold", "type": "boolean" },
         { "key": "buyer", "label": "Buyer", "type": "text" },
         { "key": "notes", "label": "Notes", "type": "text" }
-      ]
+      ],
+      "layoutHtml": "<div class=\"space-y-3\"><div class=\"grid grid-cols-2 gap-3\"><div class=\"p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20\"><p class=\"text-xs text-emerald-400 mb-1\">Revenue</p><p class=\"text-2xl font-bold text-white\">\${salePrice}</p></div><div class=\"p-4 rounded-xl bg-blue-500/10 border border-blue-500/20\"><p class=\"text-xs text-blue-400 mb-1\">Profit</p><p class=\"text-2xl font-bold text-white\">\${salePrice - purchasePrice}</p></div></div><div data-each=\"entries\"><div class=\"flex items-center justify-between py-2 border-b border-white/5 text-sm\"><span class=\"text-white\">{entry.itemName}</span><span class=\"text-emerald-400 font-medium\">\${entry.salePrice}</span></div></div></div>"
     }
   ]
 }
@@ -368,6 +402,7 @@ export async function generateWithTemplateSearch(
         description: section.description,
         fields: section.fields as ISectionTemplate["fields"],
         viewType: section.viewType,
+        layoutHtml: section.layoutHtml || "",
         embedding: outputEmbedding,
         sourcePrompt: prompt,
         createdBy: userId,
