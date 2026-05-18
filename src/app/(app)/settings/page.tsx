@@ -12,8 +12,9 @@ import {
   SECTIONS, SECTION_META, type SectionId, type FontStyle,
   type ColorMode,
 } from "@/lib/constants";
-import { Plus, Trash2, Save, Sparkles, Sun, Monitor, Moon } from "lucide-react";
+import { Plus, Trash2, Save, Sparkles, Sun, Monitor, Moon, Pencil } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
+import { LayoutEditor } from "@/components/sections/layout-editor";
 import { AI_PROVIDERS, type AIProvider } from "@/lib/ai-providers";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ const COLOR_MODE_SEGMENTS = [
 export default function SettingsPage() {
   const router = useRouter();
   const { preferences, updatePreferences } = useTheme();
-  const { enabledSections, updateSections } = useSections();
+  const { enabledSections, customSections, updateSections } = useSections();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -83,6 +84,11 @@ export default function SettingsPage() {
   const [aiProviderSetting, setAiProviderSetting] = useState<AIProvider | "">("");
   const [hasAiKey, setHasAiKey] = useState(false);
   const [newAiKey, setNewAiKey] = useState("");
+  const [editingLayout, setEditingLayout] = useState<{
+    slug: string;
+    fields: { key: string; label: string; type: string }[];
+    layoutHtml: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/user/preferences")
@@ -268,6 +274,59 @@ export default function SettingsPage() {
                     onChange={() => toggleSection(id)}
                     size="sm"
                   />
+                </Card>
+              );
+            })}
+
+            {/* Custom (AI-generated) sections */}
+            {customSections.map((cs) => {
+              const Icon = ICON_MAP[cs.icon] || ICON_MAP.Star;
+              return (
+                <Card
+                  key={cs.slug}
+                  variant={cs.enabled ? "default" : "inset"}
+                  padding="none"
+                  className={`flex items-center gap-3 p-3 transition-all ${
+                    cs.enabled ? "border border-[var(--accent-color)]" : ""
+                  }`}
+                  style={{
+                    background: cs.enabled ? "var(--accent-glow)" : undefined,
+                  }}
+                >
+                  {Icon && (
+                    <Icon
+                      size={18}
+                      style={{ color: cs.enabled ? "var(--accent-color)" : "var(--text-muted)" }}
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: cs.enabled ? "var(--text-primary)" : "var(--text-muted)" }}
+                    >
+                      {cs.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Custom section</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fetch(`/api/sections/templates/${cs.slug}`)
+                        .then((r) => r.json())
+                        .then((d) => {
+                          setEditingLayout({
+                            slug: cs.slug,
+                            fields: d.template?.fields || [],
+                            layoutHtml: d.template?.layoutHtml || "",
+                          });
+                        });
+                    }}
+                  >
+                    <Pencil size={14} />
+                    Edit Layout
+                  </Button>
                 </Card>
               );
             })}
@@ -727,6 +786,18 @@ export default function SettingsPage() {
           {saving ? "Saving..." : "Save changes"}
         </Button>
       </div>
+
+      {/* Layout editor modal for custom sections */}
+      {editingLayout && (
+        <LayoutEditor
+          slug={editingLayout.slug}
+          fields={editingLayout.fields}
+          initialHtml={editingLayout.layoutHtml}
+          open={!!editingLayout}
+          onClose={() => setEditingLayout(null)}
+          onSave={() => setEditingLayout(null)}
+        />
+      )}
     </div>
   );
 }
