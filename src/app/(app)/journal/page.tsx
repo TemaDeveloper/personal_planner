@@ -19,11 +19,11 @@ interface JournalEntry {
 }
 
 const MOODS = [
-  { value: 1, emoji: "\u{1F61E}" },
-  { value: 2, emoji: "\u{1F615}" },
-  { value: 3, emoji: "\u{1F610}" },
-  { value: 4, emoji: "\u{1F642}" },
-  { value: 5, emoji: "\u{1F604}" },
+  { value: 1, emoji: "\u{1F61E}", label: "sad" },
+  { value: 2, emoji: "\u{1F615}", label: "confused" },
+  { value: 3, emoji: "\u{1F610}", label: "neutral" },
+  { value: 4, emoji: "\u{1F642}", label: "good" },
+  { value: 5, emoji: "\u{1F604}", label: "great" },
 ];
 
 export default function JournalPage() {
