@@ -172,6 +172,8 @@ export default function GymPage() {
                             background: attended ? "var(--accent-color)" : today ? "var(--surface-2)" : "var(--surface-1)",
                             border: today && !attended ? "1px solid var(--accent-color)" : "1px solid transparent",
                           }}
+                          aria-label={`${attended ? "Remove" : "Mark"} gym attendance for ${format(day, "MMM d")}`}
+                          aria-pressed={attended}
                         >
                           <span
                             className="text-xs font-semibold"

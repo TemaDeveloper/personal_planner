@@ -186,6 +186,8 @@ export default function HealthPage() {
                     opacity: mood === m.value ? 1 : 0.5,
                   }}
                   title={m.label}
+                  aria-label={`Set mood to ${m.label}`}
+                  aria-pressed={mood === m.value}
                 >
                   {m.emoji}
                 </button>

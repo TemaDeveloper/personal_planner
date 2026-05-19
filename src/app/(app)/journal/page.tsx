@@ -125,6 +125,8 @@ export default function JournalPage() {
                   border: `1px solid ${mood === m.value ? "var(--accent-color)" : "var(--border-subtle)"}`,
                   opacity: mood === m.value ? 1 : 0.5,
                 }}
+                aria-label={`Set mood to ${m.label}`}
+                aria-pressed={mood === m.value}
               >
                 {m.emoji}
               </button>

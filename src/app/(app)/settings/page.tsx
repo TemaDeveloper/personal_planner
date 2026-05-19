@@ -435,6 +435,8 @@ export default function SettingsPage() {
                         ? `0 0 0 2px var(--background), 0 0 0 4px ${THEME_COLORS[t]}`
                         : "none",
                   }}
+                  aria-label={`Choose ${t} accent color`}
+                  aria-pressed={accentTheme === t}
                 />
               ))}
             </div>
