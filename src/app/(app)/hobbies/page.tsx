@@ -212,6 +212,8 @@ export default function HobbiesPage() {
                       opacity: newHobbyColor === c ? 1 : 0.35,
                       boxShadow: newHobbyColor === c ? `0 0 0 2px var(--background), 0 0 0 3px ${c}` : "none",
                     }}
+                    aria-label={`Choose hobby color ${c}`}
+                    aria-pressed={newHobbyColor === c}
                   />
                 ))}
               </div>

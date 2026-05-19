@@ -153,6 +153,7 @@ export default function HabitsPage() {
                       <button
                         onClick={() => deleteHabit(habit._id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto cursor-pointer"
+                        aria-label={`Delete ${habit.name}`}
                       >
                         <Trash2 size={10} className="text-muted-foreground hover:text-destructive" />
                       </button>
@@ -168,6 +169,8 @@ export default function HabitsPage() {
                           key={day}
                           onClick={() => toggleHabit(habit._id, day)}
                           className="flex-1 flex items-center justify-center py-2 min-w-[22px] cursor-pointer transition-all hover:scale-125"
+                          aria-label={`${done ? "Unmark" : "Mark"} ${habit.name} for ${format(new Date(dateStr), "MMM d")}`}
+                          aria-pressed={done}
                         >
                           <div
                             className="w-3.5 h-3.5 rounded-sm transition-all"
@@ -282,6 +285,8 @@ function AddHabitModal({
                 <button key={c} type="button" onClick={() => setColor(c)}
                   className="w-8 h-8 rounded-lg transition-all hover:scale-110 cursor-pointer"
                   style={{ background: c, opacity: color === c ? 1 : 0.4, boxShadow: color === c ? `0 0 0 2px var(--background), 0 0 0 3px ${c}` : "none" }}
+                  aria-label={`Choose habit color ${c}`}
+                  aria-pressed={color === c}
                 />
               ))}
             </div>
