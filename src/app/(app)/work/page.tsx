@@ -5,7 +5,7 @@ import User from "@/lib/models/user";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
-import { Briefcase, ArrowRight } from "lucide-react";
+import { Briefcase, ArrowRight, Download } from "lucide-react";
 
 export default async function WorkPage() {
   const session = await auth();
@@ -18,7 +18,19 @@ export default async function WorkPage() {
 
   return (
     <div className="animate-slide-up">
-      <PageHeader title="Work" description="Track hours and earnings across your jobs" />
+      <PageHeader
+        title="Work"
+        description="Track hours and earnings across your jobs"
+        action={
+          <a
+            href="/api/export/work"
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)] inline-flex"
+            aria-label="Export to Excel"
+          >
+            <Download size={16} />
+          </a>
+        }
+      />
 
       {jobs.length === 0 ? (
         <Card padding="lg" className="text-center">

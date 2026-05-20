@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/ui/form-input";
-import { Droplets, Moon, Weight, Smile, Heart } from "lucide-react";
+import { Droplets, Moon, Weight, Smile, Heart, Download } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
@@ -122,7 +122,19 @@ export default function HealthPage() {
 
   return (
     <PageTransition>
-      <PageHeader title="Health" description="Water, sleep & wellness" />
+      <PageHeader
+        title="Health"
+        description="Water, sleep & wellness"
+        action={
+          <button
+            onClick={() => { window.location.href = "/api/export/health"; }}
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+            aria-label="Export to Excel"
+          >
+            <Download size={16} />
+          </button>
+        }
+      />
 
       {/* Log today */}
       <Card className="mb-6">

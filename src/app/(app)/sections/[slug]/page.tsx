@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CustomEntryForm } from "@/components/sections/custom-entry-form";
 import { TableView } from "@/components/sections/table-view";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Check, Download } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
 import { RenderedLayout } from "@/components/sections/rendered-layout";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
@@ -101,12 +101,21 @@ export default function CustomSectionPage() {
         title={template.name}
         description={template.description}
         action={
-          template.viewType !== "table" ? (
-            <Button size="sm" onClick={() => setShowForm(true)}>
-              <Plus size={14} />
-              Add
-            </Button>
-          ) : undefined
+          <>
+            <button
+              onClick={() => { window.location.href = `/api/export/custom:${slug}`; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+            {template.viewType !== "table" && (
+              <Button size="sm" onClick={() => setShowForm(true)}>
+                <Plus size={14} />
+                Add
+              </Button>
+            )}
+          </>
         }
       />
 

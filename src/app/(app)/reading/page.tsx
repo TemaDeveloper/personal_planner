@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
-import { Plus, Trash2, BookOpen, Star } from "lucide-react";
+import { Plus, Trash2, BookOpen, Star, Download } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
 
@@ -78,10 +78,19 @@ export default function ReadingPage() {
         title="Reading"
         description="Reading list & progress"
         action={
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus size={14} />
-            Add Book
-          </Button>
+          <>
+            <button
+              onClick={() => { window.location.href = "/api/export/reading"; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+            <Button size="sm" onClick={() => setShowForm(true)}>
+              <Plus size={14} />
+              Add Book
+            </Button>
+          </>
         }
       />
 

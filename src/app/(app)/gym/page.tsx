@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { Check, ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Dumbbell, Download } from "lucide-react";
 import {
   startOfMonth, endOfMonth, addMonths, startOfWeek, addDays,
   format, startOfDay, isSameMonth, isToday, isBefore, isAfter,
@@ -115,6 +115,15 @@ export default function GymPage() {
       <PageHeader
         title="Gym"
         description={`${attendedCount} days this month`}
+        action={
+          <button
+            onClick={() => { window.location.href = "/api/export/gym"; }}
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+            aria-label="Export to Excel"
+          >
+            <Download size={16} />
+          </button>
+        }
       />
 
       <div className="flex flex-col lg:flex-row gap-6">

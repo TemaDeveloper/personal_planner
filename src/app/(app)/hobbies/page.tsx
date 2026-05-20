@@ -16,6 +16,7 @@ import {
   FolderOpen,
   Palette,
   Settings2,
+  Download,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -167,14 +168,23 @@ export default function HobbiesPage() {
         title="Hobbies"
         description="Track hobby time & projects"
         action={
-          <Button
-            variant={showManage ? "primary" : "secondary"}
-            size="icon"
-            onClick={() => setShowManage((v) => !v)}
-            aria-label="Manage hobbies"
-          >
-            <Settings2 size={16} />
-          </Button>
+          <>
+            <button
+              onClick={() => { window.location.href = "/api/export/hobbies"; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+            <Button
+              variant={showManage ? "primary" : "secondary"}
+              size="icon"
+              onClick={() => setShowManage((v) => !v)}
+              aria-label="Manage hobbies"
+            >
+              <Settings2 size={16} />
+            </Button>
+          </>
         }
       />
 

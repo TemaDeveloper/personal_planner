@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   Archive,
   X,
+  Download,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
@@ -105,10 +106,19 @@ export default function ShoppingPage() {
         title="Shopping"
         description="Shopping lists"
         action={
-          <Button onClick={() => setShowNewList(true)} size="md">
-            <Plus size={14} />
-            New List
-          </Button>
+          <>
+            <button
+              onClick={() => { window.location.href = "/api/export/shopping"; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+            <Button onClick={() => setShowNewList(true)} size="md">
+              <Plus size={14} />
+              New List
+            </Button>
+          </>
         }
       />
 

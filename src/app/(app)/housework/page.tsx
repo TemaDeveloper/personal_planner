@@ -17,6 +17,7 @@ import {
   Home,
   RotateCcw,
   Settings2,
+  Download,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -165,14 +166,23 @@ export default function HouseworkPage() {
         title="Housework"
         description="Chores & recurring tasks"
         action={
-          <Button
-            onClick={() => setShowManage((v) => !v)}
-            variant={showManage ? "primary" : "outline"}
-            size="icon"
-            aria-label="Manage chores"
-          >
-            <Settings2 size={16} />
-          </Button>
+          <>
+            <button
+              onClick={() => { window.location.href = "/api/export/housework"; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+            <Button
+              onClick={() => setShowManage((v) => !v)}
+              variant={showManage ? "primary" : "outline"}
+              size="icon"
+              aria-label="Manage chores"
+            >
+              <Settings2 size={16} />
+            </Button>
+          </>
         }
       />
 

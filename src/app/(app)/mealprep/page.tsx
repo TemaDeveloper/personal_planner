@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UtensilsCrossed,
+  Download,
 } from "lucide-react";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -72,7 +73,19 @@ export default function MealPrepPage() {
 
   return (
     <PageTransition>
-      <PageHeader title="Meal Prep" description="Weekly meal planning" />
+      <PageHeader
+        title="Meal Prep"
+        description="Weekly meal planning"
+        action={
+          <button
+            onClick={() => { window.location.href = "/api/export/mealprep"; }}
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+            aria-label="Export to Excel"
+          >
+            <Download size={16} />
+          </button>
+        }
+      />
 
       {/* Week navigation */}
       <div className="flex items-center justify-between mb-6">

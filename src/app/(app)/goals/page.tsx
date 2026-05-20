@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -107,10 +108,19 @@ export default function GoalsPage() {
         title="Goals"
         description="Goals & milestones"
         action={
-          <Button onClick={() => setShowForm(true)} size="md">
-            <Plus size={14} />
-            New Goal
-          </Button>
+          <>
+            <button
+              onClick={() => { window.location.href = "/api/export/goals"; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+            <Button onClick={() => setShowForm(true)} size="md">
+              <Plus size={14} />
+              New Goal
+            </Button>
+          </>
         }
       />
 

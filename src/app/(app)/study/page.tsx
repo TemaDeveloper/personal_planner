@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   Check,
+  Download,
 } from "lucide-react";
 import { ACADEMIC_ITEM_TYPES } from "@/lib/constants";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -116,7 +117,19 @@ export default function StudyPage() {
 
   return (
     <PageTransition>
-      <PageHeader title="Study" description="Subjects, homework & grades" />
+      <PageHeader
+        title="Study"
+        description="Subjects, homework & grades"
+        action={
+          <button
+            onClick={() => { window.location.href = "/api/export/study"; }}
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+            aria-label="Export to Excel"
+          >
+            <Download size={16} />
+          </button>
+        }
+      />
 
       {/* Tabs */}
       <SegmentedControl

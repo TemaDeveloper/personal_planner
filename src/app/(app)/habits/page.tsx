@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { Plus, Flame, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Flame, Trash2, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { FormInput } from "@/components/ui/form-input";
 import { Card } from "@/components/ui/card";
@@ -84,10 +84,19 @@ export default function HabitsPage() {
         title="Habits"
         description={`${totalCompleted} completions this month`}
         action={
-          <Button size="sm" onClick={() => setShowAdd(true)}>
-            <Plus size={14} />
-            Add
-          </Button>
+          <>
+            <button
+              onClick={() => { window.location.href = "/api/export/habits"; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+            <Button size="sm" onClick={() => setShowAdd(true)}>
+              <Plus size={14} />
+              Add
+            </Button>
+          </>
         }
       />
 

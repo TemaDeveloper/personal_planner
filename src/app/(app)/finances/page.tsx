@@ -17,7 +17,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from "date-fns";
-import { TrendingUp, TrendingDown, DollarSign, Receipt } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Receipt, Download } from "lucide-react";
 
 export default async function FinancesPage() {
   const session = await auth();
@@ -81,7 +81,19 @@ export default async function FinancesPage() {
 
   return (
     <div className="animate-slide-up">
-      <PageHeader title="Finances" description="Income, bills, and expenses overview" />
+      <PageHeader
+        title="Finances"
+        description="Income, bills, and expenses overview"
+        action={
+          <a
+            href="/api/export/finances"
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)] inline-flex"
+            aria-label="Export to Excel"
+          >
+            <Download size={16} />
+          </a>
+        }
+      />
 
       {/* Net income */}
       <Card padding="lg" className="mb-6">

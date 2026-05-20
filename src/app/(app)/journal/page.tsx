@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { Trash2, NotebookPen } from "lucide-react";
+import { Trash2, NotebookPen, Download } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
 import { format } from "date-fns";
@@ -102,7 +102,19 @@ export default function JournalPage() {
 
   return (
     <PageTransition>
-      <PageHeader title="Journal" description="Daily journal" />
+      <PageHeader
+        title="Journal"
+        description="Daily journal"
+        action={
+          <button
+            onClick={() => { window.location.href = "/api/export/journal"; }}
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+            aria-label="Export to Excel"
+          >
+            <Download size={16} />
+          </button>
+        }
+      />
 
       {/* Today's entry */}
       <Card padding="lg" className="mb-6">
