@@ -9,6 +9,7 @@ import {
   Settings,
   Download,
   LogOut,
+  Users,
 } from "lucide-react";
 import { useSections } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
@@ -75,6 +76,10 @@ export function AppSidebar() {
             ))}
           </NavGroup>
         )}
+        {/* Shared */}
+        <NavGroup label="Shared">
+          <NavItem href="/shared" icon={Users} label="Shared with me" active={isActive("/shared")} />
+        </NavGroup>
       </nav>
 
       {/* Bottom section */}
