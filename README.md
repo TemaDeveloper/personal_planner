@@ -29,6 +29,19 @@ A free, open-source personal planner to track your daily life -- gym, work, habi
 
 All sections are toggleable per user. Enable only what you need.
 
+### Supervisor Sharing & View-Only Access
+
+Share any section (or a specific job within Work) with a supervisor, manager, or collaborator. Two access modes:
+
+- **Magic link** -- generate a URL anyone can open to view your data read-only, no account required
+- **Account-based** -- invite by email, the shared section appears in their "Shared with me" sidebar
+
+Sharing is managed in Settings > Sharing. You can set optional expiry dates, revoke access anytime, and track who has access. Email invitations are sent via Resend.
+
+### Excel Export
+
+Export any section's data as a `.xlsx` file -- built-in sections and custom sections alike. Each section page has a download button in the header. Custom sections use their field definitions as column headers automatically.
+
 ### AI-Generated Custom Sections & Shared Template Pool
 
 Beyond the built-in sections, users can describe any activity in natural language (e.g., "I resell monitors on Facebook Marketplace") and the AI generates a fully custom tracking section with smart fields, formulas, and the right view type.
@@ -38,9 +51,9 @@ Beyond the built-in sections, users can describe any activity in natural languag
 1. **User describes what they want to track** during onboarding or setup.
 2. **Semantic search** runs against a shared template pool using vector embeddings. The user's prompt is converted to a 1536-dimensional vector (via OpenAI `text-embedding-3-small`) and compared against existing templates stored in MongoDB Atlas Vector Search.
 3. **Match decision** based on cosine similarity score:
-   - **Strong match (>= 0.85):** The best matching template is forked and the AI adapts its fields for the specific user.
-   - **Weak match (0.70 - 0.84):** Existing templates are passed as inspiration, but the AI generates mostly from scratch.
-   - **No match (< 0.70):** The AI generates an entirely new section.
+   - **Strong match (>= 0.85):** The proven template is reused instantly -- no AI call needed, zero latency. Usage count is incremented.
+   - **Weak match (0.70 - 0.84):** Existing templates (including their layout HTML) are passed as inspiration, and the AI generates a tailored version.
+   - **No match (< 0.70):** The AI generates an entirely new section from scratch using a field-analysis system that picks the right layout structure based on field composition.
 4. **Save & deduplicate:** After generation, an embedding is computed for the output template and compared to the source:
    - If the fork is significantly different (cosine distance > threshold), it's saved as a new template with a `forkedFrom` reference.
    - If it's essentially the same, the source template's usage count is incremented instead.
@@ -57,9 +70,9 @@ Generate Embedding (OpenAI text-embedding-3-small)
     ▼
 Vector Search (MongoDB Atlas) ──► Top 3 matches by cosine similarity
     │
-    ├── Score >= 0.85 ──► Fork & Adapt (AI tweaks existing template)
+    ├── Score >= 0.85 ──► Instant Reuse (no AI call, proven template)
     ├── Score 0.70-0.84 ──► Use as Inspiration (AI generates informed by matches)
-    └── Score < 0.70 ──► Generate from Scratch (full AI generation)
+    └── Score < 0.70 ──► Generate from Scratch (field-analysis-driven AI generation)
     │
     ▼
 Deduplicate (compare output embedding to source)
@@ -77,6 +90,9 @@ User gets their custom section
 - **Database:** MongoDB with Mongoose
 - **Auth:** NextAuth v5 (credentials + Google OAuth)
 - **Styling:** Tailwind CSS 4, CSS custom properties, Framer Motion
+- **Email:** Resend (share invitations)
+- **Export:** ExcelJS (`.xlsx` generation)
+- **AI:** Mistral, Claude, Gemini, OpenAI (multi-provider, user-configurable)
 - **Deployment:** Vercel
 
 ## Getting Started
@@ -118,6 +134,9 @@ OPENAI_API_KEY=your-openai-api-key
 # Optional: Google OAuth
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+
+# Optional: Email invitations for sharing (resend.com)
+RESEND_API_KEY=
 ```
 
 4. Start the development server:
@@ -134,7 +153,7 @@ The easiest way to deploy is with [Vercel](https://vercel.com):
 
 1. Push your repo to GitHub
 2. Import the project on Vercel
-3. Add your environment variables (`MONGODB_URI`, `NEXTAUTH_SECRET`, `MISTRAL_API_KEY`, `OPENAI_API_KEY`, Google OAuth vars)
+3. Add your environment variables (`MONGODB_URI`, `NEXTAUTH_SECRET`, `MISTRAL_API_KEY`, `OPENAI_API_KEY`, `RESEND_API_KEY`, Google OAuth vars)
 4. Deploy
 
 ### Atlas Vector Search Index (required for shared templates)
