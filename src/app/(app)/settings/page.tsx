@@ -12,7 +12,8 @@ import {
   SECTIONS, SECTION_META, type SectionId, type FontStyle,
   type ColorMode,
 } from "@/lib/constants";
-import { Plus, Trash2, Save, Sparkles, Sun, Monitor, Moon, Pencil } from "lucide-react";
+import { Plus, Trash2, Save, Sparkles, Sun, Monitor, Moon, Pencil, Share2, Link2, XCircle } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 import { ICON_MAP } from "@/lib/icon-map";
 import { LayoutEditor } from "@/components/sections/layout-editor";
 import { AI_PROVIDERS, type AIProvider } from "@/lib/ai-providers";
@@ -90,6 +91,26 @@ export default function SettingsPage() {
     layoutHtml: string;
   } | null>(null);
 
+  const [shares, setShares] = useState<{
+    token: string;
+    sectionType: string;
+    scopeFilter: string | null;
+    inviteeEmail: string | null;
+    label: string;
+    expiresAt: string | null;
+    revokedAt: string | null;
+    createdAt: string;
+  }[]>([]);
+  const [shareModal, setShareModal] = useState(false);
+  const [shareForm, setShareForm] = useState({
+    sectionType: "work",
+    scopeFilter: "",
+    inviteeEmail: "",
+    label: "",
+    expiresAt: "",
+  });
+  const [shareUrl, setShareUrl] = useState("");
+
   useEffect(() => {
     fetch("/api/user/preferences")
       .then((r) => r.json())
@@ -115,6 +136,10 @@ export default function SettingsPage() {
         setHasAiKey(data.hasAiKey || false);
         setLoading(false);
       });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/shares").then((r) => r.json()).then((d) => setShares(d.shares || []));
   }, []);
 
   const handleSave = async () => {
@@ -176,6 +201,51 @@ export default function SettingsPage() {
       ...subjects,
       { name: "", color: SUBJECT_COLORS[subjects.length % SUBJECT_COLORS.length], active: true },
     ]);
+  };
+
+  const handleCreateShare = async () => {
+    const body: Record<string, string> = { sectionType: shareForm.sectionType };
+    if (shareForm.scopeFilter) body.scopeFilter = shareForm.scopeFilter;
+    if (shareForm.inviteeEmail) body.inviteeEmail = shareForm.inviteeEmail;
+    if (shareForm.label) body.label = shareForm.label;
+    if (shareForm.expiresAt) body.expiresAt = new Date(shareForm.expiresAt).toISOString();
+
+    const res = await fetch("/api/shares", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setShareUrl(data.url);
+      navigator.clipboard.writeText(data.url);
+      toast.success("Share link copied to clipboard!");
+      const listRes = await fetch("/api/shares");
+      const listData = await listRes.json();
+      setShares(listData.shares || []);
+    } else {
+      toast.error("Failed to create share");
+    }
+  };
+
+  const handleRevokeShare = async (token: string) => {
+    const res = await fetch(`/api/shares/${token}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ revoke: true }),
+    });
+    if (res.ok) {
+      setShares((prev) => prev.map((s) => s.token === token ? { ...s, revokedAt: new Date().toISOString() } : s));
+      toast.success("Share revoked");
+    }
+  };
+
+  const handleDeleteShare = async (token: string) => {
+    const res = await fetch(`/api/shares/${token}`, { method: "DELETE" });
+    if (res.ok) {
+      setShares((prev) => prev.filter((s) => s.token !== token));
+      toast.success("Share deleted");
+    }
   };
 
   if (loading) {
@@ -772,6 +842,128 @@ export default function SettingsPage() {
             >
               Remove API key
             </Button>
+          )}
+        </Section>
+
+        {/* Sharing */}
+        <Section title="Sharing">
+          <div className="space-y-3">
+            {shares.filter((s) => !s.revokedAt).length === 0 && (
+              <p className="text-xs text-[var(--text-muted)]">No active shares.</p>
+            )}
+            {shares.filter((s) => !s.revokedAt).map((s) => (
+              <div key={s.token} className="flex items-center justify-between p-3 rounded-lg bg-[var(--surface-1)]">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {s.sectionType}{s.scopeFilter ? ` — ${s.scopeFilter}` : ""}
+                  </p>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {s.inviteeEmail || "Magic link"}
+                    {s.label ? ` · ${s.label}` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      const url = `${window.location.origin}/shared/${s.token}`;
+                      navigator.clipboard.writeText(url);
+                      toast.success("Link copied");
+                    }}
+                    aria-label="Copy link"
+                  >
+                    <Link2 size={14} />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => handleRevokeShare(s.token)} aria-label="Revoke">
+                    <XCircle size={14} />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => handleDeleteShare(s.token)} aria-label="Delete">
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <Button variant="secondary" size="sm" onClick={() => { setShareModal(true); setShareUrl(""); }} className="mt-3">
+            <Share2 size={14} /> Create Share
+          </Button>
+
+          {shareModal && (
+            <Modal open={shareModal} onClose={() => setShareModal(false)} title="Create Share">
+              <div className="space-y-4">
+                <Field label="Section">
+                  <select
+                    value={shareForm.sectionType}
+                    onChange={(e) => setShareForm((f) => ({ ...f, sectionType: e.target.value, scopeFilter: "" }))}
+                    className="w-full bg-[var(--surface-1)] rounded-lg px-3 py-2 text-sm outline-none border border-[var(--border-subtle)]"
+                  >
+                    {enabledSections.map((s) => (
+                      <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                    ))}
+                    {customSections.map((cs) => (
+                      <option key={cs.slug} value={`custom:${cs.slug}`}>{cs.name}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                {shareForm.sectionType === "work" && jobs.length > 0 && (
+                  <Field label="Job (optional — leave empty for all jobs)">
+                    <select
+                      value={shareForm.scopeFilter}
+                      onChange={(e) => setShareForm((f) => ({ ...f, scopeFilter: e.target.value }))}
+                      className="w-full bg-[var(--surface-1)] rounded-lg px-3 py-2 text-sm outline-none border border-[var(--border-subtle)]"
+                    >
+                      <option value="">All jobs</option>
+                      {jobs.map((j: { name: string }) => (
+                        <option key={j.name} value={j.name}>{j.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+
+                <Field label="Invitee email (optional)">
+                  <input
+                    type="email"
+                    value={shareForm.inviteeEmail}
+                    onChange={(e) => setShareForm((f) => ({ ...f, inviteeEmail: e.target.value }))}
+                    placeholder="supervisor@company.com"
+                    className="w-full bg-[var(--surface-1)] rounded-lg px-3 py-2 text-sm outline-none border border-[var(--border-subtle)]"
+                  />
+                </Field>
+
+                <Field label="Label (optional)">
+                  <input
+                    type="text"
+                    value={shareForm.label}
+                    onChange={(e) => setShareForm((f) => ({ ...f, label: e.target.value }))}
+                    placeholder="For my manager"
+                    className="w-full bg-[var(--surface-1)] rounded-lg px-3 py-2 text-sm outline-none border border-[var(--border-subtle)]"
+                  />
+                </Field>
+
+                <Field label="Expires (optional)">
+                  <input
+                    type="date"
+                    value={shareForm.expiresAt}
+                    onChange={(e) => setShareForm((f) => ({ ...f, expiresAt: e.target.value }))}
+                    className="w-full bg-[var(--surface-1)] rounded-lg px-3 py-2 text-sm outline-none border border-[var(--border-subtle)]"
+                  />
+                </Field>
+
+                {shareUrl && (
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <p className="text-xs text-emerald-400 mb-1">Share link (copied to clipboard):</p>
+                    <p className="text-xs text-white/80 break-all">{shareUrl}</p>
+                  </div>
+                )}
+
+                <Button onClick={handleCreateShare} variant="primary" className="w-full">
+                  Create & Copy Link
+                </Button>
+              </div>
+            </Modal>
           )}
         </Section>
       </div>
