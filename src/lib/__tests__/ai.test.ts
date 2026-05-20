@@ -16,10 +16,12 @@ describe("buildAugmentedPrompt", () => {
     expect(result).toContain("I breed golden retrievers");
   });
 
-  it("includes template name for strong matches (>= 0.85)", () => {
+  it("includes template as inspiration for strong matches that reach prompt builder", () => {
+    // Strong matches (≥0.85) with layoutHtml are handled before buildAugmentedPrompt
+    // is called — they skip AI entirely. This path is for fallback cases.
     const result = buildAugmentedPrompt("I breed dogs", mockTemplate, 0.92);
     expect(result).toContain("Pet Breeding Tracker");
-    expect(result).toContain("Adapt this template");
+    expect(result).toContain("inspiration");
   });
 
   it("includes template as inspiration for weak matches (0.70-0.84)", () => {
