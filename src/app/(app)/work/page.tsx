@@ -24,6 +24,7 @@ export default async function WorkPage() {
         action={
           <a
             href="/api/export/work"
+            download
             className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)] inline-flex"
             aria-label="Export to Excel"
           >

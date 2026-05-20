@@ -87,6 +87,7 @@ export default async function FinancesPage() {
         action={
           <a
             href="/api/export/finances"
+            download
             className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)] inline-flex"
             aria-label="Export to Excel"
           >
