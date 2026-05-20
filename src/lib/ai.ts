@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod/v4";
-import type { IFieldDefinition, ISectionTemplate } from "@/lib/models/section-template";
+import SectionTemplate, { type IFieldDefinition, type ISectionTemplate } from "@/lib/models/section-template";
 import {
   generateEmbedding,
   searchSimilarTemplates,
@@ -21,13 +21,18 @@ interface MatchedTemplate {
 export const STRONG_MATCH_THRESHOLD = 0.85;
 export const WEAK_MATCH_THRESHOLD = 0.70;
 
+interface MatchedTemplateWithLayout extends MatchedTemplate {
+  layoutHtml?: string;
+}
+
 /**
  * Build an augmented prompt that includes matched template context.
- * Strong match: fork and adapt. Weak match: use as inspiration. No match: generate fresh.
+ * Weak match: use fields + layout as inspiration. No match: generate fresh.
+ * Strong matches (≥0.85) are handled before this — they skip AI entirely.
  */
 export function buildAugmentedPrompt(
   userPrompt: string,
-  template: MatchedTemplate | null,
+  template: MatchedTemplateWithLayout | null,
   score: number
 ): string {
   if (!template || score < WEAK_MATCH_THRESHOLD) {
@@ -36,19 +41,11 @@ export function buildAugmentedPrompt(
 
   const fieldsJson = JSON.stringify(template.fields, null, 2);
 
-  if (score >= STRONG_MATCH_THRESHOLD) {
-    return `Existing template found: "${template.name}"
-Fields: ${fieldsJson}
-ViewType: ${template.viewType}
-
-Adapt this template for the user's specific needs: "${userPrompt}"
-You may add, remove, or rename fields. Keep the general structure if it fits.`;
-  }
-
-  // Weak match — use as inspiration
+  // Weak match — use as inspiration, include layoutHtml so AI can adapt
   return `For inspiration, here is a somewhat related template: "${template.name}"
 Fields: ${fieldsJson}
 ViewType: ${template.viewType}
+${template.layoutHtml ? `LayoutHtml: ${template.layoutHtml}` : ""}
 
 Generate a section for: "${userPrompt}"
 Use the above as inspiration but create what fits best for this specific use case.`;
@@ -103,7 +100,7 @@ const PlannerConfigSchema = z.object({
       options: z.array(z.string()).optional(),
       formula: z.string().optional(),
     })),
-    layoutHtml: z.string().optional(),
+    layoutHtml: z.string().min(1),
   })).optional(),
 });
 
@@ -174,36 +171,68 @@ Field types: boolean (yes/no toggle), number, text, select (with options array),
 Formula: optional string expression for auto-calculated fields (e.g. "salePrice - purchasePrice")
 
 layoutHtml: REQUIRED for custom sections. Generate a Tailwind CSS HTML layout that renders beautifully in dark mode.
-  Rules for layoutHtml:
-  - Use {fieldName} syntax for data binding (e.g., {salePrice}, {itemName})
-  - Use {fieldA - fieldB} for arithmetic (e.g., {salePrice - purchasePrice})
-  - Use data-each="entries" attribute for looping: <div data-each="entries"><span>{entry.fieldName}</span></div>
-  - Use Tailwind CSS classes (dark theme: bg-white/5, text-white, text-white/60, etc.)
-  - Use rounded corners (rounded-xl, rounded-2xl), subtle borders (border border-white/10)
-  - Make it visually unique and beautiful — each section should feel custom-designed
-  - No <script> tags, no onclick/onevent attributes
-  - Keep it concise — dashboard card style, not a full page
 
-EXAMPLE layoutHtml for a tire reselling section:
-<div class="space-y-3">
-  <div class="grid grid-cols-2 gap-3">
-    <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-      <p class="text-xs text-emerald-400 mb-1">Revenue</p>
-      <p class="text-2xl font-bold text-white">\${salePrice}</p>
-    </div>
-    <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-      <p class="text-xs text-blue-400 mb-1">Profit</p>
-      <p class="text-2xl font-bold text-white">\${salePrice - purchasePrice}</p>
-    </div>
-  </div>
-  <div data-each="entries">
-    <div class="flex items-center justify-between py-2 border-b border-white/5 text-sm">
-      <span class="text-white">{entry.itemName}</span>
-      <span class="text-emerald-400 font-medium">\${entry.salePrice}</span>
-    </div>
-  </div>
-</div>
-Note: The $ before expressions are visual currency symbols — the {…} part is what gets interpolated.
+  First, classify each field you create into a ROLE, then pick the structure:
+  - IDENTIFIER: text field naming each entry (item name, title, exercise) — show prominently as row/card label
+  - KEY METRIC: number/formula fields showing outcomes (profit, total, score) — stat cards on top, bold
+  - DETAIL: supporting numbers (cost, reps, quantity) — inline, secondary styling
+  - STATUS: select/boolean fields (sold, completed) — badges or ✓/– indicators
+  - NOTES: long text — truncated, muted, at bottom
+
+  Pick structure based on field composition:
+  - Has formula/key metrics + identifier + many fields per entry → stat cards on top + table rows (data-each)
+  - All numbers, no identifier, single-entry → metric tiles in grid (no data-each)
+  - Identifier + select/status + mixed fields → entry cards (data-each), name top-left, badge top-right
+  - Mostly booleans + one identifier → compact checklist rows (data-each)
+  - Identifier + few details, distinct items → item list or small cards (data-each)
+  - Mix of everything → key metrics as stats on top, data-each list below, identifier as label
+
+  Syntax rules:
+  - {fieldName} for data binding, {fieldA - fieldB} for arithmetic
+  - data-each="entries" for loops, {entry.fieldName} inside loops
+  - Literal $ before {…} for currency: $\{salePrice}
+  - Tailwind dark theme: bg-white/5, bg-emerald-500/10, bg-blue-500/10, bg-amber-500/10 etc.
+  - Text: text-white, text-white/60 (secondary), text-emerald-400/blue-400/amber-400 (accents)
+  - number fields → font-bold + unit ($, hrs, kg) based on label
+  - boolean fields → ✓ or – indicator
+  - select fields → rounded badge
+  - formula fields → accent-colored and bold
+  - NEVER use placeholder text ("Project A", "Item 1") — every value MUST use {fieldName} or {entry.fieldName}
+  - No <script> tags, no onclick/onevent attributes
+
+layoutHtml examples (ID=identifier, KM=key metric, DT=detail, ST=status, NT=notes):
+
+  Reselling (ID=itemName, KM=salePrice+profit, DT=purchasePrice, ST=sold → stats+table):
+<div class="space-y-3"><div class="grid grid-cols-3 gap-3"><div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-xs text-emerald-400 mb-1">Revenue</p><p class="text-2xl font-bold text-white">\${salePrice}</p></div><div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400 mb-1">Cost</p><p class="text-2xl font-bold text-white">\${purchasePrice}</p></div><div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-xs text-amber-400 mb-1">Profit</p><p class="text-2xl font-bold text-white">\${salePrice - purchasePrice}</p></div></div><div class="rounded-xl border border-white/10 overflow-hidden"><div class="grid grid-cols-4 gap-2 px-4 py-2 text-xs text-white/40 border-b border-white/10"><span>Item</span><span>Cost</span><span>Sold For</span><span>Status</span></div><div data-each="entries"><div class="grid grid-cols-4 gap-2 px-4 py-2.5 text-sm border-b border-white/5"><span class="text-white truncate">{entry.itemName}</span><span class="text-white/60">\${entry.purchasePrice}</span><span class="text-emerald-400 font-medium">\${entry.salePrice}</span><span class="text-xs">{entry.sold}</span></div></div></div></div>
+
+  Health Log (all numbers, no ID → metric tiles):
+<div class="grid grid-cols-2 gap-3"><div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400 mb-1">Water</p><p class="text-2xl font-bold text-white">{water}<span class="text-sm text-white/40 ml-1">glasses</span></p></div><div class="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20"><p class="text-xs text-purple-400 mb-1">Sleep</p><p class="text-2xl font-bold text-white">{sleep}<span class="text-sm text-white/40 ml-1">hrs</span></p></div><div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-xs text-amber-400 mb-1">Weight</p><p class="text-2xl font-bold text-white">{weight}<span class="text-sm text-white/40 ml-1">kg</span></p></div><div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-xs text-emerald-400 mb-1">Mood</p><p class="text-2xl font-bold text-white">{mood}<span class="text-sm text-white/40 ml-1">/5</span></p></div></div>
+
+  Books (ID=title, DT=author, ST=genre(select)+finished, KM=rating → item cards):
+<div data-each="entries"><div class="p-3 rounded-xl bg-white/5 border border-white/10 mb-2"><div class="flex items-start justify-between gap-2"><div class="min-w-0 flex-1"><p class="text-white text-sm font-medium truncate">{entry.title}</p><p class="text-white/40 text-xs mt-0.5">{entry.author}</p></div><div class="flex items-center gap-2 flex-shrink-0"><span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-xs text-purple-400">{entry.genre}</span><span class="text-amber-400 font-bold text-sm">{entry.rating}<span class="text-white/30">/5</span></span></div></div></div></div>
+
+  Projects (ID=projectName, ST=status(select), KM=hoursSpent+tasksCompleted, NT=notes → stats+entry cards):
+<div class="space-y-3"><div class="grid grid-cols-2 gap-3"><div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400 mb-1">Hours Today</p><p class="text-2xl font-bold text-white">{hoursSpent}<span class="text-sm text-white/40 ml-1">hrs</span></p></div><div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-xs text-emerald-400 mb-1">Tasks Done</p><p class="text-2xl font-bold text-white">{tasksCompleted}</p></div></div><div data-each="entries"><div class="p-3 rounded-xl bg-white/5 border border-white/10 mb-2"><div class="flex items-center justify-between mb-1"><span class="text-white font-medium text-sm">{entry.projectName}</span><span class="px-2 py-0.5 rounded-full bg-white/10 text-xs text-white/60">{entry.status}</span></div><div class="flex gap-4 text-xs text-white/40"><span>{entry.hoursSpent} hrs</span><span>{entry.tasksCompleted} tasks</span></div><p class="text-xs text-white/40 mt-1 truncate">{entry.notes}</p></div></div></div>
+
+  Exercises (ID=exercise, DT=sets+reps+weight, no formulas → pure table):
+<div class="rounded-xl border border-white/10 overflow-hidden"><div class="grid grid-cols-5 gap-2 px-4 py-2 text-xs text-white/40 border-b border-white/10"><span class="col-span-2">Exercise</span><span>Sets</span><span>Reps</span><span>Weight</span></div><div data-each="entries"><div class="grid grid-cols-5 gap-2 px-4 py-2.5 text-sm border-b border-white/5"><span class="text-white font-medium col-span-2 truncate">{entry.exercise}</span><span class="text-white/60">{entry.sets}</span><span class="text-white/60">{entry.reps}</span><span class="text-amber-400 font-medium">{entry.weight}<span class="text-white/30 text-xs ml-0.5">kg</span></span></div></div></div>
+
+  Medications (ID=medName, ST=taken(boolean), DT=dosage+time → checklist):
+<div class="rounded-xl border border-white/10 overflow-hidden"><div data-each="entries"><div class="flex items-center gap-3 px-4 py-3 border-b border-white/5"><span class="text-lg">{entry.taken}</span><div class="flex-1 min-w-0"><span class="text-white text-sm font-medium">{entry.medName}</span><span class="text-white/40 text-xs ml-2">{entry.dosage}</span></div><span class="text-white/40 text-xs">{entry.time}</span></div></div></div>
+
+  Deliveries (KM=netProfit(formula)+earnings+tips, DT=deliveries+hoursOnline, no ID → stats+compact rows):
+<div class="space-y-3"><div class="grid grid-cols-3 gap-3"><div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-xs text-emerald-400 mb-1">Net Profit</p><p class="text-2xl font-bold text-white">\${earnings - gasSpent}</p></div><div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400 mb-1">Earnings</p><p class="text-2xl font-bold text-white">\${earnings}</p></div><div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-xs text-amber-400 mb-1">Tips</p><p class="text-2xl font-bold text-white">\${tips}</p></div></div><div data-each="entries"><div class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-white/[0.03] mb-1.5"><div class="flex gap-4 text-sm"><span class="text-white">{entry.deliveries} deliveries</span><span class="text-white/40">{entry.hoursOnline} hrs</span></div><span class="text-emerald-400 font-medium text-sm">\${entry.earnings}</span></div></div></div>
+
+  Crypto (ID=coin, KM=profitLoss(formula), DT=buyPrice+sellPrice+quantity, ST=exchange(select) → stats+multi-col table):
+<div class="space-y-3"><div class="grid grid-cols-2 gap-3"><div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-xs text-emerald-400 mb-1">Sell Value</p><p class="text-2xl font-bold text-white">\${sellPrice}</p></div><div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-xs text-amber-400 mb-1">P&L</p><p class="text-2xl font-bold text-white">\${sellPrice - buyPrice}</p></div></div><div class="rounded-xl border border-white/10 overflow-hidden"><div class="grid grid-cols-5 gap-2 px-4 py-2 text-xs text-white/40 border-b border-white/10"><span>Coin</span><span>Buy</span><span>Sell</span><span>Qty</span><span>Exchange</span></div><div data-each="entries"><div class="grid grid-cols-5 gap-2 px-4 py-2.5 text-sm border-b border-white/5"><span class="text-white font-medium">{entry.coin}</span><span class="text-white/60">\${entry.buyPrice}</span><span class="text-emerald-400">\${entry.sellPrice}</span><span class="text-white/60">{entry.quantity}</span><span class="px-2 py-0.5 rounded-full bg-white/10 text-xs text-white/60">{entry.exchange}</span></div></div></div></div>
+
+  Study (ID=subject, KM=duration+vocabCount, ST=type(select) → stats+session list):
+<div class="space-y-3"><div class="grid grid-cols-2 gap-3"><div class="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20"><p class="text-xs text-purple-400 mb-1">Study Time</p><p class="text-2xl font-bold text-white">{duration}<span class="text-sm text-white/40 ml-1">min</span></p></div><div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400 mb-1">New Vocab</p><p class="text-2xl font-bold text-white">{vocabCount}</p></div></div><div class="rounded-xl border border-white/10 overflow-hidden"><div data-each="entries"><div class="flex items-center gap-3 px-4 py-2.5 border-b border-white/5"><span class="text-white text-sm font-medium flex-shrink-0">{entry.subject}</span><span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-xs text-purple-400">{entry.type}</span><span class="text-white/40 text-xs ml-auto flex-shrink-0">{entry.duration} min</span></div></div></div></div>
+
+  Plants (ID=plantName, 3xST(boolean), NT=notes → compact checklist with boolean group):
+<div data-each="entries"><div class="flex items-center gap-3 py-2.5 border-b border-white/5"><div class="flex gap-1.5"><span class="text-blue-400 text-sm">{entry.watered}</span><span class="text-amber-400 text-sm">{entry.fertilized}</span><span class="text-emerald-400 text-sm">{entry.newGrowth}</span></div><span class="text-white text-sm font-medium">{entry.plantName}</span><span class="text-white/40 text-xs ml-auto truncate max-w-[40%]">{entry.notes}</span></div></div>
+
+  Note: $ before {…} = visual currency symbol. The {…} is what gets interpolated.
 
 Return ONLY valid JSON (no markdown, no code fences).
 
@@ -433,9 +462,46 @@ export async function generateWithTemplateSearch(
   const bestMatch = searchResults.length > 0 ? searchResults[0] : null;
   const bestScore = bestMatch?.score ?? 0;
 
+  // Strong match (≥0.85): skip AI call entirely, reuse the proven template
+  if (bestMatch && bestScore >= STRONG_MATCH_THRESHOLD && bestMatch.layoutHtml) {
+    await SectionTemplate.findByIdAndUpdate(bestMatch._id, {
+      $inc: { usageCount: 1 },
+    });
+
+    const reusedConfig: PlannerConfig = {
+      enabledSections: [],
+      customSections: [{
+        name: bestMatch.name,
+        icon: bestMatch.icon,
+        description: bestMatch.description,
+        viewType: bestMatch.viewType,
+        fields: bestMatch.fields.map((f) => ({
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          ...(f.options ? { options: f.options } : {}),
+          ...(f.formula ? { formula: f.formula } : {}),
+        })),
+        layoutHtml: bestMatch.layoutHtml,
+      }],
+    };
+
+    return {
+      config: reusedConfig,
+      sourceTemplate: bestMatch,
+      saveResult: { action: "reused", templateId: bestMatch._id },
+    };
+  }
+
+  // Weak match or no match: generate via AI
   const augmentedPrompt = buildAugmentedPrompt(
     prompt,
-    bestMatch ? { name: bestMatch.name, fields: bestMatch.fields, viewType: bestMatch.viewType } : null,
+    bestMatch ? {
+      name: bestMatch.name,
+      fields: bestMatch.fields,
+      viewType: bestMatch.viewType,
+      layoutHtml: bestMatch.layoutHtml,
+    } : null,
     bestScore
   );
 
@@ -466,7 +532,7 @@ export async function generateWithTemplateSearch(
         description: section.description,
         fields: section.fields as ISectionTemplate["fields"],
         viewType: section.viewType,
-        layoutHtml: section.layoutHtml || "",
+        layoutHtml: section.layoutHtml,
         embedding: outputEmbedding,
         sourcePrompt: prompt,
         createdBy: userId,

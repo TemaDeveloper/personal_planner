@@ -34,9 +34,11 @@ export function templateToEmbeddingInput(
 export interface TemplateSearchResult {
   _id: string;
   name: string;
+  slug: string;
   description: string;
   fields: ISectionTemplate["fields"];
   viewType: ISectionTemplate["viewType"];
+  layoutHtml: string;
   icon: string;
   embedding: number[];
   usageCount: number;
@@ -65,8 +67,8 @@ export async function searchSimilarTemplates(
     },
     {
       $project: {
-        _id: 1, name: 1, description: 1, fields: 1, viewType: 1,
-        icon: 1, embedding: 1, usageCount: 1, score: 1,
+        _id: 1, name: 1, slug: 1, description: 1, fields: 1, viewType: 1,
+        layoutHtml: 1, icon: 1, embedding: 1, usageCount: 1, score: 1,
       },
     },
   ]);
