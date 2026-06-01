@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
-import { generateExcel, ExcelColumn } from "@/lib/excel";
+import { generateExcel, ExcelColumn, ExcelOptions } from "@/lib/excel";
 import { format } from "date-fns";
+import { buildWorkReport } from "@/lib/work-report";
+import User from "@/lib/models/user";
+import Route from "@/lib/models/route";
 import WorkSession from "@/lib/models/work-session";
 import GymAttendance from "@/lib/models/gym-attendance";
 import { Habit, HabitLog } from "@/lib/models/habit";
@@ -33,26 +36,84 @@ async function buildExport(
   section: string,
   userId: string,
   job?: string
-): Promise<{ name: string; columns: ExcelColumn[]; rows: Record<string, unknown>[] }> {
+): Promise<{
+  name: string;
+  columns: ExcelColumn[];
+  rows: Record<string, unknown>[];
+  options?: ExcelOptions;
+}> {
   switch (section) {
     case "work": {
       const filter: Record<string, unknown> = { userId };
       if (job) filter.jobName = job;
-      const docs = await WorkSession.find(filter).sort({ date: -1 }).lean();
-      return {
-        name: "Work Sessions",
-        columns: [
-          { header: "Date", key: "date" },
-          { header: "Job", key: "job" },
-          { header: "Hours", key: "hours" },
-          { header: "Note", key: "note" },
-        ],
-        rows: docs.map((d) => ({
-          date: fmtDate(d.date),
-          job: d.jobName,
+      const [docs, routes, user] = await Promise.all([
+        WorkSession.find(filter).sort({ date: -1 }).lean(),
+        // Routes are not job-linked, so gas always reflects all routes for all time.
+        Route.find({ userId }).sort({ date: -1 }).lean(),
+        User.findById(userId).select("workConfig").lean(),
+      ]);
+
+      const workConfig = user?.workConfig;
+      const report = buildWorkReport({
+        sessions: docs.map((d) => ({
+          jobName: d.jobName,
+          date: d.date,
           hours: d.hours,
           note: d.note ?? "",
         })),
+        jobs: workConfig?.jobs ?? [],
+        routes: routes.map((r) => ({
+          date: r.date,
+          origin: r.origin,
+          destination: r.destination,
+          distanceKm: r.distanceKm,
+        })),
+        gasPriceCentsPerLitre: workConfig?.gasPrice ?? 0,
+        carConsumptionLPer100km: workConfig?.carConsumption ?? 0,
+      });
+
+      const routeSection = {
+        title: "Gas & Routes — all routes, all time",
+        columns: [
+          { header: "Date", key: "date" },
+          { header: "Origin", key: "origin" },
+          { header: "Destination", key: "destination" },
+          { header: "Distance (km)", key: "distanceKm" },
+        ] as ExcelColumn[],
+        rows: report.routeRows.map((r) => ({
+          date: fmtDate(r.date),
+          origin: r.origin,
+          destination: r.destination,
+          distanceKm: r.distanceKm,
+        })),
+      };
+
+      return {
+        name: "Work Sessions",
+        columns: [
+          { header: "Job Name", key: "job" },
+          { header: "Date", key: "date" },
+          { header: "Hours", key: "hours" },
+          { header: "Note", key: "note" },
+          { header: "Total", key: "total" },
+        ],
+        rows: report.rows.map((r) => ({
+          job: r.jobName,
+          date: fmtDate(r.date),
+          hours: r.hours,
+          note: r.note,
+          total: r.total,
+        })),
+        options: {
+          summaryRows: [
+            { label: "Gross earnings", value: report.grossEarnings, currency: true },
+            { label: "Gas cost", value: report.gas.totalCostDollars, currency: true },
+            { label: "Net (earnings − gas)", value: report.net, currency: true },
+            { label: "Total distance (km)", value: report.gas.totalKm },
+            { label: "Litres used", value: report.gas.litresUsed },
+          ],
+          sections: [routeSection],
+        },
       };
     }
 
@@ -356,12 +417,12 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const job = searchParams.get("job") || undefined;
 
-  const { name, columns, rows } = await buildExport(section, String(userId), job);
+  const { name, columns, rows, options } = await buildExport(section, String(userId), job);
   if (columns.length === 0) {
     return NextResponse.json({ error: "Unknown section" }, { status: 400 });
   }
 
-  const buffer = await generateExcel(name, columns, rows);
+  const buffer = await generateExcel(name, columns, rows, options);
   const filename = `${name.toLowerCase().replace(/\s+/g, "-")}-export.xlsx`;
 
   return new NextResponse(new Uint8Array(buffer), {

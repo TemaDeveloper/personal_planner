@@ -17,21 +17,87 @@ import CustomEntry from "@/lib/models/custom-entry";
 import SectionTemplate from "@/lib/models/section-template";
 import User from "@/lib/models/user";
 import ShareToken from "@/lib/models/share-token";
+import Route from "@/lib/models/route";
+import { buildWorkReport } from "@/lib/work-report";
+
+export interface WorkShareSummary {
+  grossEarnings: number;
+  gasCost: number;
+  net: number;
+  totalKm: number;
+  litres: number;
+}
 
 async function fetchSectionData(
   sectionType: string,
   ownerId: string,
   scopeFilter: string | null
-): Promise<{ data: unknown[]; meta?: Record<string, unknown> }> {
+): Promise<{
+  data: unknown[];
+  meta?: Record<string, unknown>;
+  summary?: WorkShareSummary | null;
+  routes?: Record<string, unknown>[] | null;
+}> {
   switch (sectionType) {
     case "work": {
-      const data = await WorkSession.find({
-        userId: ownerId,
-        ...(scopeFilter ? { jobName: scopeFilter } : {}),
-      })
-        .sort({ date: -1 })
-        .lean();
-      return { data };
+      const [sessions, routeDocs, owner] = await Promise.all([
+        WorkSession.find({
+          userId: ownerId,
+          ...(scopeFilter ? { jobName: scopeFilter } : {}),
+        })
+          .sort({ date: -1 })
+          .lean(),
+        // Routes are not job-linked: gas reflects all routes for all time.
+        Route.find({ userId: ownerId }).sort({ date: -1 }).lean(),
+        User.findById(ownerId).select("workConfig").lean(),
+      ]);
+
+      const workConfig = owner?.workConfig;
+      const report = buildWorkReport({
+        sessions: sessions.map((s) => ({
+          jobName: s.jobName,
+          date: s.date,
+          hours: s.hours,
+          note: s.note ?? "",
+        })),
+        jobs: workConfig?.jobs ?? [],
+        routes: routeDocs.map((r) => ({
+          date: r.date,
+          origin: r.origin,
+          destination: r.destination,
+          distanceKm: r.distanceKm,
+        })),
+        gasPriceCentsPerLitre: workConfig?.gasPrice ?? 0,
+        carConsumptionLPer100km: workConfig?.carConsumption ?? 0,
+      });
+
+      // Display-keyed rows so the viewer shows readable headers and the Total column.
+      const data = report.rows.map((r) => ({
+        "Job Name": r.jobName,
+        Date: r.date,
+        Hours: r.hours,
+        Note: r.note,
+        Total: r.total,
+      }));
+
+      const routes = report.routeRows.map((r) => ({
+        Date: r.date,
+        Origin: r.origin,
+        Destination: r.destination,
+        "Distance (km)": r.distanceKm,
+      }));
+
+      return {
+        data,
+        summary: {
+          grossEarnings: report.grossEarnings,
+          gasCost: report.gas.totalCostDollars,
+          net: report.net,
+          totalKm: report.gas.totalKm,
+          litres: report.gas.litresUsed,
+        },
+        routes,
+      };
     }
     case "gym": {
       const data = await GymAttendance.find({ userId: ownerId })
@@ -141,7 +207,7 @@ export async function GET(
     return NextResponse.json({ error: "This share has expired" }, { status: 410 });
 
   const owner = await User.findById(share.ownerId).select("name email").lean();
-  const { data } = await fetchSectionData(
+  const { data, summary, routes } = await fetchSectionData(
     share.sectionType,
     String(share.ownerId),
     share.scopeFilter ?? null
@@ -153,6 +219,8 @@ export async function GET(
     ownerName: (owner?.name as string) || "Unknown",
     permission: share.permission,
     data: stripInternalFields(data),
+    summary: summary ?? null,
+    routes: routes ?? null,
   });
 }
 
