@@ -24,6 +24,7 @@ import { FormSelect } from "@/components/ui/form-input";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Subject {
   name: string;
@@ -61,6 +62,8 @@ export default function SettingsPage() {
   const { enabledSections, customSections, updateSections } = useSections();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [confirmRevokeToken, setConfirmRevokeToken] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [avatarEmoji, setAvatarEmoji] = useState("\u{1F31F}");
@@ -142,6 +145,15 @@ export default function SettingsPage() {
     fetch("/api/shares").then((r) => r.json()).then((d) => setShares(d.shares || []));
   }, []);
 
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
   const handleSave = async () => {
     setSaving(true);
 
@@ -168,6 +180,7 @@ export default function SettingsPage() {
     if (res.ok) {
       updatePreferences({ accentTheme, fontStyle, layoutDensity, currency, weekStart, dateFormat, timeFormat, colorMode });
       updateSections(localSections);
+      setIsDirty(false);
       toast.success("Settings saved");
       router.refresh();
     } else {
@@ -181,6 +194,7 @@ export default function SettingsPage() {
       ...jobs,
       { name: "", hourlyRate: 0, weeklyTarget: 20, active: true, enableExpenseTracking: false },
     ]);
+    setIsDirty(true);
   };
 
   const addBill = () => {
@@ -188,12 +202,14 @@ export default function SettingsPage() {
       ...bills,
       { name: "", amount: 0, dueDay: 1, category: "other", active: true },
     ]);
+    setIsDirty(true);
   };
 
   const toggleSection = (id: SectionId) => {
     setLocalSections((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
+    setIsDirty(true);
   };
 
   const addSubject = () => {
@@ -201,6 +217,7 @@ export default function SettingsPage() {
       ...subjects,
       { name: "", color: SUBJECT_COLORS[subjects.length % SUBJECT_COLORS.length], active: true },
     ]);
+    setIsDirty(true);
   };
 
   const handleCreateShare = async () => {
@@ -287,13 +304,13 @@ export default function SettingsPage() {
               label="Name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setIsDirty(true); }}
             />
             <FormInput
               label="Avatar"
               type="text"
               value={avatarEmoji}
-              onChange={(e) => setAvatarEmoji(e.target.value)}
+              onChange={(e) => { setAvatarEmoji(e.target.value); setIsDirty(true); }}
               className="text-center text-xl"
               maxLength={2}
             />
@@ -420,6 +437,7 @@ export default function SettingsPage() {
                         const updated = [...subjects];
                         updated[idx].color = e.target.value;
                         setSubjects(updated);
+                        setIsDirty(true);
                       }}
                       className="w-8 h-8 rounded cursor-pointer border-0 p-0"
                       style={{ background: "transparent" }}
@@ -432,6 +450,7 @@ export default function SettingsPage() {
                         const updated = [...subjects];
                         updated[idx].name = e.target.value;
                         setSubjects(updated);
+                        setIsDirty(true);
                       }}
                       className="flex-1"
                     />
@@ -439,7 +458,7 @@ export default function SettingsPage() {
                       variant="ghost"
                       size="icon"
                       aria-label="Delete subject"
-                      onClick={() => setSubjects(subjects.filter((_, i) => i !== idx))}
+                      onClick={() => { setSubjects(subjects.filter((_, i) => i !== idx)); setIsDirty(true); }}
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -468,7 +487,7 @@ export default function SettingsPage() {
                   label: String(n),
                 }))}
                 value={String(targetDaysPerWeek)}
-                onChange={(v) => setTargetDaysPerWeek(Number(v))}
+                onChange={(v) => { setTargetDaysPerWeek(Number(v)); setIsDirty(true); }}
                 layoutId="gym-days"
                 className="w-full"
               />
@@ -485,6 +504,7 @@ export default function SettingsPage() {
               onChange={(v) => {
                 setColorMode(v);
                 updatePreferences({ colorMode: v });
+                setIsDirty(true);
               }}
               layoutId="color-mode"
             />
@@ -495,7 +515,7 @@ export default function SettingsPage() {
               {THEMES.map((t) => (
                 <button
                   key={t}
-                  onClick={() => setAccentTheme(t)}
+                  onClick={() => { setAccentTheme(t); setIsDirty(true); }}
                   className="w-10 h-10 rounded-lg transition-all hover:scale-110"
                   style={{
                     background: THEME_COLORS[t],
@@ -525,6 +545,7 @@ export default function SettingsPage() {
                     onClick={() => {
                       setFontStyle(f);
                       document.documentElement.setAttribute("data-font", f);
+                      setIsDirty(true);
                     }}
                     className={`text-left transition-all ${
                       fontStyle === f
@@ -566,7 +587,7 @@ export default function SettingsPage() {
                   label: l.charAt(0).toUpperCase() + l.slice(1),
                 }))}
                 value={layoutDensity}
-                onChange={(v) => setLayoutDensity(v)}
+                onChange={(v) => { setLayoutDensity(v); setIsDirty(true); }}
                 layoutId="layout-density"
                 className="w-full"
               />
@@ -579,7 +600,7 @@ export default function SettingsPage() {
                   label: c,
                 }))}
                 value={currency}
-                onChange={(v) => setCurrency(v)}
+                onChange={(v) => { setCurrency(v); setIsDirty(true); }}
                 layoutId="currency"
                 className="w-full"
               />
@@ -597,7 +618,7 @@ export default function SettingsPage() {
                   label: w.charAt(0).toUpperCase() + w.slice(1),
                 }))}
                 value={weekStart}
-                onChange={(v) => setWeekStart(v)}
+                onChange={(v) => { setWeekStart(v); setIsDirty(true); }}
                 layoutId="week-start"
                 className="w-full"
               />
@@ -606,7 +627,7 @@ export default function SettingsPage() {
             <FormSelect
               label="Date format"
               value={dateFormat}
-              onChange={(e) => setDateFormat(e.target.value)}
+              onChange={(e) => { setDateFormat(e.target.value); setIsDirty(true); }}
             >
               {DATE_FORMATS.map((f) => (
                 <option key={f} value={f}>{f}</option>
@@ -620,7 +641,7 @@ export default function SettingsPage() {
                   label: t,
                 }))}
                 value={timeFormat}
-                onChange={(v) => setTimeFormat(v)}
+                onChange={(v) => { setTimeFormat(v); setIsDirty(true); }}
                 layoutId="time-format"
                 className="w-full"
               />
@@ -642,6 +663,7 @@ export default function SettingsPage() {
                       const updated = [...jobs];
                       updated[idx].name = e.target.value;
                       setJobs(updated);
+                      setIsDirty(true);
                     }}
                     className="flex-1"
                   />
@@ -649,7 +671,7 @@ export default function SettingsPage() {
                     variant="ghost"
                     size="icon"
                     aria-label="Delete job"
-                    onClick={() => setJobs(jobs.filter((_, i) => i !== idx))}
+                    onClick={() => { setJobs(jobs.filter((_, i) => i !== idx)); setIsDirty(true); }}
                   >
                     <Trash2 size={14} />
                   </Button>
@@ -665,6 +687,7 @@ export default function SettingsPage() {
                       const updated = [...jobs];
                       updated[idx].hourlyRate = Number(e.target.value);
                       setJobs(updated);
+                      setIsDirty(true);
                     }}
                   />
                   <FormInput
@@ -676,6 +699,7 @@ export default function SettingsPage() {
                       const updated = [...jobs];
                       updated[idx].weeklyTarget = Number(e.target.value);
                       setJobs(updated);
+                      setIsDirty(true);
                     }}
                   />
                 </div>
@@ -687,6 +711,7 @@ export default function SettingsPage() {
                       const updated = [...jobs];
                       updated[idx].enableExpenseTracking = e.target.checked;
                       setJobs(updated);
+                      setIsDirty(true);
                     }}
                     className="accent-primary"
                   />
@@ -715,14 +740,14 @@ export default function SettingsPage() {
               type="number"
               step="0.1"
               value={gasPrice}
-              onChange={(e) => setGasPrice(e.target.value)}
+              onChange={(e) => { setGasPrice(e.target.value); setIsDirty(true); }}
             />
             <FormInput
               label="Consumption (L/100km)"
               type="number"
               step="0.1"
               value={carConsumption}
-              onChange={(e) => setCarConsumption(e.target.value)}
+              onChange={(e) => { setCarConsumption(e.target.value); setIsDirty(true); }}
             />
           </div>
         </Section>
@@ -743,6 +768,7 @@ export default function SettingsPage() {
                         const updated = [...bills];
                         updated[idx].name = e.target.value;
                         setBills(updated);
+                        setIsDirty(true);
                       }}
                     />
                   </div>
@@ -756,6 +782,7 @@ export default function SettingsPage() {
                         const updated = [...bills];
                         updated[idx].amount = Number(e.target.value);
                         setBills(updated);
+                        setIsDirty(true);
                       }}
                     />
                   </div>
@@ -770,6 +797,7 @@ export default function SettingsPage() {
                         const updated = [...bills];
                         updated[idx].dueDay = Number(e.target.value);
                         setBills(updated);
+                        setIsDirty(true);
                       }}
                     />
                   </div>
@@ -778,7 +806,7 @@ export default function SettingsPage() {
                       variant="ghost"
                       size="icon"
                       aria-label="Delete bill"
-                      onClick={() => setBills(bills.filter((_, i) => i !== idx))}
+                      onClick={() => { setBills(bills.filter((_, i) => i !== idx)); setIsDirty(true); }}
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -812,7 +840,7 @@ export default function SettingsPage() {
                 label: p.label,
               }))}
               value={(aiProviderSetting || "claude") as string}
-              onChange={(v) => setAiProviderSetting(v as AIProvider)}
+              onChange={(v) => { setAiProviderSetting(v as AIProvider); setIsDirty(true); }}
               layoutId="ai-provider"
               className="w-full"
             />
@@ -822,7 +850,7 @@ export default function SettingsPage() {
             type="password"
             placeholder={hasAiKey ? "Key saved \u2014 enter new to replace" : AI_PROVIDERS.find((p) => p.id === (aiProviderSetting || "claude"))?.placeholder}
             value={newAiKey}
-            onChange={(e) => setNewAiKey(e.target.value)}
+            onChange={(e) => { setNewAiKey(e.target.value); setIsDirty(true); }}
           />
           {hasAiKey && (
             <Button
@@ -875,7 +903,7 @@ export default function SettingsPage() {
                   >
                     <Link2 size={14} />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => handleRevokeShare(s.token)} aria-label="Revoke">
+                  <Button size="icon" variant="ghost" onClick={() => setConfirmRevokeToken(s.token)} aria-label="Revoke">
                     <XCircle size={14} />
                   </Button>
                   <Button size="icon" variant="ghost" onClick={() => handleDeleteShare(s.token)} aria-label="Delete">
@@ -965,6 +993,20 @@ export default function SettingsPage() {
               </div>
             </Modal>
           )}
+
+          <ConfirmDialog
+            open={!!confirmRevokeToken}
+            onClose={() => setConfirmRevokeToken(null)}
+            onConfirm={() => {
+              if (confirmRevokeToken) {
+                handleRevokeShare(confirmRevokeToken);
+                setConfirmRevokeToken(null);
+              }
+            }}
+            title="Revoke share?"
+            message="This will immediately revoke access for anyone using this share link. This action cannot be undone."
+            confirmLabel="Revoke"
+          />
         </Section>
       </div>
 

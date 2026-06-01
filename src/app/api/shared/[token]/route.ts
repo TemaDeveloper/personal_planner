@@ -42,10 +42,17 @@ async function fetchSectionData(
     case "habits": {
       const habits = await Habit.find({ userId: ownerId, active: true }).lean();
       const habitIds = habits.map((h) => h._id);
+      const habitMap = new Map(habits.map((h) => [String(h._id), h.name as string]));
       const logs = await HabitLog.find({ habitId: { $in: habitIds } })
         .sort({ date: -1 })
         .lean();
-      return { data: logs, meta: { habits } };
+      // Project to readable rows so the viewer shows habit names, not ObjectIds
+      const data = logs.map((l) => ({
+        date: l.date,
+        habit: habitMap.get(String(l.habitId)) ?? "Unknown",
+        completed: "Yes",
+      }));
+      return { data, meta: { habits } };
     }
     case "study": {
       const data = await StudySession.find({ userId: ownerId })
@@ -134,7 +141,7 @@ export async function GET(
     return NextResponse.json({ error: "This share has expired" }, { status: 410 });
 
   const owner = await User.findById(share.ownerId).select("name email").lean();
-  const { data, meta } = await fetchSectionData(
+  const { data } = await fetchSectionData(
     share.sectionType,
     String(share.ownerId),
     share.scopeFilter ?? null
@@ -145,7 +152,27 @@ export async function GET(
     scopeFilter: share.scopeFilter,
     ownerName: (owner?.name as string) || "Unknown",
     permission: share.permission,
-    data,
-    meta,
+    data: stripInternalFields(data),
+  });
+}
+
+// Internal/identifying fields that must never leave the server in a public share.
+const INTERNAL_FIELDS = new Set([
+  "_id",
+  "__v",
+  "userId",
+  "ownerId",
+  "templateId",
+  "habitId",
+]);
+
+function stripInternalFields(data: unknown[]): Record<string, unknown>[] {
+  return data.map((row) => {
+    if (!row || typeof row !== "object") return { value: row };
+    const clean: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(row as Record<string, unknown>)) {
+      if (!INTERNAL_FIELDS.has(key)) clean[key] = value;
+    }
+    return clean;
   });
 }

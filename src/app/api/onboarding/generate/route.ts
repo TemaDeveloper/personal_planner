@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (stack) console.error("[onboarding/generate] Stack:", stack);
 
     return NextResponse.json(
-      { error: message.slice(0, 200) },
+      { error: "Something went wrong generating your sections. Please try again." },
       { status: 500 }
     );
   }

@@ -33,6 +33,7 @@ export const config = {
     "/settings/:path*",
     "/export/:path*",
     "/sections/:path*",
+    "/shared",
     "/onboarding",
   ],
 };

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/ui/form-input";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import { PageTransition } from "@/components/ui/page-transition";
 
 const EXPORT_TYPES = [
   { value: "work", label: "Work Sessions", desc: "Hours logged across all jobs" },
@@ -29,7 +30,14 @@ export default function ExportPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
+  const dateError = from && to && from > to ? "\"From\" date must be before \"To\" date" : "";
+
   const handleExport = () => {
+    if (dateError) {
+      toast.error(dateError);
+      return;
+    }
+
     const params = new URLSearchParams({ type });
     if (from) params.append("from", from);
     if (to) params.append("to", to);
@@ -39,10 +47,10 @@ export default function ExportPage() {
   };
 
   return (
-    <div className="animate-slide-up">
+    <PageTransition>
       <PageHeader
         title="Export"
-        description="Download your data as CSV for Excel"
+        description="Download your data as Excel"
       />
 
       <Card padding="lg" className="space-y-6">
@@ -108,9 +116,13 @@ export default function ExportPage() {
               onChange={(e) => setTo(e.target.value)}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Leave empty to export all data
-          </p>
+          {dateError ? (
+            <p className="text-xs text-destructive mt-2">{dateError}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-2">
+              Leave empty to export all data
+            </p>
+          )}
         </div>
 
         {/* Export button */}
@@ -118,11 +130,12 @@ export default function ExportPage() {
           onClick={handleExport}
           size="lg"
           className="w-full"
+          disabled={!!dateError}
         >
           <Download size={16} />
           Download CSV
         </Button>
       </Card>
-    </div>
+    </PageTransition>
   );
 }

@@ -12,7 +12,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProgressPie } from "@/components/ui/progress-pie";
-import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
 
 interface AttendanceRecord {

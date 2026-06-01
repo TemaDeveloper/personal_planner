@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { ACADEMIC_ITEM_TYPES } from "@/lib/constants";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageTransition } from "@/components/ui/page-transition";
 
 interface StudySession {
@@ -310,6 +311,8 @@ function LogTimeTab({
   const [minutes, setMinutes] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -334,10 +337,20 @@ function LogTimeTab({
     setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`/api/study/sessions/${id}`, { method: "DELETE" });
-    setSessions((prev) => prev.filter((s) => s._id !== id));
-    toast.success("Session removed");
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/study/sessions/${deleteTarget}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      setSessions((prev) => prev.filter((s) => s._id !== deleteTarget));
+      toast.success("Session removed");
+    } catch {
+      toast.error("Failed to delete session");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -405,7 +418,7 @@ function LogTimeTab({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleDelete(s._id)}
+                onClick={() => setDeleteTarget(s._id)}
                 className="hover:text-destructive"
                 aria-label="Delete session"
               >
@@ -415,6 +428,14 @@ function LogTimeTab({
           </Card>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        message="This will permanently delete this study session."
+        loading={deleting}
+      />
     </div>
   );
 }
@@ -433,6 +454,8 @@ function HomeworkTab({
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState(new Date().toISOString().split("T")[0]);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -459,22 +482,35 @@ function HomeworkTab({
   };
 
   const toggleComplete = async (id: string, completed: boolean) => {
-    const res = await fetch(`/api/study/homework/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: !completed }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/study/homework/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: !completed }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
       setHomework((prev) =>
         prev.map((h) => (h._id === id ? { ...h, completed: !completed } : h))
       );
+    } catch {
+      toast.error("Failed to update homework");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`/api/study/homework/${id}`, { method: "DELETE" });
-    setHomework((prev) => prev.filter((h) => h._id !== id));
-    toast.success("Homework removed");
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/study/homework/${deleteTarget}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      setHomework((prev) => prev.filter((h) => h._id !== deleteTarget));
+      toast.success("Homework removed");
+    } catch {
+      toast.error("Failed to delete homework");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   const pending = homework.filter((h) => !h.completed);
@@ -550,7 +586,7 @@ function HomeworkTab({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleDelete(h._id)}
+              onClick={() => setDeleteTarget(h._id)}
               className="hover:text-destructive"
               aria-label="Delete homework"
             >
@@ -581,7 +617,7 @@ function HomeworkTab({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(h._id)}
+                  onClick={() => setDeleteTarget(h._id)}
                   className="hover:text-destructive"
                   aria-label="Delete homework"
                 >
@@ -592,6 +628,14 @@ function HomeworkTab({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        message="This will permanently delete this homework item."
+        loading={deleting}
+      />
     </div>
   );
 }
@@ -613,6 +657,8 @@ function AcademicTab({
   const [formDueDate, setFormDueDate] = useState(new Date().toISOString().split("T")[0]);
   const [formGrade, setFormGrade] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = typeFilter === "all" ? items : items.filter((i) => i.type === typeFilter);
 
@@ -648,22 +694,35 @@ function AcademicTab({
   };
 
   const toggleComplete = async (id: string, completed: boolean) => {
-    const res = await fetch(`/api/study/academic/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: !completed }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/study/academic/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: !completed }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
       setItems((prev) =>
         prev.map((i) => (i._id === id ? { ...i, completed: !completed } : i))
       );
+    } catch {
+      toast.error("Failed to update item");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`/api/study/academic/${id}`, { method: "DELETE" });
-    setItems((prev) => prev.filter((i) => i._id !== id));
-    toast.success("Item removed");
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/study/academic/${deleteTarget}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      setItems((prev) => prev.filter((i) => i._id !== deleteTarget));
+      toast.success("Item removed");
+    } catch {
+      toast.error("Failed to delete item");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   const filterSegments = [
@@ -773,7 +832,7 @@ function AcademicTab({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleDelete(item._id)}
+                onClick={() => setDeleteTarget(item._id)}
                 className="hover:text-destructive"
                 aria-label="Delete item"
               >
@@ -784,14 +843,23 @@ function AcademicTab({
         ))}
 
         {filtered.length === 0 && (
-          <Card className="text-center">
-            <FileText size={32} className="mx-auto mb-4" style={{ color: "var(--text-muted)" }} />
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              No {typeFilter === "all" ? "academic items" : `${typeFilter}s`} yet
-            </p>
-          </Card>
+          <EmptyState
+            icon={FileText}
+            title={`No ${typeFilter === "all" ? "academic items" : `${typeFilter}s`} yet`}
+            description="Track your assignments, exams, and other academic items here."
+            actionLabel="Add Item"
+            onAction={() => setShowForm(true)}
+          />
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        message="This will permanently delete this academic item."
+        loading={deleting}
+      />
     </div>
   );
 }

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageTransition } from "@/components/ui/page-transition";
 
 interface Milestone {
@@ -54,6 +55,8 @@ export default function GoalsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("active");
   const [filterCategory, setFilterCategory] = useState<string>("");
   const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/goals")
@@ -74,18 +77,24 @@ export default function GoalsPage() {
     const updated = [...goal.milestones];
     updated[msIdx] = { ...updated[msIdx], completed: !updated[msIdx].completed };
 
-    const res = await fetch(`/api/goals/${goal._id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ milestones: updated }),
-    });
+    try {
+      const res = await fetch(`/api/goals/${goal._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ milestones: updated }),
+      });
 
-    if (res.ok) {
-      setGoals((prev) =>
-        prev.map((g) =>
-          g._id === goal._id ? { ...g, milestones: updated } : g
-        )
-      );
+      if (res.ok) {
+        setGoals((prev) =>
+          prev.map((g) =>
+            g._id === goal._id ? { ...g, milestones: updated } : g
+          )
+        );
+      } else {
+        toast.error("Failed to update milestone");
+      }
+    } catch {
+      toast.error("Failed to update milestone");
     }
   };
 
@@ -161,10 +170,11 @@ export default function GoalsPage() {
             onAction={() => setShowForm(true)}
           />
         ) : (
-          <Card className="text-center" padding="lg">
-            <Target size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
-            <p className="text-sm text-[var(--text-muted)]">No goals match filters.</p>
-          </Card>
+          <EmptyState
+            icon={Target}
+            title="No goals match filters"
+            description="Try adjusting your filters to see more goals."
+          />
         )
       ) : (
         <div className="space-y-3">
@@ -258,17 +268,23 @@ export default function GoalsPage() {
                       value={goal.status}
                       onChange={async (e) => {
                         const newStatus = e.target.value;
-                        const res = await fetch(`/api/goals/${goal._id}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ status: newStatus }),
-                        });
-                        if (res.ok) {
-                          setGoals((prev) =>
-                            prev.map((g) =>
-                              g._id === goal._id ? { ...g, status: newStatus } : g
-                            )
-                          );
+                        try {
+                          const res = await fetch(`/api/goals/${goal._id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ status: newStatus }),
+                          });
+                          if (res.ok) {
+                            setGoals((prev) =>
+                              prev.map((g) =>
+                                g._id === goal._id ? { ...g, status: newStatus } : g
+                              )
+                            );
+                          } else {
+                            toast.error("Failed to update status");
+                          }
+                        } catch {
+                          toast.error("Failed to update status");
                         }
                       }}
                       className="text-xs !py-1 !px-1"
@@ -280,11 +296,7 @@ export default function GoalsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={async () => {
-                        await fetch(`/api/goals/${goal._id}`, { method: "DELETE" });
-                        setGoals((prev) => prev.filter((g) => g._id !== goal._id));
-                        toast.success("Goal deleted");
-                      }}
+                      onClick={() => setDeleteTarget(goal._id)}
                       className="hover:text-destructive"
                       aria-label="Delete goal"
                     >
@@ -297,6 +309,33 @@ export default function GoalsPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          setDeleting(true);
+          try {
+            const res = await fetch(`/api/goals/${deleteTarget}`, { method: "DELETE" });
+            if (res.ok) {
+              setGoals((prev) => prev.filter((g) => g._id !== deleteTarget));
+              toast.success("Goal deleted");
+            } else {
+              toast.error("Failed to delete goal");
+            }
+          } catch {
+            toast.error("Failed to delete goal");
+          } finally {
+            setDeleting(false);
+            setDeleteTarget(null);
+          }
+        }}
+        title="Delete goal?"
+        message="This will permanently delete this goal and all its milestones."
+        confirmLabel="Delete"
+        loading={deleting}
+      />
 
       <GoalModal
         open={showForm}

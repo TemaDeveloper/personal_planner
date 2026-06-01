@@ -17,7 +17,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from "date-fns";
-import { TrendingUp, TrendingDown, DollarSign, Receipt, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Receipt, Download, Fuel } from "lucide-react";
 
 export default async function FinancesPage() {
   const session = await auth();
@@ -34,15 +34,25 @@ export default async function FinancesPage() {
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
 
-  const [user, todaySessions, weekSessions, monthSessions, monthExpenses, monthRoutes] =
-    await Promise.all([
-      User.findById(userId).lean(),
-      WorkSession.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean(),
-      WorkSession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean(),
-      WorkSession.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
-      Expense.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
-      Route.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
-    ]);
+  const [
+    user,
+    todaySessions,
+    weekSessions,
+    monthSessions,
+    monthExpenses,
+    todayRoutes,
+    weekRoutes,
+    monthRoutes,
+  ] = await Promise.all([
+    User.findById(userId).lean(),
+    WorkSession.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean(),
+    WorkSession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean(),
+    WorkSession.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
+    Expense.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
+    Route.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean(),
+    Route.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean(),
+    Route.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
+  ]);
 
   if (!user) return null;
 
@@ -70,11 +80,20 @@ export default async function FinancesPage() {
   const totalBills = bills.reduce((s: number, b: { amount: number }) => s + b.amount, 0);
   const totalExpenses = monthExpenses.reduce((s: number, e: { amount: number }) => s + e.amount, 0);
 
-  const totalKm = monthRoutes.reduce((s: number, r: { distanceKm: number }) => s + r.distanceKm, 0);
-  const gasCalc = calculateGasCost(totalKm, {
+  const gasConfig = {
     gasPriceCentsPerLitre: user.workConfig?.gasPrice || 210.2,
     carConsumptionLPer100km: user.workConfig?.carConsumption || 9.0,
-  });
+  };
+  const sumKm = (routes: { distanceKm: number }[]) =>
+    routes.reduce((s: number, r: { distanceKm: number }) => s + r.distanceKm, 0);
+
+  const todayKm = sumKm(todayRoutes);
+  const weekKm = sumKm(weekRoutes);
+  const totalKm = sumKm(monthRoutes);
+
+  const todayGas = calculateGasCost(todayKm, gasConfig);
+  const weekGas = calculateGasCost(weekKm, gasConfig);
+  const gasCalc = calculateGasCost(totalKm, gasConfig);
 
   const totalOutflows = totalBills + totalExpenses + gasCalc.totalCostDollars;
   const netIncome = totalMonthIncome - totalOutflows;
@@ -186,6 +205,34 @@ export default async function FinancesPage() {
               <span className="text-sm font-bold">
                 {formatCurrency(totalOutflows, currency)}
               </span>
+            </div>
+          </Card>
+
+          {/* Fuel breakdown */}
+          <Card padding="md" className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Fuel size={14} className="text-muted-foreground" />
+              <h3 className="text-xs font-semibold text-muted-foreground">
+                FUEL ({gasConfig.carConsumptionLPer100km.toFixed(1)} L/100km @{" "}
+                {(gasConfig.gasPriceCentsPerLitre / 100).toFixed(2)}/L)
+              </h3>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Today", km: todayKm, gas: todayGas },
+                { label: "This week", km: weekKm, gas: weekGas },
+                { label: "This month", km: totalKm, gas: gasCalc },
+              ].map((f) => (
+                <div key={f.label}>
+                  <p className="stat-label">{f.label}</p>
+                  <p className="text-lg font-semibold">
+                    {formatCurrency(f.gas.totalCostDollars, currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {f.km.toFixed(0)} km · {f.gas.litresUsed.toFixed(1)} L
+                  </p>
+                </div>
+              ))}
             </div>
           </Card>
 

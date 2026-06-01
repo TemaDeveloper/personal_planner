@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
 import { Plus, Trash2, BookOpen, Star, Download } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -35,6 +36,8 @@ export default function ReadingPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/reading")
@@ -200,11 +203,7 @@ export default function ReadingPage() {
                       variant="ghost"
                       size="icon"
                       aria-label="Delete book"
-                      onClick={async () => {
-                        await fetch(`/api/reading/${book._id}`, { method: "DELETE" });
-                        setBooks((prev) => prev.filter((b) => b._id !== book._id));
-                        toast.success("Book removed");
-                      }}
+                      onClick={() => setDeleteTarget(book._id)}
                       className="text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 size={14} />
@@ -231,6 +230,31 @@ export default function ReadingPage() {
           }}
         />
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          setDeleting(true);
+          try {
+            const res = await fetch(`/api/reading/${deleteTarget}`, { method: "DELETE" });
+            if (res.ok) {
+              setBooks((prev) => prev.filter((b) => b._id !== deleteTarget));
+              toast.success("Book removed");
+            } else {
+              toast.error("Failed to remove book");
+            }
+          } catch {
+            toast.error("Network error while removing book");
+          }
+          setDeleting(false);
+          setDeleteTarget(null);
+        }}
+        message="This will permanently remove this book from your reading list."
+        confirmLabel="Remove"
+        loading={deleting}
+      />
     </PageTransition>
   );
 }

@@ -389,7 +389,10 @@ Output ONLY the complete updated HTML:`;
 
     return NextResponse.json({ html: cleaned });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message.slice(0, 200) }, { status: 500 });
+    console.error("[edit-layout] AI error:", err instanceof Error ? err.message : err);
+    return NextResponse.json(
+      { error: "Failed to generate layout. Please try again." },
+      { status: 500 }
+    );
   }
 }

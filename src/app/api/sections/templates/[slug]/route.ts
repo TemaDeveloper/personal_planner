@@ -16,7 +16,14 @@ export async function GET(
 
   await connectDB();
   const { slug } = await params;
-  const template = await SectionTemplate.findOne({ slug }).lean();
+  const template = await SectionTemplate.findOne({
+    slug,
+    $or: [
+      { createdBy: userId },
+      { createdBy: null },
+      { isShared: true },
+    ],
+  }).lean();
 
   if (!template) {
     return NextResponse.json({ error: "Template not found" }, { status: 404 });

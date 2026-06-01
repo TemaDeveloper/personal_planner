@@ -21,8 +21,20 @@ export async function GET(req: NextRequest) {
   const filter: Record<string, unknown> = { userId };
   if (from || to) {
     filter.date = {};
-    if (from) (filter.date as Record<string, Date>).$gte = new Date(from);
-    if (to) (filter.date as Record<string, Date>).$lte = new Date(to);
+    if (from) {
+      const fromDate = new Date(from);
+      if (isNaN(fromDate.getTime())) {
+        return NextResponse.json({ error: "Invalid 'from' date" }, { status: 400 });
+      }
+      (filter.date as Record<string, Date>).$gte = fromDate;
+    }
+    if (to) {
+      const toDate = new Date(to);
+      if (isNaN(toDate.getTime())) {
+        return NextResponse.json({ error: "Invalid 'to' date" }, { status: 400 });
+      }
+      (filter.date as Record<string, Date>).$lte = toDate;
+    }
   }
 
   const expenses = await Expense.find(filter).sort({ date: -1 }).limit(200).lean();

@@ -20,11 +20,24 @@ interface FieldDef {
   type: string;
 }
 
-const UNSAFE_ATTR = /\s+on\w+\s*=\s*["'][^"']*["']/gi;
-const SCRIPT_TAG = /<script[\s>][\s\S]*?<\/script\s*>/gi;
 const EXPRESSION_RE = /\{([^}]+)\}/g;
 const DATA_EACH_RE = /<([a-z][a-z0-9]*)\s([^>]*?)data-each="entries"([^>]*)>([\s\S]*?)<\/\1>/gi;
 const ALLOWED_TOKEN = /^[a-zA-Z_]\w*$/;
+
+/** Tags allowed in layout HTML */
+const ALLOWED_TAGS = new Set([
+  "div", "span", "p", "h1", "h2", "h3", "h4", "h5", "h6",
+  "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td",
+  "strong", "em", "b", "i", "br", "hr", "a", "img",
+  "section", "article", "header", "footer", "nav", "main",
+  "dl", "dt", "dd", "figure", "figcaption", "blockquote", "pre", "code",
+]);
+
+/** Attributes allowed on any tag */
+const ALLOWED_ATTRS = new Set([
+  "class", "style", "id", "data-each", "href", "src", "alt", "title",
+  "width", "height", "colspan", "rowspan", "role", "aria-label",
+]);
 
 function escapeHtml(str: string): string {
   return String(str)
@@ -34,9 +47,47 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Strict HTML sanitizer using allowlist approach.
+ * Only permitted tags and attributes survive; everything else is stripped.
+ */
 function sanitizeHtml(html: string): string {
-  let clean = html.replace(SCRIPT_TAG, "");
-  clean = clean.replace(UNSAFE_ATTR, "");
+  // Remove script tags and their content entirely
+  let clean = html.replace(/<script[\s>][\s\S]*?<\/script\s*>/gi, "");
+
+  // Remove all event handler attributes (on*)
+  clean = clean.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "");
+
+  // Remove javascript: protocol from href/src
+  clean = clean.replace(/(href|src)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "$1=\"\"");
+
+  // Remove data: protocol from src (except images)
+  clean = clean.replace(/src\s*=\s*(?:"data:(?!image\/)[^"]*"|'data:(?!image\/)[^']*')/gi, "src=\"\"");
+
+  // Strip disallowed tags (keep content, remove tag)
+  clean = clean.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (match, tag) => {
+    const lower = tag.toLowerCase();
+    if (!ALLOWED_TAGS.has(lower)) return "";
+
+    // For allowed tags, filter attributes
+    if (match.startsWith("</")) return `</${lower}>`;
+
+    const attrString = match.slice(match.indexOf(tag) + tag.length, match.length - (match.endsWith("/>") ? 2 : 1));
+    const filteredAttrs: string[] = [];
+    const attrRe = /([a-z][a-z0-9-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/gi;
+    let attrMatch;
+    while ((attrMatch = attrRe.exec(attrString)) !== null) {
+      const attrName = attrMatch[1].toLowerCase();
+      const attrVal = attrMatch[2] ?? attrMatch[3] ?? attrMatch[4] ?? "";
+      if (ALLOWED_ATTRS.has(attrName) || attrName.startsWith("data-")) {
+        filteredAttrs.push(`${attrName}="${attrVal}"`);
+      }
+    }
+
+    const selfClose = match.endsWith("/>");
+    return `<${lower}${filteredAttrs.length ? " " + filteredAttrs.join(" ") : ""}${selfClose ? " /" : ""}>`;
+  });
+
   return clean;
 }
 

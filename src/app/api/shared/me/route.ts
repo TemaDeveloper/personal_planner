@@ -20,8 +20,11 @@ export async function GET() {
   }
 
   const now = new Date();
+  // Match invitee email case-insensitively so a casing mismatch between the
+  // owner-entered invite and the stored account email doesn't hide the share.
+  const escapedEmail = user.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const shares = await ShareToken.find({
-    inviteeEmail: user.email,
+    inviteeEmail: { $regex: `^${escapedEmail}$`, $options: "i" },
     revokedAt: null,
     $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
   })

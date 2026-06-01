@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     ownerId: userId,
     sectionType,
     scopeFilter: scopeFilter ?? null,
-    inviteeEmail: inviteeEmail ?? null,
+    inviteeEmail: inviteeEmail ? inviteeEmail.toLowerCase().trim() : null,
     permission: "view",
     expiresAt: expiresAt ? new Date(expiresAt) : null,
     revokedAt: null,

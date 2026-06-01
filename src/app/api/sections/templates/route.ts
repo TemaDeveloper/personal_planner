@@ -28,7 +28,7 @@ export async function GET() {
     $or: [
       { createdBy: userId },
       { createdBy: null },
-      { usageCount: { $gte: 3 } },
+      { isShared: true, usageCount: { $gte: 3 } },
     ],
   })
     .sort({ usageCount: -1 })

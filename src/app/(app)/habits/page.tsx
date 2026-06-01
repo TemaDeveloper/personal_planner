@@ -7,6 +7,7 @@ import { Plus, Flame, Trash2, ChevronLeft, ChevronRight, Download } from "lucide
 import { Modal } from "@/components/ui/modal";
 import { FormInput } from "@/components/ui/form-input";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ProgressPie } from "@/components/ui/progress-pie";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,6 +27,7 @@ export default function HabitsPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const currentMonth = addMonths(new Date(), monthOffset);
   const daysInMonth = getDaysInMonth(currentMonth);
@@ -49,6 +51,9 @@ export default function HabitsPage() {
   const toggleHabit = async (habitId: string, day: number) => {
     const dateStr = `${monthStr}-${String(day).padStart(2, "0")}`;
 
+    // Snapshot for rollback
+    const snapshot = habits;
+
     // Optimistic update
     setHabits((prev) =>
       prev.map((h) => {
@@ -61,17 +66,30 @@ export default function HabitsPage() {
       })
     );
 
-    await fetch(`/api/habits/${habitId}/log`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: dateStr }),
-    });
+    try {
+      const res = await fetch(`/api/habits/${habitId}/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateStr }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setHabits(snapshot);
+      toast.error("Failed to update habit");
+    }
   };
 
   const deleteHabit = async (habitId: string) => {
-    await fetch(`/api/habits/${habitId}`, { method: "DELETE" });
-    toast.success("Habit removed");
-    setHabits((prev) => prev.filter((h) => h._id !== habitId));
+    try {
+      const res = await fetch(`/api/habits/${habitId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Habit removed");
+      setHabits((prev) => prev.filter((h) => h._id !== habitId));
+    } catch {
+      toast.error("Failed to delete habit");
+    } finally {
+      setDeleteTarget(null);
+    }
   };
 
   // Stats
@@ -160,7 +178,7 @@ export default function HabitsPage() {
                       <span className="text-sm">{habit.emoji}</span>
                       <span className="text-xs font-medium truncate" style={{ color: "var(--text-primary)" }}>{habit.name}</span>
                       <button
-                        onClick={() => deleteHabit(habit._id)}
+                        onClick={() => setDeleteTarget(habit._id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto cursor-pointer"
                         aria-label={`Delete ${habit.name}`}
                       >
@@ -247,6 +265,15 @@ export default function HabitsPage() {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteHabit(deleteTarget);
+        }}
+        message="This will permanently remove this habit and all its tracking data."
+      />
     </PageTransition>
   );
 }

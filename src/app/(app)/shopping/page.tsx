@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormInput } from "@/components/ui/form-input";
 import {
   Plus,
@@ -39,6 +40,8 @@ export default function ShoppingPage() {
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [showNewList, setShowNewList] = useState(false);
   const [newItemName, setNewItemName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/shopping")
@@ -192,12 +195,7 @@ export default function ShoppingPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={async () => {
-                        await fetch(`/api/shopping/${activeList._id}`, { method: "DELETE" });
-                        setLists((prev) => prev.filter((l) => l._id !== activeList._id));
-                        setActiveListId(lists.find((l) => l._id !== activeList._id)?._id || null);
-                        toast.success("List deleted");
-                      }}
+                      onClick={() => setDeleteTarget(activeList._id)}
                       className="hover:text-destructive"
                       aria-label="Delete list"
                     >
@@ -305,6 +303,31 @@ export default function ShoppingPage() {
           setActiveListId(list._id);
           setShowNewList(false);
         }}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          setDeleting(true);
+          try {
+            const res = await fetch(`/api/shopping/${deleteTarget}`, { method: "DELETE" });
+            if (res.ok) {
+              setLists((prev) => prev.filter((l) => l._id !== deleteTarget));
+              setActiveListId(lists.find((l) => l._id !== deleteTarget)?._id || null);
+              toast.success("List deleted");
+            } else {
+              toast.error("Failed to delete shopping list");
+            }
+          } catch {
+            toast.error("Network error while deleting shopping list");
+          }
+          setDeleting(false);
+          setDeleteTarget(null);
+        }}
+        message="This will permanently delete this shopping list and all its items."
+        loading={deleting}
       />
     </PageTransition>
   );

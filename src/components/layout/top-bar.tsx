@@ -21,6 +21,7 @@ function getPageTitle(pathname: string, enabledSections: string[]): string {
   if (pathname === "/dashboard") return "Dashboard";
   if (pathname === "/settings") return "Settings";
   if (pathname === "/export") return "Export";
+  if (pathname === "/shared") return "Shared with me";
 
   for (const id of enabledSections) {
     const meta = SECTION_META[id as keyof typeof SECTION_META];

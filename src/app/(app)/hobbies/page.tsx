@@ -9,6 +9,7 @@ import { FormInput, FormSelect, FormTextarea } from "@/components/ui/form-input"
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Plus,
   Trash2,
@@ -73,6 +74,10 @@ export default function HobbiesPage() {
   const [showManage, setShowManage] = useState(false);
   const [newHobbyName, setNewHobbyName] = useState("");
   const [newHobbyColor, setNewHobbyColor] = useState(HOBBY_COLORS[0]);
+  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const [deleteHobbyName, setDeleteHobbyName] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -115,16 +120,25 @@ export default function HobbiesPage() {
   };
 
   const removeHobby = async (name: string) => {
-    const updated = hobbies.filter((h) => h.name !== name);
-    const res = await fetch("/api/user/preferences", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hobbiesConfig: { hobbies: updated } }),
-    });
-    if (res.ok) {
-      setHobbies(updated);
-      toast.success("Hobby removed");
+    setDeleting(true);
+    try {
+      const updated = hobbies.filter((h) => h.name !== name);
+      const res = await fetch("/api/user/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hobbiesConfig: { hobbies: updated } }),
+      });
+      if (res.ok) {
+        setHobbies(updated);
+        toast.success("Hobby removed");
+      } else {
+        toast.error("Failed to remove hobby");
+      }
+    } catch {
+      toast.error("Network error while removing hobby");
     }
+    setDeleting(false);
+    setDeleteHobbyName(null);
   };
 
   // Weekly stats
@@ -202,7 +216,7 @@ export default function HobbiesPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeHobby(h.name)}
+                  onClick={() => setDeleteHobbyName(h.name)}
                   className="hover:text-destructive"
                   aria-label="Delete hobby"
                 >
@@ -369,11 +383,7 @@ export default function HobbiesPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={async () => {
-                      await fetch(`/api/hobbies/sessions/${s._id}`, { method: "DELETE" });
-                      setSessions((prev) => prev.filter((x) => x._id !== s._id));
-                      toast.success("Deleted");
-                    }}
+                    onClick={() => setDeleteSessionId(s._id)}
                     className="hover:text-destructive"
                     aria-label="Delete session"
                   >
@@ -457,11 +467,7 @@ export default function HobbiesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={async () => {
-                          await fetch(`/api/hobbies/projects/${p._id}`, { method: "DELETE" });
-                          setProjects((prev) => prev.filter((x) => x._id !== p._id));
-                          toast.success("Deleted");
-                        }}
+                        onClick={() => setDeleteProjectId(p._id)}
                         className="hover:text-destructive"
                         aria-label="Delete project"
                       >
@@ -499,6 +505,68 @@ export default function HobbiesPage() {
           }}
         />
       </Modal>
+
+      {/* Confirm delete session */}
+      <ConfirmDialog
+        open={!!deleteSessionId}
+        onClose={() => setDeleteSessionId(null)}
+        onConfirm={async () => {
+          if (!deleteSessionId) return;
+          setDeleting(true);
+          try {
+            const res = await fetch(`/api/hobbies/sessions/${deleteSessionId}`, { method: "DELETE" });
+            if (res.ok) {
+              setSessions((prev) => prev.filter((x) => x._id !== deleteSessionId));
+              toast.success("Session deleted");
+            } else {
+              toast.error("Failed to delete session");
+            }
+          } catch {
+            toast.error("Network error while deleting session");
+          }
+          setDeleting(false);
+          setDeleteSessionId(null);
+        }}
+        message="This will permanently delete this hobby session."
+        loading={deleting}
+      />
+
+      {/* Confirm delete project */}
+      <ConfirmDialog
+        open={!!deleteProjectId}
+        onClose={() => setDeleteProjectId(null)}
+        onConfirm={async () => {
+          if (!deleteProjectId) return;
+          setDeleting(true);
+          try {
+            const res = await fetch(`/api/hobbies/projects/${deleteProjectId}`, { method: "DELETE" });
+            if (res.ok) {
+              setProjects((prev) => prev.filter((x) => x._id !== deleteProjectId));
+              toast.success("Project deleted");
+            } else {
+              toast.error("Failed to delete project");
+            }
+          } catch {
+            toast.error("Network error while deleting project");
+          }
+          setDeleting(false);
+          setDeleteProjectId(null);
+        }}
+        message="This will permanently delete this hobby project."
+        loading={deleting}
+      />
+
+      {/* Confirm delete hobby */}
+      <ConfirmDialog
+        open={!!deleteHobbyName}
+        onClose={() => setDeleteHobbyName(null)}
+        onConfirm={() => {
+          if (deleteHobbyName) removeHobby(deleteHobbyName);
+        }}
+        message="This will permanently remove this hobby and its configuration."
+        confirmLabel="Remove"
+        loading={deleting}
+      />
     </PageTransition>
   );
 }

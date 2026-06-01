@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormTextarea } from "@/components/ui/form-input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface JournalEntry {
   _id: string;
@@ -35,6 +36,8 @@ export default function JournalPage() {
   const [mood, setMood] = useState(3);
   const [saving, setSaving] = useState(false);
   const [todayId, setTodayId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/journal")
@@ -192,16 +195,7 @@ export default function JournalPage() {
                     variant="ghost"
                     size="icon"
                     aria-label="Delete entry"
-                    onClick={async () => {
-                      await fetch(`/api/journal/${entry._id}`, { method: "DELETE" });
-                      setEntries((prev) => prev.filter((e) => e._id !== entry._id));
-                      if (entry._id === todayId) {
-                        setContent("");
-                        setMood(3);
-                        setTodayId(null);
-                      }
-                      toast.success("Entry deleted");
-                    }}
+                    onClick={() => setDeleteTarget(entry._id)}
                     className="text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 size={14} />
@@ -215,6 +209,35 @@ export default function JournalPage() {
           </div>
         )}
       </Card>
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          setDeleting(true);
+          try {
+            const res = await fetch(`/api/journal/${deleteTarget}`, { method: "DELETE" });
+            if (!res.ok) {
+              toast.error("Failed to delete entry");
+              return;
+            }
+            setEntries((prev) => prev.filter((e) => e._id !== deleteTarget));
+            if (deleteTarget === todayId) {
+              setContent("");
+              setMood(3);
+              setTodayId(null);
+            }
+            toast.success("Entry deleted");
+            setDeleteTarget(null);
+          } catch {
+            toast.error("Failed to delete entry");
+          } finally {
+            setDeleting(false);
+          }
+        }}
+        message="This will permanently delete this journal entry."
+        loading={deleting}
+      />
     </PageTransition>
   );
 }

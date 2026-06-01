@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
 import {
   Plus,
@@ -46,6 +47,9 @@ export default function HouseworkPage() {
   const [chores, setChores] = useState<ChoreConfig[]>([]);
   const [newChoreName, setNewChoreName] = useState("");
   const [newChoreFreq, setNewChoreFreq] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [deleteChoreName, setDeleteChoreName] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Load chore config
   useEffect(() => {
@@ -77,17 +81,26 @@ export default function HouseworkPage() {
   };
 
   const removeChore = async (name: string) => {
-    const updated = chores.filter((c) => c.name !== name);
-    const res = await fetch("/api/user/preferences", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ houseworkConfig: { chores: updated } }),
-    });
-    if (res.ok) {
-      setChores(updated);
-      toast.success("Chore removed");
-      fetchChecklist(date);
+    setDeleting(true);
+    try {
+      const updated = chores.filter((c) => c.name !== name);
+      const res = await fetch("/api/user/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ houseworkConfig: { chores: updated } }),
+      });
+      if (res.ok) {
+        setChores(updated);
+        toast.success("Chore removed");
+        fetchChecklist(date);
+      } else {
+        toast.error("Failed to remove chore");
+      }
+    } catch {
+      toast.error("Network error while removing chore");
     }
+    setDeleting(false);
+    setDeleteChoreName(null);
   };
 
   const fetchChecklist = (d: Date) => {
@@ -208,7 +221,7 @@ export default function HouseworkPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => removeChore(c.name)}
+                onClick={() => setDeleteChoreName(c.name)}
                 className="hover:text-destructive"
                 aria-label="Delete chore"
               >
@@ -340,11 +353,7 @@ export default function HouseworkPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={async () => {
-                      await fetch(`/api/housework/${item._id}`, { method: "DELETE" });
-                      setChecklist((prev) => prev.filter((c) => c._id !== item._id));
-                      toast.success("Removed");
-                    }}
+                    onClick={() => setDeleteTaskId(item._id)}
                     className="hover:text-destructive"
                     aria-label="Delete item"
                   >
@@ -374,6 +383,43 @@ export default function HouseworkPage() {
           </button>
         </div>
       )}
+
+      {/* Confirm delete task */}
+      <ConfirmDialog
+        open={!!deleteTaskId}
+        onClose={() => setDeleteTaskId(null)}
+        onConfirm={async () => {
+          if (!deleteTaskId) return;
+          setDeleting(true);
+          try {
+            const res = await fetch(`/api/housework/${deleteTaskId}`, { method: "DELETE" });
+            if (res.ok) {
+              setChecklist((prev) => prev.filter((c) => c._id !== deleteTaskId));
+              toast.success("Task removed");
+            } else {
+              toast.error("Failed to delete task");
+            }
+          } catch {
+            toast.error("Network error while deleting task");
+          }
+          setDeleting(false);
+          setDeleteTaskId(null);
+        }}
+        message="This will permanently delete this housework task."
+        loading={deleting}
+      />
+
+      {/* Confirm delete recurring chore */}
+      <ConfirmDialog
+        open={!!deleteChoreName}
+        onClose={() => setDeleteChoreName(null)}
+        onConfirm={() => {
+          if (deleteChoreName) removeChore(deleteChoreName);
+        }}
+        message="This will permanently remove this recurring chore."
+        confirmLabel="Remove"
+        loading={deleting}
+      />
 
       {/* Add task modal */}
       <AddTaskModal

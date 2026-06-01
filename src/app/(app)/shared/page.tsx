@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageTransition } from "@/components/ui/page-transition";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Users } from "lucide-react";
 import { SECTIONS, SECTION_META, type SectionId } from "@/lib/constants";
 
@@ -48,12 +49,11 @@ export default function SharedWithMePage() {
       {loading ? (
         <p className="text-sm text-[var(--text-muted)] animate-pulse">Loading...</p>
       ) : items.length === 0 ? (
-        <Card padding="lg" className="text-center">
-          <Users size={32} className="mx-auto mb-3 text-[var(--text-muted)]" />
-          <p className="text-sm text-[var(--text-muted)]">
-            Nothing shared with you yet.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title="Nothing shared with you yet"
+          description="When someone shares a section with you, it will appear here."
+        />
       ) : (
         <div className="grid gap-3">
           {items.map((item) => (
