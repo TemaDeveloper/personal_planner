@@ -23,7 +23,7 @@ import MealPlan from "@/lib/models/meal-plan";
 import CustomEntry from "@/lib/models/custom-entry";
 import SectionTemplate from "@/lib/models/section-template";
 
-function fmtDate(d: unknown): string {
+export function fmtDate(d: unknown): string {
   if (!d) return "";
   try {
     return format(new Date(d as string), "yyyy-MM-dd");
@@ -32,7 +32,7 @@ function fmtDate(d: unknown): string {
   }
 }
 
-async function buildExport(
+export async function buildExport(
   section: string,
   userId: string,
   job?: string
