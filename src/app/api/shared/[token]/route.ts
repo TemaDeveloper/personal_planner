@@ -20,12 +20,20 @@ import ShareToken from "@/lib/models/share-token";
 import Route from "@/lib/models/route";
 import { buildWorkReport } from "@/lib/work-report";
 
+export interface WorkShareJobBreakdown {
+  jobName: string;
+  hours: number;
+  rate: number;
+  total: number;
+}
+
 export interface WorkShareSummary {
   grossEarnings: number;
   gasCost: number;
   net: number;
   totalKm: number;
   litres: number;
+  byJob: WorkShareJobBreakdown[];
 }
 
 async function fetchSectionData(
@@ -95,6 +103,7 @@ async function fetchSectionData(
           net: report.net,
           totalKm: report.gas.totalKm,
           litres: report.gas.litresUsed,
+          byJob: report.byJob,
         },
         routes,
       };

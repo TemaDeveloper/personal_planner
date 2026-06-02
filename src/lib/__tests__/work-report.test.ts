@@ -71,6 +71,29 @@ describe("buildWorkReport", () => {
     expect(report.net).toBe(90);
   });
 
+  it("breaks gross earnings down per job, aggregating sessions and sorting by total", () => {
+    const report = buildWorkReport({
+      sessions: [
+        { jobName: "Wuzzals", date: "2026-05-20", hours: 8, note: "" },
+        { jobName: "Advapay", date: "2026-05-21", hours: 5, note: "" },
+        { jobName: "Wuzzals", date: "2026-05-22", hours: 2, note: "" },
+      ],
+      jobs: [
+        { name: "Wuzzals", hourlyRate: 25 },
+        { name: "Advapay", hourlyRate: 40 },
+      ],
+      routes: [],
+      ...GAS,
+    });
+
+    // Wuzzals: (8+2)h * 25 = 250; Advapay: 5h * 40 = 200; sorted desc by total.
+    expect(report.byJob).toEqual([
+      { jobName: "Wuzzals", hours: 10, rate: 25, total: 250 },
+      { jobName: "Advapay", hours: 5, rate: 40, total: 200 },
+    ]);
+    expect(report.byJob.reduce((s, j) => s + j.total, 0)).toBe(report.grossEarnings);
+  });
+
   it("handles empty input without dividing by zero", () => {
     const report = buildWorkReport({ sessions: [], jobs: [], routes: [], ...GAS });
     expect(report.grossEarnings).toBe(0);

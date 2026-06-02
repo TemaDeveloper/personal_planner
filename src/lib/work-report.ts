@@ -28,9 +28,18 @@ export interface WorkReportRow {
   total: number;
 }
 
+export interface WorkReportJobBreakdown {
+  jobName: string;
+  hours: number;
+  rate: number;
+  total: number;
+}
+
 export interface WorkReport {
   rows: WorkReportRow[];
   routeRows: WorkReportRoute[];
+  /** Gross earnings split per job — the line items that sum to grossEarnings. */
+  byJob: WorkReportJobBreakdown[];
   grossEarnings: number;
   gas: GasCalculation;
   net: number;
@@ -71,6 +80,24 @@ export function buildWorkReport(input: {
   });
   grossEarnings = round2(grossEarnings);
 
+  // Aggregate per job so the breakdown can show where the gross came from.
+  const byJobMap = new Map<string, WorkReportJobBreakdown>();
+  for (const r of rows) {
+    const existing = byJobMap.get(r.jobName);
+    if (existing) {
+      existing.hours = round2(existing.hours + r.hours);
+      existing.total = round2(existing.total + r.total);
+    } else {
+      byJobMap.set(r.jobName, {
+        jobName: r.jobName,
+        hours: r.hours,
+        rate: r.rate,
+        total: r.total,
+      });
+    }
+  }
+  const byJob = [...byJobMap.values()].sort((a, b) => b.total - a.total);
+
   const totalKm = input.routes.reduce((sum, r) => sum + (r.distanceKm || 0), 0);
   const gas = calculateGasCost(totalKm, {
     gasPriceCentsPerLitre: input.gasPriceCentsPerLitre,
@@ -86,5 +113,5 @@ export function buildWorkReport(input: {
     distanceKm: r.distanceKm,
   }));
 
-  return { rows, routeRows, grossEarnings, gas, net };
+  return { rows, routeRows, byJob, grossEarnings, gas, net };
 }
