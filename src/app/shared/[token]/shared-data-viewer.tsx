@@ -148,42 +148,30 @@ function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
   );
 }
 
-/* ---------- Stat card (used in the bento row) ---------- */
+/* ---------- Stat card (right-rail stats) ---------- */
 function StatCard({
   label,
   value,
-  hero,
   icon,
+  tone = "neutral",
 }: {
   label: string;
   value: string;
-  hero?: boolean;
   icon: React.ReactNode;
+  tone?: "neutral" | "net";
 }) {
   return (
-    <div
-      className={
-        "relative overflow-hidden rounded-2xl border p-5 " +
-        (hero
-          ? "sm:col-span-2 border-indigo-400/40 bg-gradient-to-br from-indigo-500/25 to-indigo-600/5 ring-1 ring-indigo-400/20"
-          : "border-white/10 bg-white/[0.03]")
-      }
-    >
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex items-center justify-between">
-        <p
-          className={
-            "text-xs uppercase tracking-wider " +
-            (hero ? "text-indigo-200/80" : "text-white/40")
-          }
-        >
-          {label}
-        </p>
-        <span className={hero ? "text-indigo-200/70" : "text-white/30"}>{icon}</span>
+        <p className="text-xs uppercase tracking-wider text-white/40">{label}</p>
+        <span className={tone === "net" ? "text-emerald-300/60" : "text-white/30"}>
+          {icon}
+        </span>
       </div>
       <p
         className={
-          "mt-2 tabular-nums font-bold " +
-          (hero ? "text-3xl sm:text-4xl text-indigo-100" : "text-2xl text-white")
+          "mt-2 text-2xl font-bold tabular-nums " +
+          (tone === "net" ? "text-emerald-200" : "text-white")
         }
       >
         {value}
@@ -192,20 +180,113 @@ function StatCard({
   );
 }
 
-/* ---------- Earnings summary: bento stat row + full-width breakdown ---------- */
-function EarningsSection({ summary }: { summary: WorkSummary }) {
+/** A breakdown line item: a label and the dollar amount it contributed. */
+interface BreakdownItem {
+  key: string;
+  label: string;
+  value: number;
+}
+
+/**
+ * Builds the itemized lines under "Gross earnings".
+ * - Single job (one distinct job in the data): one line per session, labelled
+ *   by its note (falling back to the date) — this is the "what did I do" view.
+ * - Multiple jobs: one line per job (name · hours × rate).
+ */
+function buildBreakdown(
+  summary: WorkSummary,
+  rows: Record<string, unknown>[]
+): BreakdownItem[] {
+  if (summary.byJob.length <= 1) {
+    return rows.map((r, i) => {
+      const note = typeof r["Note"] === "string" ? r["Note"].trim() : "";
+      const label = note || formatCell("Date", r["Date"]) || `Session ${i + 1}`;
+      const value = typeof r["Total"] === "number" ? r["Total"] : 0;
+      return { key: String(i), label, value };
+    });
+  }
+  return summary.byJob.map((j) => ({
+    key: j.jobName,
+    label: `${j.jobName} · ${j.hours}h × ${money(j.rate)}/h`,
+    value: j.total,
+  }));
+}
+
+/* ---------- Earnings dashboard: bento (hero + breakdown left, stats right) ---------- */
+function EarningsSection({
+  summary,
+  rows,
+}: {
+  summary: WorkSummary;
+  rows: Record<string, unknown>[];
+}) {
+  const items = buildBreakdown(summary, rows);
+
   return (
-    <div className="space-y-6">
-      {/* Bento stat row — Gross is the hero, spanning two columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* LEFT (2 cols): gross hero + itemized breakdown */}
+      <div className="lg:col-span-2 space-y-4">
+        {/* Gross earnings hero */}
+        <div className="relative overflow-hidden rounded-2xl border border-indigo-400/40 bg-gradient-to-br from-indigo-500/25 to-indigo-600/5 ring-1 ring-indigo-400/20 p-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-indigo-200/80">
+              Gross earnings
+            </p>
+            <span className="text-indigo-200/70">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </span>
+          </div>
+          <p className="mt-2 text-4xl font-bold tabular-nums text-indigo-100">
+            {money(summary.grossEarnings)}
+          </p>
+        </div>
+
+        {/* Itemized breakdown with dot leaders */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-5">
+            Breakdown
+          </h2>
+
+          <LeaderLine label="Gross earnings" value={summary.grossEarnings} emphasis />
+
+          <div className="my-3 border-t border-white/10" />
+
+          <div className="space-y-3 text-sm">
+            {items.length === 0 ? (
+              <p className="text-white/40">No sessions recorded.</p>
+            ) : (
+              items.map((it) => (
+                <LeaderLine key={it.key} label={it.label} value={it.value} />
+              ))
+            )}
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-white/10 space-y-3">
+            <LeaderLine label="Gas & fuel" value={summary.gasCost} sign="minus" />
+            <div className="pt-3 border-t-2 border-white/20 flex items-baseline gap-3">
+              <span className="font-bold text-white uppercase tracking-wide">Total</span>
+              <span className="flex-1 border-b border-dotted border-white/15 translate-y-[-4px]" />
+              <span className="tabular-nums font-bold text-2xl text-emerald-200">
+                {money(summary.net)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT (1 col): stacked stat cards */}
+      <div className="space-y-4">
         <StatCard
-          hero
-          label="Gross earnings"
-          value={money(summary.grossEarnings)}
+          tone="net"
+          label="Net total"
+          value={money(summary.net)}
           icon={
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+              <polyline points="16 7 22 7 22 13" />
             </svg>
           }
         />
@@ -221,70 +302,12 @@ function EarningsSection({ summary }: { summary: WorkSummary }) {
             </svg>
           }
         />
-        <StatCard
-          label="Net total"
-          value={money(summary.net)}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-              <polyline points="16 7 22 7 22 13" />
-            </svg>
-          }
-        />
-      </div>
-
-      {/* Full-width earnings breakdown with dot leaders, per job */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider">
-            Earnings breakdown
-          </h2>
-          <span className="text-xs text-white/40">
-            {summary.totalKm} km · {summary.litres} L
-          </span>
-        </div>
-
-        <div className="space-y-3 text-sm">
-          {summary.byJob.length === 0 ? (
-            <p className="text-white/40">No earnings recorded.</p>
-          ) : (
-            summary.byJob.map((j) => (
-              <LeaderLine
-                key={j.jobName}
-                label={
-                  <span>
-                    {j.jobName}
-                    <span className="text-white/40">
-                      {" "}
-                      · {j.hours}h × {money(j.rate)}/h
-                    </span>
-                  </span>
-                }
-                value={j.total}
-              />
-            ))
-          )}
-
-          {/* Gross subtotal */}
-          <div className="pt-3 border-t border-white/10">
-            <LeaderLine label="Gross earnings" value={summary.grossEarnings} emphasis />
-          </div>
-
-          {/* Gas deduction */}
-          <LeaderLine label="Gas & fuel" value={summary.gasCost} sign="minus" />
-
-          {/* Net total */}
-          <div className="pt-3 mt-1 border-t-2 border-white/20">
-            <div className="flex items-baseline gap-3">
-              <span className="font-bold text-white uppercase tracking-wide">
-                Net total
-              </span>
-              <span className="flex-1 border-b border-dotted border-white/15 translate-y-[-4px]" />
-              <span className="tabular-nums font-bold text-2xl text-indigo-200">
-                {money(summary.net)}
-              </span>
-            </div>
-          </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <p className="text-xs uppercase tracking-wider text-white/40">Distance driven</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-white">
+            {summary.totalKm} <span className="text-base font-medium text-white/50">km</span>
+          </p>
+          <p className="mt-1 text-xs text-white/40">{summary.litres} L of fuel used</p>
         </div>
       </div>
     </div>
@@ -328,7 +351,7 @@ export function SharedDataViewer({ token }: { token: string }) {
         </a>
       </div>
 
-      {shared.summary && <EarningsSection summary={shared.summary} />}
+      {shared.summary && <EarningsSection summary={shared.summary} rows={rows} />}
 
       {rows.length === 0 ? (
         <p className="text-white/40 text-sm">No data to show yet.</p>
