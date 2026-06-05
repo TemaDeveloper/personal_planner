@@ -8,7 +8,7 @@ export const FONTS = ["sans", "inter", "geometric", "serif", "mono"] as const;
 export type FontStyle = (typeof FONTS)[number];
 
 export const FONT_META: Record<FontStyle, { label: string; description: string; preview: string }> = {
-  sans:      { label: "Jakarta",       description: "Modern & friendly",    preview: "Aa" },
+  sans:      { label: "Hanken",        description: "Editorial & clean",    preview: "Aa" },
   inter:     { label: "Inter",         description: "Modern & neutral",     preview: "Aa" },
   geometric: { label: "Space Grotesk", description: "Bold & geometric",     preview: "Aa" },
   serif:     { label: "Playfair",      description: "Elegant & editorial",  preview: "Aa" },
