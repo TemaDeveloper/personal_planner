@@ -41,13 +41,10 @@ export function AppSidebar() {
     pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <aside className="hidden md:flex flex-col flex-shrink-0 w-60 sticky top-0 h-screen border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] backdrop-blur-xl">
+    <aside className="hidden md:flex flex-col flex-shrink-0 w-60 sticky top-0 h-screen border-r border-[var(--sidebar-border)] bg-[var(--sidebar)]">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 h-14 border-b border-[var(--sidebar-border)]">
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-extrabold bg-[var(--accent-color)] text-primary-foreground"
-          style={{ boxShadow: "0 0 16px var(--accent-glow)" }}
-        >
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-extrabold bg-[var(--accent-color)] text-primary-foreground">
           P
         </div>
         <span className="font-semibold text-sm text-[var(--text-primary)]">
