@@ -295,13 +295,7 @@ svg.ic { stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: ro
 .ai-sub { font-size: 12px; color: var(--t2); }
 .close2 { margin-left: auto; width: 38px; height: 38px; border: 0; background: none; color: var(--t2); border-radius: 8px; display: grid; place-items: center; flex: none; }
 .close2:hover { background: var(--hair); }
-.ai-tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--hair); flex: none; overflow-x: auto; scrollbar-width: none; }
-.ai-tabs::-webkit-scrollbar { display: none; }
-.ai-tab { min-height: 46px; padding: 0 13px; border: 0; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 13.5px; font-weight: 600; color: var(--t2); white-space: nowrap; flex: none; }
-.ai-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .ai-body { padding: 18px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.ai-pane { display: none; }
-.ai-pane.show { display: block; animation: rise .25s ease; }
 .ai-text { width: 100%; min-height: 92px; resize: vertical; padding: 12px 13px; font-family: inherit; font-size: 16px; line-height: 1.5; background: var(--surface-2); border: 1px solid var(--hair); border-radius: 10px; color: var(--t1); -webkit-appearance: none; appearance: none; }
 .ai-text:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
 .sugs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
@@ -519,7 +513,7 @@ svg.ic { stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: ro
           <div class="field"><label>Accent</label><div class="swatches"><div class="sw on" style="background:#C0613C;color:#C0613C"></div><div class="sw" style="background:#5E8C6A"></div><div class="sw" style="background:#3F6B8C"></div><div class="sw" style="background:#8C6A3F"></div><div class="sw" style="background:#7A5C7E"></div></div><p class="faint" style="font-size:11.5px;margin-top:8px">Muted single hues only — no neon, one accent at a time.</p></div>
         </div>
         <div class="card pad-lg" style="margin-bottom:14px"><div class="section-title">Regional</div><div class="row g3"><div class="field"><label>Currency</label><div class="seg"><button class="on">CAD</button><button>USD</button><button>EUR</button></div></div><div class="field"><label>Week starts</label><div class="seg"><button class="on">Mon</button><button>Sun</button></div></div><div class="field"><label>Time</label><div class="seg"><button class="on">24h</button><button>12h</button></div></div></div></div>
-        <div class="row g2"><div class="card"><div class="section-title">AI</div><p class="muted" style="font-size:13px">Powers smart onboarding &amp; AI-generated sections.</p><button class="btn btn-ghost mt">Manage API key</button></div><div class="card"><div class="section-title">Data</div><p class="muted" style="font-size:13px">Export everything to Excel, or manage sharing.</p><button class="btn btn-ghost mt">Export &amp; sharing</button></div></div>
+        <div class="row g2"><div class="card"><div class="section-title">AI</div><p class="muted" style="font-size:13px">Powers smart onboarding &amp; AI-generated sections.</p><button class="btn btn-ghost mt">Manage API key</button></div><div class="card"><div class="section-title">Data</div><p class="muted" style="font-size:13px">Export sections to Excel, or manage sharing &amp; access.</p><div style="display:flex;gap:10px;flex-wrap:wrap" class="mt"><button class="btn btn-ghost" onclick="openOv('overlayExport')"><svg class="ic" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Export to Excel</button><button class="btn btn-ghost" onclick="openOv('overlayShare')"><svg class="ic" style="width:15px;height:15px" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg> Sharing &amp; access</button></div></div></div>
       </section>
 
       <!-- PLACEHOLDER -->
@@ -541,70 +535,80 @@ svg.ic { stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: ro
   </div>
 </div>
 
-<!-- AI Studio overlay — the app's command center -->
-<div class="overlay" id="overlay" onclick="if(event.target===this)closeAI()">
+<!-- AI Studio overlay — generate & update personalized sections only -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeOv('overlay')">
   <div class="ai-studio">
     <div class="ai-head">
       <div class="ai-icon"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg></div>
-      <div><div class="ai-title">AI Studio</div><div class="ai-sub">Generate &amp; update sections · export · share</div></div>
-      <button class="close2" onclick="closeAI()" aria-label="Close"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-    </div>
-    <div class="ai-tabs">
-      <button class="ai-tab active" data-ai="create">Create &amp; update</button>
-      <button class="ai-tab" data-ai="export">Export</button>
-      <button class="ai-tab" data-ai="share">Share</button>
+      <div><div class="ai-title">AI Studio</div><div class="ai-sub">Generate &amp; update your personalized sections</div></div>
+      <button class="close2" onclick="closeOv('overlay')" aria-label="Close"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="ai-body">
-      <!-- CREATE / UPDATE -->
-      <div class="ai-pane show" id="ai-create">
-        <div class="fieldlabel first">Describe a section or a change</div>
-        <textarea class="ai-text" placeholder="e.g. “Create a water-intake tracker with a daily goal” · “Add a Tips column to my Work table” · “Make a Travel section with destinations, dates and budget”"></textarea>
-        <div class="sugs">
-          <button class="sug">＋ Water tracker</button>
-          <button class="sug">＋ Mood journal</button>
-          <button class="sug">＋ Tips column → Work</button>
-          <button class="sug">＋ Travel budget section</button>
-        </div>
-        <div class="ai-actions">
-          <button class="btn btn-ghost">Update existing section…</button>
-          <button class="btn btn-primary"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Generate</button>
-        </div>
-        <p class="faint" style="font-size:11.5px;margin-top:14px">The AI builds the fields, layout and UI for the section, adds it to your nav, and you can edit or remove it anytime.</p>
+      <div class="fieldlabel first">Describe a section or a change</div>
+      <textarea class="ai-text" placeholder="e.g. “Create a water-intake tracker with a daily goal” · “Add a Tips column to my Work table” · “Make a Travel section with destinations, dates and budget”"></textarea>
+      <div class="sugs">
+        <button class="sug">＋ Water tracker</button>
+        <button class="sug">＋ Mood journal</button>
+        <button class="sug">＋ Tips column → Work</button>
+        <button class="sug">＋ Travel budget section</button>
       </div>
+      <div class="ai-actions">
+        <button class="btn btn-ghost">Update existing section…</button>
+        <button class="btn btn-primary"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Generate</button>
+      </div>
+      <p class="faint" style="font-size:11.5px;margin-top:14px">The AI builds the fields, layout and UI for the section, adds it to your nav, and you can edit or remove it anytime.</p>
+    </div>
+  </div>
+</div>
 
-      <!-- EXPORT -->
-      <div class="ai-pane" id="ai-export">
-        <div class="fieldlabel first">Choose sections to export to Excel</div>
-        <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Work <span class="meta">· hours, earnings, gas/km</span></div></div>
-        <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Finances <span class="meta">· income, bills, expenses</span></div></div>
-        <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Gym <span class="meta">· attendance</span></div></div>
-        <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Study <span class="meta">· sessions, grades</span></div></div>
-        <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Journal <span class="meta">· entries</span></div></div>
-        <div class="fieldlabel">Date range</div>
-        <div class="seg"><button class="on">This month</button><button>This year</button><button>All time</button></div>
-        <div class="ai-actions">
-          <button class="btn btn-primary" style="flex:1"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Export 2 sections (.xlsx)</button>
-        </div>
+<!-- Export modal (opened from Settings → Data) -->
+<div class="overlay" id="overlayExport" onclick="if(event.target===this)closeOv('overlayExport')">
+  <div class="ai-studio">
+    <div class="ai-head">
+      <div class="ai-icon"><svg class="ic" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></div>
+      <div><div class="ai-title">Export to Excel</div><div class="ai-sub">Choose which sections to include</div></div>
+      <button class="close2" onclick="closeOv('overlayExport')" aria-label="Close"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="ai-body">
+      <div class="fieldlabel first">Sections</div>
+      <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Work <span class="meta">· hours, earnings, gas/km</span></div></div>
+      <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Finances <span class="meta">· income, bills, expenses</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Gym <span class="meta">· attendance</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Study <span class="meta">· sessions, grades</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Journal <span class="meta">· entries</span></div></div>
+      <div class="fieldlabel">Date range</div>
+      <div class="seg"><button class="on">This month</button><button>This year</button><button>All time</button></div>
+      <div class="ai-actions">
+        <button class="btn btn-primary" style="flex:1"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Export 2 sections (.xlsx)</button>
       </div>
+    </div>
+  </div>
+</div>
 
-      <!-- SHARE -->
-      <div class="ai-pane" id="ai-share">
-        <div class="fieldlabel first">What to share</div>
-        <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Work <span class="meta">· all jobs</span></div></div>
-        <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Finances</div></div>
-        <div class="fieldlabel">Access level</div>
-        <div class="seg"><button class="on">Viewer</button><button>Editor</button></div>
-        <div class="fieldlabel">Share with</div>
-        <div class="seg" id="shareMethod"><button class="on" onclick="setShareMethod('link',this)">Magic link</button><button onclick="setShareMethod('people',this)">Specific people</button></div>
-        <div id="shareEmail" style="display:none"><div class="fieldlabel">Emails or accounts</div><input class="input" placeholder="supervisor@company.com, teammate@…" /></div>
-        <div class="ai-actions">
-          <button class="btn btn-primary" style="flex:1"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1"/></svg> Create share link</button>
-        </div>
-        <div class="linkbox"><span class="url num">planner.app/s/8fK2-q9Lm…</span><button class="btn btn-ghost copy">Copy</button></div>
-        <div class="fieldlabel">Active shares</div>
-        <div class="share-row"><div class="si"><div class="sn">Work — all jobs</div><div class="sm">supervisor@company.com · expires Aug 1</div></div><span class="role-pill view">Viewer</span></div>
-        <div class="share-row"><div class="si"><div class="sn">Finances</div><div class="sm">Magic link · no expiry</div></div><span class="role-pill">Editor</span></div>
+<!-- Share modal (opened from Settings → Data) -->
+<div class="overlay" id="overlayShare" onclick="if(event.target===this)closeOv('overlayShare')">
+  <div class="ai-studio">
+    <div class="ai-head">
+      <div class="ai-icon"><svg class="ic" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></div>
+      <div><div class="ai-title">Sharing &amp; access</div><div class="ai-sub">Share sections with viewer or editor access</div></div>
+      <button class="close2" onclick="closeOv('overlayShare')" aria-label="Close"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="ai-body">
+      <div class="fieldlabel first">What to share</div>
+      <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Work <span class="meta">· all jobs</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Finances</div></div>
+      <div class="fieldlabel">Access level</div>
+      <div class="seg"><button class="on">Viewer</button><button>Editor</button></div>
+      <div class="fieldlabel">Share with</div>
+      <div class="seg" id="shareMethod"><button class="on" onclick="setShareMethod('link',this)">Magic link</button><button onclick="setShareMethod('people',this)">Specific people</button></div>
+      <div id="shareEmail" style="display:none"><div class="fieldlabel">Emails or accounts</div><input class="input" placeholder="supervisor@company.com, teammate@…" /></div>
+      <div class="ai-actions">
+        <button class="btn btn-primary" style="flex:1"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1"/></svg> Create share link</button>
       </div>
+      <div class="linkbox"><span class="url num">planner.app/s/8fK2-q9Lm…</span><button class="btn btn-ghost copy">Copy</button></div>
+      <div class="fieldlabel">Active shares</div>
+      <div class="share-row"><div class="si"><div class="sn">Work — all jobs</div><div class="sm">supervisor@company.com · expires Aug 1</div></div><span class="role-pill view">Viewer</span></div>
+      <div class="share-row"><div class="si"><div class="sn">Finances</div><div class="sm">Magic link · no expiry</div></div><span class="role-pill">Editor</span></div>
     </div>
   </div>
 </div>
@@ -653,16 +657,13 @@ function setMode(m){
   document.getElementById(map[m]) && document.getElementById(map[m]).classList.add('on');
 }
 function toggleMode(){ setMode(document.documentElement.dataset.mode==='dark'?'light':'dark'); }
-// AI Studio
-function openAI(){ document.getElementById('overlay').classList.add('show'); closeDrawer(); }
-function closeAI(){ document.getElementById('overlay').classList.remove('show'); }
-document.querySelectorAll('.ai-tab').forEach(t=>t.addEventListener('click',()=>{
-  document.querySelectorAll('.ai-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-  document.querySelectorAll('.ai-pane').forEach(p=>p.classList.remove('show'));
-  document.getElementById('ai-'+t.dataset.ai).classList.add('show');
-}));
+// Overlays (AI Studio · Export · Share)
+function openOv(id){ document.getElementById(id).classList.add('show'); closeDrawer(); }
+function closeOv(id){ document.getElementById(id).classList.remove('show'); }
+function closeAllOv(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); }
+function openAI(){ openOv('overlay'); }
 document.querySelectorAll('.sug').forEach(s=>s.addEventListener('click',()=>{
-  const ta = document.querySelector('#ai-create .ai-text');
+  const ta = document.querySelector('#overlay .ai-text');
   ta.value = (ta.value ? ta.value+'\n' : '') + s.textContent.replace('＋','Add a').trim();
   ta.focus();
 }));
@@ -672,7 +673,7 @@ function setShareMethod(m, btn){
 }
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openAI(); }
-  if(e.key==='Escape'){ closeAI(); closeDrawer(); }
+  if(e.key==='Escape'){ closeAllOv(); closeDrawer(); }
 });
 </script>
 </body>
