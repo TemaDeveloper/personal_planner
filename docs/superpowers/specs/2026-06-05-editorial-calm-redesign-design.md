@@ -106,6 +106,12 @@ Global **Settings** shrinks to only: Account · Appearance · Regional · AI · 
 
 These IA changes interleave with the visual phases below (a section's Phase-N restyle includes adding its Setup tab and wiring it to the new nav).
 
+**6. Section model — Hybrid + AI-editable (approved).** Sections come in two kinds, and the AI works across both:
+- **Built-in sections** (Work, Finances, Gym, Study, …) stay hardcoded in `constants.ts` because they carry specialized logic generic templates can't express (gas/km calculator, earnings breakdown, per-section Excel export, sharing scopes).
+- **AI-generated custom sections** continue via the `section-template` model (`/api/sections/templates`, `/sections/[slug]`, `layout-renderer`) — AI produces `fields` + `viewType` + `layoutHtml` from a prompt.
+- **New capability:** the AI can also *edit/extend built-ins* (e.g. "add a Tips column to Work"). Built-ins are React, not template-driven, so this needs a mechanism — an **extensible custom-fields/columns layer** attached to a built-in section (extra fields stored per-user and rendered alongside the bespoke UI), rather than rewriting the built-in. The implementation plan must design this layer; it is the one non-trivial new piece of this decision.
+- **AI entry point:** the **AI Studio** modal (✨ button) is the single home for generate + update. **Export** and **Sharing** are NOT in AI Studio — they live in Settings → Data (and optionally per-section menus).
+
 ## 4. Affected Surfaces
 
 **Token layer:** `src/app/globals.css` (full rewrite of the system, keep structure/var names where consumed).
