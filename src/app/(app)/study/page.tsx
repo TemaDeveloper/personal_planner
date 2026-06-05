@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { StatBlock } from "@/components/ui/stat-block";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   GraduationCap,
   Clock,
@@ -109,7 +111,7 @@ export default function StudyPage() {
         <PageHeader title="Study" description="Subjects, homework & grades" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="h-32 animate-pulse" />
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
       </div>
@@ -144,8 +146,8 @@ export default function StudyPage() {
       {subjects.length === 0 && (
         <EmptyState
           icon={GraduationCap}
-          title="No study sessions yet"
-          description="Log your first study session to start tracking."
+          title="No subjects configured"
+          description="Add active subjects in your preferences to start tracking study time."
         />
       )}
 
@@ -215,49 +217,47 @@ function OverviewTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Card padding="md">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock size={16} style={{ color: "var(--accent-color)" }} />
-            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Study this week</span>
+      {/* Hero + supporting stats */}
+      <Card padding="md">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-10">
+          <StatBlock
+            label="Study this week"
+            value={`${hours}h ${mins}m`}
+            size="hero"
+          />
+          <div className="grid grid-cols-2 gap-6">
+            <StatBlock
+              label="Pending homework"
+              value={String(pendingHomework)}
+              size="md"
+            />
+            <StatBlock
+              label="Upcoming items"
+              value={String(upcomingItems.length)}
+              size="md"
+            />
           </div>
-          <div className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            {hours}h {mins}m
-          </div>
-        </Card>
-        <Card padding="md">
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen size={16} style={{ color: "var(--accent-color)" }} />
-            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Pending homework</span>
-          </div>
-          <div className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>{pendingHomework}</div>
-        </Card>
-        <Card padding="md">
-          <div className="flex items-center gap-2 mb-3">
-            <FileText size={16} style={{ color: "var(--accent-color)" }} />
-            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Upcoming items</span>
-          </div>
-          <div className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>{upcomingItems.length}</div>
-        </Card>
-      </div>
+        </div>
+      </Card>
 
       {perSubject.length > 0 && (
         <Card>
-          <h3 className="text-xs font-semibold mb-4" style={{ color: "var(--text-muted)" }}>
-            TIME PER SUBJECT THIS WEEK
-          </h3>
+          <h3 className="stat-label mb-4">Time per subject this week</h3>
           <div className="space-y-3">
             {perSubject.map((s) => (
-              <div key={s.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={s.name} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                     style={{ background: s.color }}
                   />
-                  <span className="text-sm" style={{ color: "var(--text-primary)" }}>{s.name}</span>
+                  <span className="text-sm truncate" style={{ color: "var(--text-primary)" }}>
+                    {s.name}
+                  </span>
                 </div>
-                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                  {Math.floor(s.minutes / 60)}h {s.minutes % 60}m
+                <span className="text-sm font-medium num flex-shrink-0" style={{ color: "var(--text-primary)" }}>
+                  {Math.floor(s.minutes / 60) > 0 && `${Math.floor(s.minutes / 60)}h `}
+                  {s.minutes % 60}m
                 </span>
               </div>
             ))}
@@ -267,22 +267,22 @@ function OverviewTab({
 
       {upcomingItems.length > 0 && (
         <Card>
-          <h3 className="text-xs font-semibold mb-4" style={{ color: "var(--text-muted)" }}>
-            UPCOMING DEADLINES
-          </h3>
-          <div className="space-y-2">
+          <h3 className="stat-label mb-4">Upcoming deadlines</h3>
+          <div className="space-y-3">
             {upcomingItems.slice(0, 5).map((item) => (
               <div
                 key={item._id}
-                className="flex items-center justify-between gap-2 text-sm"
+                className="flex items-center justify-between gap-3 text-sm"
               >
                 <div className="min-w-0 flex-1">
-                  <span className="font-medium truncate block" style={{ color: "var(--text-primary)" }}>{item.title}</span>
+                  <span className="font-medium truncate block" style={{ color: "var(--text-primary)" }}>
+                    {item.title}
+                  </span>
                   <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {item.subject} · {item.type}
                   </span>
                 </div>
-                <span className="text-xs flex-shrink-0" style={{ color: "var(--text-muted)" }}>
+                <span className="text-xs num flex-shrink-0" style={{ color: "var(--text-muted)" }}>
                   {new Date(item.dueDate).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -292,6 +292,14 @@ function OverviewTab({
             ))}
           </div>
         </Card>
+      )}
+
+      {upcomingItems.length === 0 && perSubject.length === 0 && (
+        <EmptyState
+          icon={Clock}
+          title="No activity yet this week"
+          description="Log a study session to see your weekly breakdown here."
+        />
       )}
     </div>
   );
@@ -398,36 +406,48 @@ function LogTimeTab({
         </form>
       </Card>
 
-      <div className="space-y-2">
-        {sessions.slice(0, 30).map((s) => (
-          <Card key={s._id} padding="md" className="flex items-center justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.subject}</span>
-              <span className="text-xs ml-2" style={{ color: "var(--text-muted)" }}>
-                {new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              </span>
-              {s.note && (
-                <span className="text-xs ml-2 truncate" style={{ color: "var(--text-muted)" }}>· {s.note}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                {Math.floor(s.minutes / 60) > 0 && `${Math.floor(s.minutes / 60)}h `}
-                {s.minutes % 60}m
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setDeleteTarget(s._id)}
-                className="hover:text-destructive"
-                aria-label="Delete session"
-              >
-                <Trash2 size={14} />
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {sessions.length === 0 ? (
+        <EmptyState
+          icon={Clock}
+          title="No sessions logged yet"
+          description="Log your first study session using the form above."
+        />
+      ) : (
+        <div className="space-y-2">
+          {sessions.slice(0, 30).map((s) => (
+            <Card key={s._id} padding="md" className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                  {s.subject}
+                </span>
+                <span className="text-xs ml-2 num" style={{ color: "var(--text-muted)" }}>
+                  {new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+                {s.note && (
+                  <span className="text-xs ml-2 truncate" style={{ color: "var(--text-muted)" }}>
+                    · {s.note}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold num" style={{ color: "var(--text-primary)" }}>
+                  {Math.floor(s.minutes / 60) > 0 && `${Math.floor(s.minutes / 60)}h `}
+                  {s.minutes % 60}m
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDeleteTarget(s._id)}
+                  className="hover:text-destructive"
+                  aria-label="Delete session"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}
@@ -519,9 +539,12 @@ function HomeworkTab({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-          {pending.length} pending
-        </h3>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          <span className="num font-semibold" style={{ color: "var(--text-primary)" }}>
+            {pending.length}
+          </span>{" "}
+          pending
+        </p>
         <Button onClick={() => setShowForm(!showForm)}>
           <Plus size={14} />
           Add
@@ -567,52 +590,42 @@ function HomeworkTab({
         </Card>
       )}
 
-      <div className="space-y-2">
-        {pending.map((h) => (
-          <Card key={h._id} padding="md" className="flex items-center gap-3">
-            <button
-              onClick={() => toggleComplete(h._id, h.completed)}
-              className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-all"
-              style={{ border: "2px solid var(--border-subtle)" }}
-              aria-label="Mark as complete"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{h.title}</p>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {h.subject}
-                {h.dueDate && ` · Due ${new Date(h.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDeleteTarget(h._id)}
-              className="hover:text-destructive"
-              aria-label="Delete homework"
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Card>
-        ))}
-      </div>
-
-      {completed.length > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>COMPLETED</h3>
+      {pending.length === 0 && completed.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="No homework yet"
+          description="Add a homework item to start tracking your assignments."
+          actionLabel="Add homework"
+          onAction={() => setShowForm(true)}
+        />
+      ) : (
+        <>
+          {pending.length === 0 && (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              All caught up — no pending homework.
+            </p>
+          )}
           <div className="space-y-2">
-            {completed.map((h) => (
-              <Card key={h._id} padding="md" className="flex items-center gap-3 opacity-60">
+            {pending.map((h) => (
+              <Card key={h._id} padding="md" className="flex items-center gap-3">
                 <button
                   onClick={() => toggleComplete(h._id, h.completed)}
-                  className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center"
-                  style={{ background: "var(--accent-color)" }}
-                  aria-label="Mark as incomplete"
-                >
-                  <Check size={12} className="text-white" />
-                </button>
+                  className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-colors"
+                  style={{ border: "2px solid var(--border-subtle)" }}
+                  aria-label="Mark as complete"
+                />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm line-through truncate" style={{ color: "var(--text-primary)" }}>{h.title}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{h.subject}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                    {h.title}
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    {h.subject}
+                    {h.dueDate && (
+                      <span className="num">
+                        {` · Due ${new Date(h.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <Button
                   variant="ghost"
@@ -626,7 +639,42 @@ function HomeworkTab({
               </Card>
             ))}
           </div>
-        </div>
+
+          {completed.length > 0 && (
+            <div>
+              <h3 className="stat-label mb-3">Completed</h3>
+              <div className="space-y-2">
+                {completed.map((h) => (
+                  <Card key={h._id} padding="md" className="flex items-center gap-3 opacity-60">
+                    <button
+                      onClick={() => toggleComplete(h._id, h.completed)}
+                      className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center"
+                      style={{ background: "var(--accent-color)" }}
+                      aria-label="Mark as incomplete"
+                    >
+                      <Check size={12} className="text-white" />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm line-through truncate" style={{ color: "var(--text-primary)" }}>
+                        {h.title}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{h.subject}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteTarget(h._id)}
+                      className="hover:text-destructive"
+                      aria-label="Delete homework"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <ConfirmDialog
@@ -735,7 +783,7 @@ function AcademicTab({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex flex-wrap gap-2">
           {filterSegments.map((t) => (
             <Button
@@ -807,7 +855,7 @@ function AcademicTab({
           <Card key={item._id} padding="md" className="flex items-center gap-3">
             <button
               onClick={() => toggleComplete(item._id, item.completed)}
-              className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-all"
+              className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-colors"
               style={{
                 background: item.completed ? "var(--accent-color)" : "transparent",
                 border: item.completed ? "none" : "2px solid var(--border-subtle)",
@@ -817,16 +865,21 @@ function AcademicTab({
               {item.completed && <Check size={12} className="text-white" />}
             </button>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${item.completed ? "line-through opacity-60" : ""}`} style={{ color: "var(--text-primary)" }}>
+              <p
+                className={`text-sm font-medium truncate ${item.completed ? "line-through opacity-60" : ""}`}
+                style={{ color: "var(--text-primary)" }}
+              >
                 {item.title}
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {item.subject} · {item.type}
-                {item.grade !== undefined && item.grade !== null && ` · Grade: ${item.grade}%`}
+                {item.grade !== undefined && item.grade !== null && (
+                  <span className="num">{` · ${item.grade}%`}</span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              <span className="text-xs num" style={{ color: "var(--text-muted)" }}>
                 {new Date(item.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
               <Button

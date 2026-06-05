@@ -31,12 +31,15 @@ export default async function SharedPage({
 
   if (isRevoked || isExpired) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
-        <div className="text-center max-w-md">
-          <h1 className="text-xl font-semibold text-white mb-2">
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{ background: "var(--surface-1)" }}
+      >
+        <div className="text-center max-w-md space-y-2">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
             This link is no longer active
           </h1>
-          <p className="text-sm text-white/60">
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             {isRevoked
               ? "The owner has revoked access to this shared data."
               : "This share link has expired."}
@@ -52,16 +55,27 @@ export default async function SharedPage({
   const scope = share.scopeFilter ? ` — ${share.scopeFilter}` : "";
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="border-b border-white/10 bg-white/[0.03]">
+    <div className="min-h-screen" style={{ background: "var(--surface-1)" }}>
+      <div
+        className="border-b"
+        style={{ borderColor: "var(--hair-strong)", background: "var(--surface-2)" }}
+      >
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold">{label}{scope}</h1>
-            <p className="text-sm text-white/50">
+            <h1
+              className="text-lg font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {label}{scope}
+            </h1>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
               Shared by {ownerName} — View only
             </p>
           </div>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-extrabold bg-indigo-500 text-white">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-extrabold"
+            style={{ background: "var(--accent-color)", color: "var(--surface-1)" }}
+          >
             P
           </div>
         </div>

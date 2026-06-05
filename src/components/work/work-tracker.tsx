@@ -9,6 +9,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { StatBlock } from "@/components/ui/stat-block";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/utils";
 import { calculateGasCost } from "@/lib/gas-calculator";
 
@@ -99,43 +102,50 @@ export function WorkTracker({
 
   return (
     <div className="space-y-6">
-      {/* Salary/hours summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card padding="md">
-          <p className="stat-label">Today</p>
-          <p className="stat-value text-xl">{todayHours.toFixed(1)}h</p>
-          {hourlyRate > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {formatCurrency(todayHours * hourlyRate, currency)}
+      {/* Hours summary — hero = this week; supporting = today & month */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {/* HERO: this week */}
+        <Card padding="md" className="sm:col-span-1">
+          <StatBlock
+            label="This week"
+            value={`${weekHours.toFixed(1)}h`}
+            sub={hourlyRate > 0 ? formatCurrency(weekHours * hourlyRate, currency) : undefined}
+            size="hero"
+          />
+          <div className="mt-3">
+            <Progress value={progress} size="sm" />
+            <p className="text-xs text-[var(--text-faint)] mt-1 num">
+              {weekHours.toFixed(1)} / {weeklyTarget}h target
             </p>
-          )}
+          </div>
         </Card>
+
         <Card padding="md">
-          <p className="stat-label">This week</p>
-          <p className="stat-value text-xl">{weekHours.toFixed(1)}h</p>
-          {hourlyRate > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {formatCurrency(weekHours * hourlyRate, currency)}
-            </p>
-          )}
+          <StatBlock
+            label="Today"
+            value={`${todayHours.toFixed(1)}h`}
+            sub={hourlyRate > 0 ? formatCurrency(todayHours * hourlyRate, currency) : undefined}
+            size="md"
+          />
         </Card>
+
         <Card padding="md">
-          <p className="stat-label">This month</p>
-          <p className="stat-value text-xl">{monthHours.toFixed(1)}h</p>
-          {hourlyRate > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {formatCurrency(monthHours * hourlyRate, currency)}
-            </p>
-          )}
+          <StatBlock
+            label="This month"
+            value={`${monthHours.toFixed(1)}h`}
+            sub={hourlyRate > 0 ? formatCurrency(monthHours * hourlyRate, currency) : undefined}
+            size="md"
+          />
         </Card>
+
         <Card padding="md">
-          <p className="stat-label">Weekly goal</p>
-          <p className="stat-value text-xl">{Math.round(progress)}%</p>
-          <div className="mt-2 h-1.5 rounded-full bg-[var(--surface-2)]">
-            <div
-              className="h-full rounded-full transition-all duration-500 bg-[var(--accent-color)]"
-              style={{ width: `${progress}%` }}
-            />
+          <StatBlock
+            label="Weekly goal"
+            value={`${Math.round(progress)}%`}
+            size="md"
+          />
+          <div className="mt-3">
+            <Progress value={progress} size="sm" />
           </div>
         </Card>
       </div>
@@ -143,22 +153,29 @@ export function WorkTracker({
       {/* Compensation summary for expense-tracked jobs */}
       {enableExpenseTracking && (
         <Card padding="md">
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign size={16} className="text-[var(--accent-color)]" />
-            <h3 className="text-sm font-semibold">Compensation Summary (This Month)</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign size={15} style={{ color: "var(--accent-color)" }} />
+            <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide">
+              Compensation · This Month
+            </h2>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <StatBlock
+              label="Expenses"
+              value={formatCurrency(totalExpenses, currency)}
+              size="lg"
+            />
+            <StatBlock
+              label={`Gas (${totalKm.toFixed(0)} km)`}
+              value={formatCurrency(gasCalc.totalCostDollars, currency)}
+              size="lg"
+            />
             <div>
-              <p className="stat-label">Expenses</p>
-              <p className="text-lg font-semibold">{formatCurrency(totalExpenses, currency)}</p>
-            </div>
-            <div>
-              <p className="stat-label">Gas ({totalKm.toFixed(0)} km)</p>
-              <p className="text-lg font-semibold">{formatCurrency(gasCalc.totalCostDollars, currency)}</p>
-            </div>
-            <div>
-              <p className="stat-label">Total owed</p>
-              <p className="text-lg font-semibold text-[var(--accent-color)]">
+              <p className="stat-label mb-1.5">Total owed</p>
+              <p
+                className="text-2xl sm:text-3xl stat-value num"
+                style={{ color: "var(--accent-text)" }}
+              >
                 {formatCurrency(totalCompensation, currency)}
               </p>
             </div>
@@ -181,7 +198,9 @@ export function WorkTracker({
       {activeTab === "hours" && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold">This week&apos;s sessions</h3>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+              This week&apos;s sessions
+            </h2>
             <Button size="sm" onClick={() => setShowAddSession(true)}>
               <Plus size={14} />
               Log hours
@@ -189,21 +208,35 @@ export function WorkTracker({
           </div>
 
           {sessions.length === 0 ? (
-            <Card variant="inset" padding="lg" className="text-center">
-              <p className="text-sm text-muted-foreground">No hours logged this week</p>
+            <Card padding="lg">
+              <EmptyState
+                icon={Clock}
+                title="No hours logged"
+                description="Log your first session for this week."
+                actionLabel="Log hours"
+                onAction={() => setShowAddSession(true)}
+              />
             </Card>
           ) : (
             <div className="space-y-2">
               {sessions.map((s) => (
                 <Card key={s._id} variant="inset" padding="md" className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">
-                      {new Date(s.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
+                      {new Date(s.date).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </p>
-                    {s.note && <p className="text-xs text-muted-foreground mt-0.5">{s.note}</p>}
+                    {s.note && (
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">{s.note}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold">{s.hours}h</span>
+                    <span className="text-sm font-semibold num text-[var(--text-primary)]">
+                      {s.hours}h
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -213,7 +246,7 @@ export function WorkTracker({
                         toast.success("Session deleted");
                         router.refresh();
                       }}
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      className="h-7 w-7 text-[var(--text-muted)] hover:text-destructive"
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -223,7 +256,6 @@ export function WorkTracker({
             </div>
           )}
 
-          {/* Add session modal */}
           {showAddSession && (
             <AddSessionModal
               jobName={jobName}
@@ -241,7 +273,9 @@ export function WorkTracker({
       {activeTab === "expenses" && enableExpenseTracking && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold">Company expenses (this month)</h3>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+              Company expenses · this month
+            </h2>
             <Button size="sm" onClick={() => setShowAddExpense(true)}>
               <Plus size={14} />
               Add expense
@@ -249,24 +283,47 @@ export function WorkTracker({
           </div>
 
           {expenses.length === 0 ? (
-            <Card variant="inset" padding="lg" className="text-center">
-              <p className="text-sm text-muted-foreground">No expenses recorded</p>
+            <Card padding="lg">
+              <EmptyState
+                icon={Receipt}
+                title="No expenses recorded"
+                description="Track company expenses to include them in your compensation summary."
+                actionLabel="Add expense"
+                onAction={() => setShowAddExpense(true)}
+              />
             </Card>
           ) : (
             <div className="space-y-2">
               {expenses.map((e) => (
                 <Card key={e._id} variant="inset" padding="md" className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">{e.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
+                      {e.description}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      {new Date(e.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                       {" · "}
                       {e.category}
-                      {e.reimbursed && " · Reimbursed"}
+                      {e.reimbursed && (
+                        <span
+                          className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                          style={{
+                            color: "var(--good)",
+                            background: "var(--good-wash)",
+                          }}
+                        >
+                          Reimbursed
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold">{formatCurrency(e.amount, currency)}</span>
+                    <span className="text-sm font-semibold num text-[var(--text-primary)]">
+                      {formatCurrency(e.amount, currency)}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -276,7 +333,7 @@ export function WorkTracker({
                         toast.success("Expense deleted");
                         router.refresh();
                       }}
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      className="h-7 w-7 text-[var(--text-muted)] hover:text-destructive"
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -304,32 +361,30 @@ export function WorkTracker({
         <div>
           {/* Gas calculator card */}
           <Card padding="md" className="mb-6">
-            <h3 className="text-sm font-semibold mb-3">Gas Calculator</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="stat-label">Total km</p>
-                <p className="text-lg font-semibold">{totalKm.toFixed(1)}</p>
-              </div>
-              <div>
-                <p className="stat-label">Fuel used</p>
-                <p className="text-lg font-semibold">{gasCalc.litresUsed.toFixed(1)} L</p>
-              </div>
-              <div>
-                <p className="stat-label">Gas cost</p>
-                <p className="text-lg font-semibold">{formatCurrency(gasCalc.totalCostDollars, currency)}</p>
-              </div>
-              <div>
-                <p className="stat-label">Per km</p>
-                <p className="text-lg font-semibold">{formatCurrency(gasCalc.costPerKm, currency)}</p>
-              </div>
+            <h2 className="stat-label mb-4">Gas Calculator · this month</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <StatBlock label="Total km" value={totalKm.toFixed(1)} size="md" />
+              <StatBlock label="Fuel used" value={`${gasCalc.litresUsed.toFixed(1)} L`} size="md" />
+              <StatBlock
+                label="Gas cost"
+                value={formatCurrency(gasCalc.totalCostDollars, currency)}
+                size="md"
+              />
+              <StatBlock
+                label="Per km"
+                value={formatCurrency(gasCalc.costPerKm, currency)}
+                size="md"
+              />
             </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              {gasPrice} c/L · {carConsumption} L/100km
+            <p className="text-xs text-[var(--text-faint)] mt-4 num">
+              <span className="num">{gasPrice}</span> c/L · <span className="num">{carConsumption}</span> L/100km
             </p>
           </Card>
 
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold">Routes (this month)</h3>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+              Routes · this month
+            </h2>
             <Button size="sm" onClick={() => setShowAddRoute(true)}>
               <Plus size={14} />
               Add route
@@ -337,22 +392,35 @@ export function WorkTracker({
           </div>
 
           {routes.length === 0 ? (
-            <Card variant="inset" padding="lg" className="text-center">
-              <p className="text-sm text-muted-foreground">No routes recorded</p>
+            <Card padding="lg">
+              <EmptyState
+                icon={MapPin}
+                title="No routes recorded"
+                description="Add routes to calculate your gas costs automatically."
+                actionLabel="Add route"
+                onAction={() => setShowAddRoute(true)}
+              />
             </Card>
           ) : (
             <div className="space-y-2">
               {routes.map((r) => (
                 <Card key={r._id} variant="inset" padding="md" className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">{r.origin} → {r.destination}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
+                      {r.origin} → {r.destination}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      {new Date(r.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                       {r.note && ` · ${r.note}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold">{r.distanceKm} km</span>
+                    <span className="text-sm font-semibold num text-[var(--text-primary)]">
+                      {r.distanceKm} km
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -362,7 +430,7 @@ export function WorkTracker({
                         toast.success("Route deleted");
                         router.refresh();
                       }}
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      className="h-7 w-7 text-[var(--text-muted)] hover:text-destructive"
                     >
                       <Trash2 size={14} />
                     </Button>

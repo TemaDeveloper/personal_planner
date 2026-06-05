@@ -32,6 +32,12 @@ export function RenderedLayout({
   return (
     <div
       className={className}
+      style={
+        {
+          "--card-bg": "var(--surface-0)",
+          "--card-border": "var(--border-subtle)",
+        } as React.CSSProperties
+      }
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

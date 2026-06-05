@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useSections } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
+import type { SectionId } from "@/lib/constants";
 import { ICON_MAP } from "@/lib/icon-map";
 
 const BOTTOM_ITEMS = [
@@ -20,25 +21,49 @@ const BOTTOM_ITEMS = [
   { href: "/export", icon: Download, label: "Export" },
 ];
 
+// Life-area grouping
+const LIFE_AREA_GROUPS: { label: string; ids: SectionId[] }[] = [
+  { label: "Money", ids: ["work", "finances"] },
+  { label: "Body",  ids: ["gym", "health", "habits"] },
+  { label: "Mind",  ids: ["study", "reading", "journal", "goals"] },
+  { label: "Home",  ids: ["housework", "shopping", "mealprep", "hobbies"] },
+];
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { enabledSections, customSections } = useSections();
 
-  const sectionItems = useMemo(() => [
-    ...enabledSections.map((id) => ({
-      href: SECTION_META[id].href,
-      icon: ICON_MAP[SECTION_META[id].icon] || ICON_MAP.Briefcase,
-      label: SECTION_META[id].label,
-    })),
-    ...customSections.filter((cs) => cs.enabled).map((cs) => ({
-      href: `/sections/${cs.slug}`,
-      icon: ICON_MAP[cs.icon] || ICON_MAP.Star,
-      label: cs.name,
-    })),
-  ], [enabledSections, customSections]);
-
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
+
+  // Build grouped sections — only include groups with at least one enabled section
+  const lifeAreaGroups = useMemo(() =>
+    LIFE_AREA_GROUPS
+      .map((group) => ({
+        label: group.label,
+        items: group.ids
+          .filter((id) => enabledSections.includes(id))
+          .map((id) => ({
+            href: SECTION_META[id].href,
+            icon: ICON_MAP[SECTION_META[id].icon] || ICON_MAP.Briefcase,
+            label: SECTION_META[id].label,
+          })),
+      }))
+      .filter((group) => group.items.length > 0),
+    [enabledSections]
+  );
+
+  // Custom (AI) sections
+  const customItems = useMemo(() =>
+    customSections
+      .filter((cs) => cs.enabled)
+      .map((cs) => ({
+        href: `/sections/${cs.slug}`,
+        icon: ICON_MAP[cs.icon] || ICON_MAP.Star,
+        label: cs.name,
+      })),
+    [customSections]
+  );
 
   return (
     <aside className="hidden md:flex flex-col flex-shrink-0 w-60 sticky top-0 h-screen border-r border-[var(--sidebar-border)] bg-[var(--sidebar)]">
@@ -54,15 +79,35 @@ export function AppSidebar() {
 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3">
-        {/* Home */}
-        <NavGroup label="Home">
-          <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={isActive("/dashboard")} />
-        </NavGroup>
+        {/* Today — pinned at top */}
+        <div className="mb-4">
+          <NavItem
+            href="/dashboard"
+            icon={LayoutDashboard}
+            label="Today"
+            active={isActive("/dashboard")}
+          />
+        </div>
 
-        {/* Sections */}
-        {sectionItems.length > 0 && (
-          <NavGroup label="Sections">
-            {sectionItems.map((item) => (
+        {/* Life-area groups */}
+        {lifeAreaGroups.map((group) => (
+          <NavGroup key={group.label} label={group.label}>
+            {group.items.map((item) => (
+              <NavItem
+                key={item.href}
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                active={isActive(item.href)}
+              />
+            ))}
+          </NavGroup>
+        ))}
+
+        {/* Custom (AI) sections */}
+        {customItems.length > 0 && (
+          <NavGroup label="Custom">
+            {customItems.map((item) => (
               <NavItem
                 key={item.href}
                 href={item.href}
@@ -73,6 +118,7 @@ export function AppSidebar() {
             ))}
           </NavGroup>
         )}
+
         {/* Shared */}
         <NavGroup label="Shared">
           <NavItem href="/shared" icon={Users} label="Shared with me" active={isActive("/shared")} />
@@ -105,7 +151,7 @@ export function AppSidebar() {
 function NavGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+      <p className="stat-label px-3 mb-1" style={{ color: "var(--text-faint)" }}>
         {label}
       </p>
       <div className="space-y-0.5">

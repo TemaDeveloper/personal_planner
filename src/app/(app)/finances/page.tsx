@@ -7,6 +7,7 @@ import Expense from "@/lib/models/expense";
 import Route from "@/lib/models/route";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
+import { StatBlock } from "@/components/ui/stat-block";
 import { formatCurrency } from "@/lib/utils";
 import { calculateGasCost } from "@/lib/gas-calculator";
 import {
@@ -98,6 +99,8 @@ export default async function FinancesPage() {
   const totalOutflows = totalBills + totalExpenses + gasCalc.totalCostDollars;
   const netIncome = totalMonthIncome - totalOutflows;
 
+  const isPositiveNet = netIncome >= 0;
+
   return (
     <div className="animate-slide-up">
       <PageHeader
@@ -115,107 +118,140 @@ export default async function FinancesPage() {
         }
       />
 
-      {/* Net income */}
+      {/* HERO — net income this month */}
       <Card padding="lg" className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <DollarSign size={16} className="text-[var(--accent-color)]" />
-          <span className="stat-label">Net income this month</span>
+        <div className="flex items-center gap-2 mb-3">
+          <DollarSign size={14} style={{ color: "var(--accent-color)" }} />
+          <span className="stat-label">Net this month</span>
         </div>
-        <p
-          className={`stat-value text-3xl ${netIncome >= 0 ? "text-[var(--accent-color)]" : "text-destructive"}`}
-        >
-          {formatCurrency(netIncome, currency)}
-        </p>
+        <StatBlock
+          label=""
+          value={formatCurrency(netIncome, currency)}
+          sub={isPositiveNet ? "Positive cash flow" : "Outflows exceed income"}
+          size="hero"
+          className={isPositiveNet ? "text-[var(--good)]" : "text-[var(--alert)]"}
+        />
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Income */}
+        {/* Income column */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-[var(--accent-color)]" />
-            <h2 className="text-sm font-semibold">Income</h2>
+            <TrendingUp size={14} style={{ color: "var(--accent-color)" }} />
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Income</h2>
           </div>
 
+          {/* Income period tiles */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Card padding="sm">
-              <p className="stat-label">Today</p>
-              <p className="text-lg font-semibold">{formatCurrency(totalTodayIncome, currency)}</p>
+              <StatBlock
+                label="Today"
+                value={formatCurrency(totalTodayIncome, currency)}
+                size="sm"
+              />
             </Card>
             <Card padding="sm">
-              <p className="stat-label">This week</p>
-              <p className="text-lg font-semibold">{formatCurrency(totalWeekIncome, currency)}</p>
+              <StatBlock
+                label="This week"
+                value={formatCurrency(totalWeekIncome, currency)}
+                size="sm"
+              />
             </Card>
             <Card padding="sm">
-              <p className="stat-label">This month</p>
-              <p className="text-lg font-semibold">{formatCurrency(totalMonthIncome, currency)}</p>
+              <StatBlock
+                label="This month"
+                value={formatCurrency(totalMonthIncome, currency)}
+                size="sm"
+              />
             </Card>
           </div>
 
-          {incomeByJob.length > 0 && (
-            <Card padding="md" className="space-y-3">
-              {incomeByJob.map((job: { name: string; month: number; week: number }) => (
-                <div key={job.name} className="flex items-center justify-between">
-                  <span className="text-sm">{job.name}</span>
-                  <span className="text-sm font-medium">
-                    {formatCurrency(job.month, currency)}/mo
-                  </span>
-                </div>
-              ))}
+          {/* Per-job breakdown */}
+          {incomeByJob.length > 0 ? (
+            <Card padding="md">
+              <p className="stat-label mb-3">By job</p>
+              <div className="space-y-3">
+                {incomeByJob.map((job: { name: string; month: number; week: number }) => (
+                  <div key={job.name} className="flex items-center justify-between">
+                    <span className="text-sm text-[var(--text-primary)]">{job.name}</span>
+                    <span className="text-sm font-medium num text-[var(--text-primary)]">
+                      {formatCurrency(job.month, currency)}/mo
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ) : (
+            <Card padding="md">
+              <div className="flex flex-col items-center py-6 text-center gap-2">
+                <TrendingUp size={20} style={{ color: "var(--accent-color)" }} />
+                <p className="text-sm text-[var(--text-muted)]">No active jobs configured</p>
+              </div>
             </Card>
           )}
         </div>
 
-        {/* Outflows */}
+        {/* Outflows column */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <TrendingDown size={16} className="text-destructive" />
-            <h2 className="text-sm font-semibold">Outflows</h2>
+            <TrendingDown size={14} style={{ color: "var(--alert)" }} />
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Outflows</h2>
           </div>
 
-          <Card padding="md" className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt size={14} className="text-muted-foreground" />
-                <span className="text-sm">Monthly bills</span>
+          {/* Outflow summary */}
+          <Card padding="md">
+            <p className="stat-label mb-3">This month</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Receipt size={13} style={{ color: "var(--text-muted)" }} />
+                  <span className="text-sm text-[var(--text-primary)]">Monthly bills</span>
+                </div>
+                <span className="text-sm font-medium num text-[var(--text-primary)]">
+                  {formatCurrency(totalBills, currency)}
+                </span>
               </div>
-              <span className="text-sm font-medium">
-                {formatCurrency(totalBills, currency)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt size={14} className="text-muted-foreground" />
-                <span className="text-sm">Company expenses</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Receipt size={13} style={{ color: "var(--text-muted)" }} />
+                  <span className="text-sm text-[var(--text-primary)]">Company expenses</span>
+                </div>
+                <span className="text-sm font-medium num text-[var(--text-primary)]">
+                  {formatCurrency(totalExpenses, currency)}
+                </span>
               </div>
-              <span className="text-sm font-medium">
-                {formatCurrency(totalExpenses, currency)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt size={14} className="text-muted-foreground" />
-                <span className="text-sm">Gas ({totalKm.toFixed(0)} km)</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Fuel size={13} style={{ color: "var(--text-muted)" }} />
+                  <span className="text-sm text-[var(--text-primary)]">
+                    Gas{" "}
+                    <span className="num text-[var(--text-muted)]">
+                      ({totalKm.toFixed(0)} km)
+                    </span>
+                  </span>
+                </div>
+                <span className="text-sm font-medium num text-[var(--text-primary)]">
+                  {formatCurrency(gasCalc.totalCostDollars, currency)}
+                </span>
               </div>
-              <span className="text-sm font-medium">
-                {formatCurrency(gasCalc.totalCostDollars, currency)}
-              </span>
-            </div>
-            <div className="pt-3 flex items-center justify-between border-t border-[var(--border-subtle)]">
-              <span className="text-sm font-semibold">Total</span>
-              <span className="text-sm font-bold">
-                {formatCurrency(totalOutflows, currency)}
-              </span>
+              <div className="pt-3 flex items-center justify-between border-t border-[var(--border-subtle)]">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Total</span>
+                <span className="text-sm font-bold num text-[var(--text-primary)]">
+                  {formatCurrency(totalOutflows, currency)}
+                </span>
+              </div>
             </div>
           </Card>
 
           {/* Fuel breakdown */}
-          <Card padding="md" className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Fuel size={14} className="text-muted-foreground" />
-              <h3 className="text-xs font-semibold text-muted-foreground">
-                FUEL ({gasConfig.carConsumptionLPer100km.toFixed(1)} L/100km @{" "}
-                {(gasConfig.gasPriceCentsPerLitre / 100).toFixed(2)}/L)
-              </h3>
+          <Card padding="md">
+            <div className="flex items-center gap-2 mb-3">
+              <Fuel size={13} style={{ color: "var(--text-muted)" }} />
+              <p className="stat-label">
+                Fuel — <span className="num">{gasConfig.carConsumptionLPer100km.toFixed(1)}</span> L/100km
+                {" "}@{" "}
+                <span className="num">${(gasConfig.gasPriceCentsPerLitre / 100).toFixed(2)}</span>/L
+              </p>
             </div>
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -223,13 +259,15 @@ export default async function FinancesPage() {
                 { label: "This week", km: weekKm, gas: weekGas },
                 { label: "This month", km: totalKm, gas: gasCalc },
               ].map((f) => (
-                <div key={f.label}>
-                  <p className="stat-label">{f.label}</p>
-                  <p className="text-lg font-semibold">
+                <div key={f.label} className="min-w-0">
+                  <p className="stat-label mb-1">{f.label}</p>
+                  <p className="text-base font-semibold num text-[var(--text-primary)]">
                     {formatCurrency(f.gas.totalCostDollars, currency)}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {f.km.toFixed(0)} km · {f.gas.litresUsed.toFixed(1)} L
+                  <p className="text-xs text-[var(--text-muted)] num mt-0.5 truncate">
+                    <span className="num">{f.km.toFixed(0)}</span> km
+                    {" · "}
+                    <span className="num">{f.gas.litresUsed.toFixed(1)}</span> L
                   </p>
                 </div>
               ))}
@@ -237,25 +275,30 @@ export default async function FinancesPage() {
           </Card>
 
           {/* Bills list */}
-          {bills.length > 0 && (
+          {bills.length > 0 ? (
             <Card padding="md">
-              <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                RECURRING BILLS
-              </h3>
+              <p className="stat-label mb-3">Recurring bills</p>
               <div className="space-y-2">
                 {bills.map((bill: { name: string; amount: number; dueDay: number; category: string }, i: number) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
+                  <div key={i} className="flex items-center justify-between text-sm min-h-[44px]">
                     <div>
-                      <span>{bill.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        Due {bill.dueDay}th
+                      <span className="text-[var(--text-primary)]">{bill.name}</span>
+                      <span className="text-xs text-[var(--text-muted)] ml-2">
+                        Due <span className="num">{bill.dueDay}</span>th
                       </span>
                     </div>
-                    <span className="font-medium">
+                    <span className="font-medium num text-[var(--text-primary)]">
                       {formatCurrency(bill.amount, currency)}
                     </span>
                   </div>
                 ))}
+              </div>
+            </Card>
+          ) : (
+            <Card padding="md">
+              <div className="flex flex-col items-center py-6 text-center gap-2">
+                <Receipt size={20} style={{ color: "var(--accent-color)" }} />
+                <p className="text-sm text-[var(--text-muted)]">No recurring bills added yet</p>
               </div>
             </Card>
           )}

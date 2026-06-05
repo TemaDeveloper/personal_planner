@@ -42,6 +42,15 @@ interface Bill { name: string; amount: number; dueDay: number; category: string;
 
 const SUBJECT_COLORS = ["#D4A853", "#00C9A7", "#9B72F0", "#F07070", "#7EC8A0", "#5B9BD5", "#FF8C42"];
 
+/** Map font key → actual CSS font-family string for preview rendering */
+const FONT_FAMILY_MAP: Record<FontStyle, string> = {
+  sans:      "'Hanken Grotesk', sans-serif",
+  inter:     "'Inter', sans-serif",
+  geometric: "'Space Grotesk', sans-serif",
+  serif:     "'Playfair Display', serif",
+  mono:      "'JetBrains Mono', monospace",
+};
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -204,10 +213,10 @@ export default function OnboardingPage() {
       title: "Welcome to MyPlanner",
       content: (
         <div className="space-y-8">
-          <p className="text-[var(--text-muted)] text-center max-w-md mx-auto">
+          <p className="text-sm text-center max-w-md mx-auto" style={{ color: "var(--text-muted)" }}>
             Your personal workspace for tracking work, gym, finances, study, and more — designed exactly how you want it.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-md mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md mx-auto">
             {[
               { icon: LayoutDashboard, label: "Dashboard", desc: "Everything at a glance" },
               ...SECTIONS.map((id) => {
@@ -217,9 +226,9 @@ export default function OnboardingPage() {
               }),
             ].map((feature) => (
               <Card key={feature.label} variant="inset" padding="md" className="text-center">
-                <feature.icon size={24} className="mx-auto mb-2" style={{ color: "var(--accent-color)" }} />
+                <feature.icon size={20} className="mx-auto mb-2" style={{ color: "var(--accent-color)" }} />
                 <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{feature.label}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{feature.desc}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: "var(--text-faint)" }}>{feature.desc}</p>
               </Card>
             ))}
           </div>
@@ -232,7 +241,7 @@ export default function OnboardingPage() {
       title: aiMode ? "Describe your planner" : "Choose your sections",
       content: aiMode ? (
         <div className="space-y-6 max-w-md mx-auto">
-          <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+          <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
             Tell us what you want to track and we&apos;ll set up your planner automatically.
           </p>
 
@@ -266,7 +275,7 @@ export default function OnboardingPage() {
           <button
             onClick={() => setAiMode(false)}
             className="w-full text-center text-xs hover:underline"
-            style={{ color: "var(--text-muted)" }}
+            style={{ color: "var(--accent-text)" }}
           >
             Skip AI — I&apos;ll choose sections manually
           </button>
@@ -274,7 +283,7 @@ export default function OnboardingPage() {
       ) : (
         // Manual section picker
         <div className="space-y-4 max-w-sm mx-auto">
-          <p className="text-xs text-center mb-2" style={{ color: "var(--text-muted)" }}>
+          <p className="text-sm text-center mb-2" style={{ color: "var(--text-muted)" }}>
             Pick which sections you want. You can change this anytime in Settings.
           </p>
           <div className="space-y-2">
@@ -286,15 +295,16 @@ export default function OnboardingPage() {
                 <button
                   key={id}
                   onClick={() => toggleSection(id)}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all"
+                  className="w-full flex items-center gap-3 p-3 rounded-md text-left transition-colors"
                   style={{
-                    background: enabled ? "var(--accent-glow)" : "var(--surface-2)",
+                    background: "var(--surface-2)",
                     border: `1px solid ${enabled ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                    minHeight: 44,
                   }}
                 >
-                  {Icon && <Icon size={20} style={{ color: enabled ? "var(--accent-color)" : "var(--text-muted)" }} />}
+                  {Icon && <Icon size={18} style={{ color: enabled ? "var(--accent-color)" : "var(--text-faint)" }} />}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: enabled ? "var(--text-primary)" : "var(--text-muted)" }}>{meta.label}</p>
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{meta.label}</p>
                     <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{meta.description}</p>
                   </div>
                   <ToggleSwitch
@@ -309,7 +319,7 @@ export default function OnboardingPage() {
           <button
             onClick={() => setAiMode(true)}
             className="w-full text-center text-xs hover:underline mt-2"
-            style={{ color: "var(--text-muted)" }}
+            style={{ color: "var(--accent-text)" }}
           >
             Use AI to set up automatically
           </button>
@@ -332,14 +342,15 @@ export default function OnboardingPage() {
                 <button
                   key={id}
                   onClick={() => toggleSection(id)}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-md text-left transition-colors"
                   style={{
-                    background: enabled ? "var(--accent-glow)" : "var(--surface-2)",
+                    background: "var(--surface-2)",
                     border: `1px solid ${enabled ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                    minHeight: 44,
                   }}
                 >
-                  {Icon && <Icon size={16} style={{ color: enabled ? "var(--accent-color)" : "var(--text-muted)" }} />}
-                  <span className="text-sm font-medium flex-1" style={{ color: enabled ? "var(--text-primary)" : "var(--text-muted)" }}>{meta.label}</span>
+                  {Icon && <Icon size={16} style={{ color: enabled ? "var(--accent-color)" : "var(--text-faint)" }} />}
+                  <span className="text-sm font-medium flex-1" style={{ color: "var(--text-primary)" }}>{meta.label}</span>
                   <ToggleSwitch
                     checked={enabled}
                     onChange={() => toggleSection(id)}
@@ -366,7 +377,7 @@ export default function OnboardingPage() {
                     type="number"
                     value={job.hourlyRate}
                     onChange={(e) => { const u = [...jobs]; u[idx].hourlyRate = Number(e.target.value); setJobs(u); }}
-                    className="w-16"
+                    className="w-16 num"
                     placeholder="$/hr"
                   />
                   <Button variant="ghost" size="icon" aria-label="Remove job" onClick={() => setJobs(jobs.filter((_, i) => i !== idx))}>
@@ -377,7 +388,7 @@ export default function OnboardingPage() {
               <button
                 onClick={() => setJobs([...jobs, { name: "", hourlyRate: 0, weeklyTarget: 20, active: true, enableExpenseTracking: false }])}
                 className="text-xs hover:underline flex items-center gap-1"
-                style={{ color: "var(--text-muted)" }}
+                style={{ color: "var(--accent-text)" }}
               >
                 <Plus size={10} />Add job
               </button>
@@ -392,9 +403,10 @@ export default function OnboardingPage() {
                   <button
                     key={n}
                     onClick={() => setTargetDaysPerWeek(n)}
-                    className="flex-1 py-1.5 rounded text-xs font-medium transition-all"
+                    className="flex-1 py-1.5 rounded-md text-xs font-medium num transition-colors"
                     style={{
-                      background: targetDaysPerWeek === n ? "var(--accent-glow)" : "var(--surface-1)",
+                      minHeight: 36,
+                      background: "var(--surface-2)",
                       border: `1px solid ${targetDaysPerWeek === n ? "var(--accent-color)" : "var(--border-subtle)"}`,
                       color: targetDaysPerWeek === n ? "var(--accent-color)" : "var(--text-muted)",
                     }}
@@ -403,7 +415,9 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{targetDaysPerWeek} days per week</p>
+              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                <span className="num">{targetDaysPerWeek}</span> days per week
+              </p>
             </ConfigCard>
           )}
 
@@ -490,7 +504,7 @@ export default function OnboardingPage() {
                     type="number"
                     value={b.amount}
                     onChange={(e) => { const u = [...bills]; u[idx].amount = Number(e.target.value); setBills(u); }}
-                    className="w-20"
+                    className="w-20 num"
                     placeholder="$"
                   />
                   <Button variant="ghost" size="icon" aria-label="Remove bill" onClick={() => setBills(bills.filter((_, i) => i !== idx))}>
@@ -530,7 +544,9 @@ export default function OnboardingPage() {
                     <Icon size={16} style={{ color: "var(--accent-color)" }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{tpl.name}</p>
-                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{tpl.fields.length} fields: {tpl.fields.map((f) => f.label).join(", ")}</p>
+                      <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        <span className="num">{tpl.fields.length}</span> fields: {tpl.fields.map((f) => f.label).join(", ")}
+                      </p>
                     </div>
                     <Button variant="ghost" size="icon" aria-label="Remove section" onClick={() => setCustomSectionTemplates(customSectionTemplates.filter((_, i) => i !== idx))}>
                       <Trash2 size={12} />
@@ -550,28 +566,55 @@ export default function OnboardingPage() {
       content: (
         <div className="space-y-6 max-w-sm mx-auto">
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Accent color</label>
+            <p className="stat-label mb-3">Accent color</p>
             <div className="flex gap-3">
               {THEMES.map((t) => (
-                <button key={t} onClick={() => { setAccentTheme(t); document.documentElement.setAttribute("data-theme", t); }}
-                  className="w-12 h-12 rounded-xl transition-all hover:scale-110"
-                  style={{ background: THEME_COLORS[t], opacity: accentTheme === t ? 1 : 0.35, boxShadow: accentTheme === t ? `0 0 0 2px var(--background), 0 0 0 4px ${THEME_COLORS[t]}` : "none" }}
+                <button
+                  key={t}
+                  onClick={() => { setAccentTheme(t); document.documentElement.setAttribute("data-theme", t); }}
+                  className="w-10 h-10 rounded-md transition-colors"
+                  style={{
+                    background: THEME_COLORS[t],
+                    opacity: accentTheme === t ? 1 : 0.4,
+                    outline: accentTheme === t ? `2px solid var(--accent-color)` : "none",
+                    outlineOffset: 2,
+                  }}
+                  aria-label={t}
                 />
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Font</label>
+            <p className="stat-label mb-3">Font</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {FONTS.map((f) => {
                 const meta = FONT_META[f as FontStyle];
+                const active = fontStyle === f;
                 return (
-                  <button key={f} onClick={() => { setFontStyle(f); document.documentElement.setAttribute("data-font", f); }}
-                    className="p-3 rounded-lg text-left transition-all"
-                    style={{ background: fontStyle === f ? "var(--accent-glow)" : "var(--surface-2)", border: `1px solid ${fontStyle === f ? "var(--accent-color)" : "var(--border-subtle)"}` }}
+                  <button
+                    key={f}
+                    onClick={() => { setFontStyle(f); document.documentElement.setAttribute("data-font", f); }}
+                    className="p-3 rounded-md text-left transition-colors"
+                    style={{
+                      background: "var(--surface-2)",
+                      border: `1px solid ${active ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                    }}
                   >
-                    <p className="text-lg font-semibold mb-0.5" style={{ fontFamily: f === "sans" ? "'DM Sans', sans-serif" : f === "inter" ? "'Inter', sans-serif" : f === "geometric" ? "'Space Grotesk', sans-serif" : f === "serif" ? "'Playfair Display', serif" : "'JetBrains Mono', monospace", color: fontStyle === f ? "var(--text-primary)" : "var(--text-muted)" }}>{meta.preview}</p>
-                    <p className="text-xs font-medium" style={{ color: fontStyle === f ? "var(--accent-color)" : "var(--text-primary)" }}>{meta.label}</p>
+                    <p
+                      className="text-lg font-semibold mb-0.5"
+                      style={{
+                        fontFamily: FONT_FAMILY_MAP[f as FontStyle],
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {meta.preview}
+                    </p>
+                    <p
+                      className="text-xs font-medium"
+                      style={{ color: active ? "var(--accent-text)" : "var(--text-primary)" }}
+                    >
+                      {meta.label}
+                    </p>
                     <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{meta.description}</p>
                   </button>
                 );
@@ -579,13 +622,22 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Currency</label>
+            <p className="stat-label mb-3">Currency</p>
             <div className="flex gap-2">
               {CURRENCIES.map((c) => (
-                <button key={c} onClick={() => setCurrency(c)}
-                  className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{ background: currency === c ? "var(--accent-glow)" : "var(--surface-2)", border: `1px solid ${currency === c ? "var(--accent-color)" : "var(--border-subtle)"}`, color: currency === c ? "var(--accent-color)" : "var(--text-muted)" }}
-                >{c}</button>
+                <button
+                  key={c}
+                  onClick={() => setCurrency(c)}
+                  className="flex-1 px-3 py-2 rounded-md text-sm font-medium num transition-colors"
+                  style={{
+                    minHeight: 44,
+                    background: "var(--surface-2)",
+                    border: `1px solid ${currency === c ? "var(--accent-color)" : "var(--border-subtle)"}`,
+                    color: currency === c ? "var(--accent-color)" : "var(--text-muted)",
+                  }}
+                >
+                  {c}
+                </button>
               ))}
             </div>
           </div>
@@ -615,14 +667,14 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-lg">
         {/* Progress dots */}
-        <div className="flex justify-center gap-2 mb-8">
+        <div className="flex justify-center gap-2 mb-10">
           {steps.map((_, i) => (
             <div
               key={i}
-              className="h-1.5 rounded-full transition-all duration-300"
+              className="h-1 rounded-full transition-all duration-300"
               style={{
                 width: step === i ? 24 : 8,
-                background: step >= i ? "var(--accent-color)" : "var(--surface-2)",
+                background: step >= i ? "var(--accent-color)" : "var(--border-subtle)",
               }}
             />
           ))}
@@ -631,12 +683,12 @@ export default function OnboardingPage() {
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.18 }}
           >
-            <h1 className="text-2xl font-bold text-center mb-6" style={{ color: "var(--text-primary)" }}>
+            <h1 className="text-xl font-semibold text-center mb-6" style={{ color: "var(--text-primary)" }}>
               {steps[step].title}
             </h1>
             {steps[step].content}
@@ -671,9 +723,10 @@ export default function OnboardingPage() {
 
         {/* Skip */}
         {step < steps.length - 1 && step !== 1 && (
-          <button onClick={handleFinish}
+          <button
+            onClick={handleFinish}
             className="w-full text-center text-xs mt-4 hover:underline"
-            style={{ color: "var(--text-muted)" }}
+            style={{ color: "var(--text-faint)" }}
           >
             Skip setup
           </button>
@@ -686,7 +739,7 @@ export default function OnboardingPage() {
 function ConfigCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card variant="default" padding="md" className="space-y-2">
-      <h3 className="text-xs font-semibold" style={{ color: "var(--accent-color)" }}>{title}</h3>
+      <p className="stat-label">{title}</p>
       {children}
     </Card>
   );

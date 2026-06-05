@@ -57,20 +57,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="animate-slide-up">
+    <div>
       <div className="text-center mb-8">
         <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-lg font-bold"
+          className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-5 text-base font-bold"
           style={{
-            background: "var(--accent-glow)",
-            border: "1px solid var(--accent-color)",
+            background: "var(--surface-raised)",
+            border: "1px solid var(--border-default)",
             color: "var(--accent-color)",
-            boxShadow: "var(--shadow-elevated)",
           }}
         >
           P
         </div>
-        <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+        <h1 className="text-2xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
           Create your planner
         </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
@@ -78,7 +77,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <Card variant="elevated" padding="lg" className="space-y-6">
+      <Card variant="default" padding="lg" className="space-y-6">
         <Button
           variant="secondary"
           size="lg"
@@ -150,7 +149,7 @@ export default function RegisterPage() {
           <Link
             href="/login"
             className="font-medium hover:underline"
-            style={{ color: "var(--accent-color)" }}
+            style={{ color: "var(--accent-text)" }}
           >
             Sign in
           </Link>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
 
 interface FieldDefinition {
@@ -92,38 +93,19 @@ export function CustomEntryForm({ slug, fields, onClose, onSuccess, initialDate 
           <div key={field.key}>
             {field.type === "boolean" && (
               <div>
-                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                <label className="block stat-label mb-2">
                   {field.label}{field.required && " *"}
                 </label>
-                <button
-                  type="button"
-                  onClick={() => updateField(field.key, !data[field.key])}
-                  className={
-                    "flex items-center gap-3 w-full p-2.5 rounded-lg text-sm text-left transition-all border " +
-                    (data[field.key]
-                      ? "bg-[var(--accent-glow)] border-[var(--accent-color)] text-[var(--accent-color)]"
-                      : "bg-[var(--surface-2)] border-[var(--border-subtle)] text-[var(--text-muted)]")
-                  }
-                >
-                  <div
-                    className={
-                      "w-8 h-5 rounded-full transition-all flex items-center px-0.5 " +
-                      (data[field.key]
-                        ? "bg-[var(--accent-color)]"
-                        : "bg-[var(--surface-1)] border border-[var(--border-subtle)]")
-                    }
-                  >
-                    <div
-                      className={
-                        "w-4 h-4 rounded-full transition-all " +
-                        (data[field.key]
-                          ? "bg-white translate-x-3"
-                          : "bg-[var(--text-muted)] translate-x-0 opacity-50")
-                      }
-                    />
-                  </div>
-                  {data[field.key] ? "Yes" : "No"}
-                </button>
+                <div className="flex items-center gap-3">
+                  <ToggleSwitch
+                    checked={!!data[field.key]}
+                    onChange={(checked) => updateField(field.key, checked)}
+                    size="md"
+                  />
+                  <span className="text-sm text-[var(--text-muted)]">
+                    {data[field.key] ? "Yes" : "No"}
+                  </span>
+                </div>
               </div>
             )}
 

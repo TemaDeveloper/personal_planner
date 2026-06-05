@@ -129,10 +129,10 @@ export default function MealPrepPage() {
             <Card key={day} padding="sm" className="min-h-[160px] flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-xs font-semibold text-[var(--accent-color)]">
+                  <p className="text-xs font-semibold text-[var(--accent-text)]">
                     {day.slice(0, 3)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[10px] text-[var(--text-muted)]">
                     {format(dayDate, "MMM d")}
                   </p>
                 </div>
@@ -157,7 +157,7 @@ export default function MealPrepPage() {
                     if (meals.length === 0) return null;
                     return (
                       <div key={type}>
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                        <p className="stat-label">
                           {MEAL_LABELS[type]}
                         </p>
                         {meals.map((m, i) => (
@@ -169,7 +169,7 @@ export default function MealPrepPage() {
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center">
-                  <p className="text-xs text-muted-foreground">No meals</p>
+                  <p className="text-xs text-[var(--text-faint)]">No meals</p>
                 </div>
               )}
             </Card>

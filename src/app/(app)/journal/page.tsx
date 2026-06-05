@@ -11,6 +11,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormTextarea } from "@/components/ui/form-input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { StatBlock } from "@/components/ui/stat-block";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface JournalEntry {
   _id: string;
@@ -95,9 +97,8 @@ export default function JournalPage() {
       <div className="animate-slide-up">
         <PageHeader title="Journal" />
         <div className="space-y-4">
-          {[1, 2].map((i) => (
-            <Card key={i} padding="lg" className="h-32 animate-pulse" />
-          ))}
+          <Skeleton className="h-64" />
+          <Skeleton className="h-40" />
         </div>
       </div>
     );
@@ -111,7 +112,7 @@ export default function JournalPage() {
         action={
           <button
             onClick={() => { window.location.href = "/api/export/journal"; }}
-            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)] min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Export to Excel"
           >
             <Download size={16} />
@@ -119,26 +120,34 @@ export default function JournalPage() {
         }
       />
 
+      {/* Hero metric */}
+      <Card padding="lg" className="mb-6">
+        <StatBlock
+          label="Total Entries"
+          value={String(entries.length)}
+          sub={entries.length === 1 ? "1 entry written" : `${entries.length} entries written`}
+          size="hero"
+        />
+      </Card>
+
       {/* Today's entry */}
       <Card padding="lg" className="mb-6">
-        <h3 className="text-sm font-semibold mb-4">
-          {format(new Date(), "EEEE, MMM d, yyyy")}
-        </h3>
+        <p className="stat-label mb-4">{format(new Date(), "EEEE, MMM d, yyyy")}</p>
 
         <div className="mb-4">
-          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-            How are you feeling?
-          </label>
-          <div className="flex gap-1">
+          <p className="stat-label mb-2">How are you feeling?</p>
+          <div className="flex gap-2">
             {MOODS.map((m) => (
               <button
                 key={m.value}
                 onClick={() => setMood(m.value)}
-                className="flex-1 py-2 rounded-lg text-lg transition-all max-w-[56px]"
+                className="flex-1 py-2 rounded-md text-lg transition-colors min-h-[44px] max-w-[56px]"
                 style={{
-                  background: mood === m.value ? "var(--accent-glow)" : "var(--surface-2)",
-                  border: `1px solid ${mood === m.value ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                  opacity: mood === m.value ? 1 : 0.5,
+                  background: mood === m.value ? "var(--accent-wash)" : "var(--surface-2)",
+                  borderWidth: "1px",
+                  borderStyle: "solid",
+                  borderColor: mood === m.value ? "var(--accent-color)" : "var(--border-subtle)",
+                  opacity: mood === m.value ? 1 : 0.55,
                 }}
                 aria-label={`Set mood to ${m.label}`}
                 aria-pressed={mood === m.value}
@@ -167,12 +176,12 @@ export default function JournalPage() {
 
       {/* Past entries */}
       <Card padding="lg">
-        <h3 className="text-sm font-semibold mb-4">Past Entries</h3>
+        <p className="stat-label mb-4">Past Entries</p>
         {entries.length === 0 ? (
           <EmptyState
             icon={NotebookPen}
-            title="No entries this month"
-            description="Write your first journal entry to start reflecting."
+            title="No entries yet"
+            description="Write your first journal entry above to start reflecting."
           />
         ) : (
           <div className="space-y-3">
@@ -184,10 +193,10 @@ export default function JournalPage() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium">
+                    <span className="text-xs font-medium text-[var(--text-primary)] num">
                       {format(new Date(entry.date), "MMM d, yyyy")}
                     </span>
-                    <span className="text-sm">
+                    <span className="text-sm" aria-label={MOODS[entry.mood - 1]?.label}>
                       {MOODS[entry.mood - 1]?.emoji}
                     </span>
                   </div>
@@ -196,12 +205,12 @@ export default function JournalPage() {
                     size="icon"
                     aria-label="Delete entry"
                     onClick={() => setDeleteTarget(entry._id)}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="text-[var(--text-muted)] hover:text-[var(--alert)] min-h-[44px] min-w-[44px]"
                   >
                     <Trash2 size={14} />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-4">
+                <p className="text-xs text-[var(--text-muted)] whitespace-pre-wrap line-clamp-4">
                   {entry.content}
                 </p>
               </Card>

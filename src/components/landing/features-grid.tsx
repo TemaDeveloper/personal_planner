@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, Puzzle, Calendar, Sun, Layers, GitFork } from "lucide-react";
 import { staggerContainer, scaleIn } from "@/lib/motion";
+import { Card } from "@/components/ui/card";
 
 const FEATURES = [
   {
@@ -26,7 +27,7 @@ const FEATURES = [
   {
     icon: Sun,
     title: "Light & Dark Mode",
-    description: "System-aware glassmorphism that looks stunning in both modes.",
+    description: "System-aware design that looks great in both modes.",
     large: false,
   },
   {
@@ -48,22 +49,26 @@ export function FeaturesGrid() {
     <section id="features" className="px-6 py-24">
       <div className="max-w-6xl mx-auto">
         <motion.div
-          className="text-center mb-16"
+          className="mb-16"
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ type: "spring", stiffness: 200, damping: 25 }}
         >
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4" style={{ color: "var(--text-primary)" }}>
+          <p className="stat-label mb-2">Features</p>
+          <h2
+            className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3"
+            style={{ color: "var(--text-primary)" }}
+          >
             Everything you need
           </h2>
-          <p className="text-base max-w-lg mx-auto" style={{ color: "var(--text-muted)" }}>
+          <p className="text-base max-w-lg" style={{ color: "var(--text-muted)" }}>
             A planner that adapts to you — not the other way around.
           </p>
         </motion.div>
 
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
           variants={staggerContainer}
           initial="hidden"
           whileInView="show"
@@ -73,22 +78,30 @@ export function FeaturesGrid() {
             <motion.div
               key={feature.title}
               variants={scaleIn}
-              className={`surface-card rounded-2xl p-6 transition-all hover:-translate-y-1 cursor-default ${
-                feature.large ? "lg:col-span-2" : ""
-              }`}
+              className={feature.large ? "lg:col-span-2" : ""}
             >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                style={{ background: "var(--accent-glow)", color: "var(--accent-color)" }}
+              <Card
+                variant="default"
+                padding="lg"
+                interactive
+                className="h-full rounded-2xl"
               >
-                <feature.icon size={20} />
-              </div>
-              <h3 className="text-base font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
-                {feature.title}
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                {feature.description}
-              </p>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "var(--accent-glow)", color: "var(--accent-color)" }}
+                >
+                  <feature.icon size={20} />
+                </div>
+                <h3
+                  className="text-base font-semibold mb-2"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {feature.title}
+                </h3>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  {feature.description}
+                </p>
+              </Card>
             </motion.div>
           ))}
         </motion.div>
