@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
 import { FormInput, FormSelect, FormTextarea } from "@/components/ui/form-input";
+import { StatBlock } from "@/components/ui/stat-block";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus,
   Trash2,
@@ -41,11 +43,19 @@ interface Goal {
 const CATEGORIES = ["personal", "career", "health", "financial"] as const;
 const STATUSES = ["active", "completed", "paused"] as const;
 
-const CAT_COLORS: Record<string, string> = {
-  personal: "#9B72F0",
-  career: "#D4A853",
-  health: "#22c55e",
-  financial: "#5B9BD5",
+/** Map category → CSS token (chart-1..5) — no hardcoded hex. */
+const CAT_TOKEN: Record<string, string> = {
+  personal: "var(--chart-3)",  // plum
+  career:   "var(--chart-4)",  // amber
+  health:   "var(--chart-5)",  // sage green
+  financial: "var(--chart-2)", // ocean blue
+};
+
+/** Status pill tokens */
+const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+  active:    { bg: "var(--good-wash)",  color: "var(--good)" },
+  completed: { bg: "var(--good-wash)",  color: "var(--good)" },
+  paused:    { bg: "var(--warn-wash)",  color: "var(--warn)" },
 };
 
 export default function GoalsPage() {
@@ -104,12 +114,18 @@ export default function GoalsPage() {
         <PageHeader title="Goals" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="h-32 animate-pulse" />
+            <Skeleton key={i} className="h-28 w-full rounded-lg" />
           ))}
         </div>
       </div>
     );
   }
+
+  /* Hero summary stats */
+  const activeCount = goals.filter((g) => g.status === "active").length;
+  const completedCount = goals.filter((g) => g.status === "completed").length;
+  const allMilestones = goals.flatMap((g) => g.milestones);
+  const doneMilestonesTotal = allMilestones.filter((m) => m.completed).length;
 
   return (
     <PageTransition>
@@ -133,6 +149,27 @@ export default function GoalsPage() {
         }
       />
 
+      {/* Hero summary — only when there are goals */}
+      {goals.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <StatBlock
+            label="Active goals"
+            value={String(activeCount)}
+            size="lg"
+          />
+          <StatBlock
+            label="Completed"
+            value={String(completedCount)}
+            size="lg"
+          />
+          <StatBlock
+            label="Milestones done"
+            value={`${doneMilestonesTotal}/${allMilestones.length}`}
+            size="lg"
+          />
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-6">
         {["", ...STATUSES].map((s) => (
@@ -146,7 +183,7 @@ export default function GoalsPage() {
             {s || "All"}
           </Button>
         ))}
-        <span className="text-[var(--text-muted)] self-center">|</span>
+        <span className="text-[var(--text-faint)] self-center select-none">|</span>
         {["", ...CATEGORIES].map((c) => (
           <Button
             key={c || "all-cat"}
@@ -183,32 +220,37 @@ export default function GoalsPage() {
             const totalMs = goal.milestones.length;
             const pct = totalMs > 0 ? (doneMs / totalMs) * 100 : 0;
             const expanded = expandedGoal === goal._id;
+            const statusStyle = STATUS_STYLE[goal.status] ?? { bg: "var(--surface-2)", color: "var(--text-muted)" };
 
             return (
               <Card key={goal._id} padding="md">
                 <div className="flex items-start gap-3">
+                  {/* Category dot using chart token, no hardcoded hex */}
                   <div
-                    className="w-3 h-3 rounded-full flex-shrink-0 mt-1.5"
-                    style={{ background: CAT_COLORS[goal.category] || "var(--accent-color)" }}
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-2"
+                    style={{ background: CAT_TOKEN[goal.category] ?? "var(--accent-color)" }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate max-w-[200px] sm:max-w-none">{goal.title}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate max-w-[200px] sm:max-w-none">
+                        {goal.title}
+                      </span>
                       <span
                         className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize"
                         style={{
-                          background: goal.status === "active" ? "var(--accent-glow)" : "var(--surface-2)",
-                          color: goal.status === "active" ? "var(--accent-color)" : "var(--text-muted)",
+                          background: statusStyle.bg,
+                          color: statusStyle.color,
                         }}
                       >
                         {goal.status}
                       </span>
                     </div>
+
                     {goal.description && (
                       <p className="text-xs text-[var(--text-muted)] mb-2">{goal.description}</p>
                     )}
                     {goal.targetDate && (
-                      <p className="text-[10px] text-[var(--text-muted)] mb-2">
+                      <p className="text-[10px] text-[var(--text-faint)] mb-2">
                         Target: {format(new Date(goal.targetDate), "MMM d, yyyy")}
                       </p>
                     )}
@@ -216,24 +258,26 @@ export default function GoalsPage() {
                     {/* Progress bar */}
                     {totalMs > 0 && (
                       <div className="mb-2">
-                        <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] mb-1">
-                          <span>{doneMs}/{totalMs} milestones</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-[var(--text-muted)] num">
+                            {doneMs}/{totalMs} milestones
+                          </span>
                         </div>
                         <Progress value={pct} size="sm" showLabel />
                       </div>
                     )}
 
-                    {/* Milestones */}
+                    {/* Milestones (expanded) */}
                     {expanded && totalMs > 0 && (
                       <div className="space-y-1.5 mt-3">
                         {goal.milestones.map((ms, i) => (
                           <button
                             key={i}
                             onClick={() => toggleMilestone(goal, i)}
-                            className="w-full flex items-center gap-2 text-left text-xs p-2 rounded-md transition-all bg-[var(--surface-2)]"
+                            className="w-full flex items-center gap-2 text-left text-xs p-2 rounded-md transition-colors bg-[var(--surface-2)] hover:bg-[var(--surface-1)] min-h-[44px]"
                           >
                             <div
-                              className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
+                              className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-colors"
                               style={{
                                 background: ms.completed ? "var(--accent-color)" : "transparent",
                                 border: `1.5px solid ${ms.completed ? "var(--accent-color)" : "var(--border-subtle)"}`,
@@ -243,7 +287,10 @@ export default function GoalsPage() {
                             </div>
                             <span
                               className="text-[var(--text-primary)]"
-                              style={{ textDecoration: ms.completed ? "line-through" : "none", opacity: ms.completed ? 0.5 : 1 }}
+                              style={{
+                                textDecoration: ms.completed ? "line-through" : "none",
+                                opacity: ms.completed ? 0.5 : 1,
+                              }}
                             >
                               {ms.title}
                             </span>
@@ -434,7 +481,7 @@ function GoalModal({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Milestones</label>
+          <label className="stat-label mb-1.5 block">Milestones</label>
           <div className="space-y-2">
             {milestones.map((ms, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -464,7 +511,7 @@ function GoalModal({
             <button
               type="button"
               onClick={() => setMilestones([...milestones, ""])}
-              className="text-xs text-[var(--accent-color)] hover:underline"
+              className="text-xs text-[var(--accent-text)] hover:underline"
             >
               + Add milestone
             </button>

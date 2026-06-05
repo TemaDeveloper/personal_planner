@@ -4,6 +4,7 @@ import { resolveUserId } from "@/lib/session";
 import User from "@/lib/models/user";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { Briefcase, ArrowRight, Download } from "lucide-react";
 
@@ -34,17 +35,20 @@ export default async function WorkPage() {
       />
 
       {jobs.length === 0 ? (
-        <Card padding="lg" className="text-center">
-          <Briefcase size={32} className="mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground text-sm mb-4">
-            No jobs configured yet.
-          </p>
-          <Link
-            href="/settings"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-color)] hover:underline"
-          >
-            Add a job in Settings <ArrowRight size={14} />
-          </Link>
+        <Card padding="lg">
+          <EmptyState
+            icon={Briefcase}
+            title="No jobs yet"
+            description="Add a job in Settings to start tracking your hours and earnings."
+          />
+          <div className="text-center -mt-6 pb-2">
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-text)] hover:underline"
+            >
+              Go to Settings <ArrowRight size={13} />
+            </Link>
+          </div>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -56,20 +60,27 @@ export default async function WorkPage() {
             >
               <Card interactive padding="md" className="flex items-center justify-between group">
                 <div className="flex items-center gap-4 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--accent-glow)]">
-                    <Briefcase size={18} className="text-[var(--accent-color)]" />
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: "var(--accent-glow)" }}
+                  >
+                    <Briefcase size={18} style={{ color: "var(--accent-color)" }} />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-sm truncate">{job.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {job.weeklyTarget}h/week
-                      {job.hourlyRate > 0 && ` · $${job.hourlyRate}/hr`}
+                    <h3 className="font-semibold text-sm truncate text-[var(--text-primary)]">
+                      {job.name}
+                    </h3>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      <span className="num">{job.weeklyTarget}</span>h/week
+                      {job.hourlyRate > 0 && (
+                        <> · $<span className="num">{job.hourlyRate}</span>/hr</>
+                      )}
                     </p>
                   </div>
                 </div>
                 <ArrowRight
                   size={16}
-                  className="text-muted-foreground transition-transform group-hover:translate-x-1"
+                  className="text-[var(--text-faint)] transition-transform group-hover:translate-x-1"
                 />
               </Card>
             </Link>

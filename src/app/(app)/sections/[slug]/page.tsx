@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { CustomEntryForm } from "@/components/sections/custom-entry-form";
 import { TableView } from "@/components/sections/table-view";
 import { Plus, Trash2, ChevronLeft, ChevronRight, Check, Download } from "lucide-react";
@@ -79,8 +81,13 @@ export default function CustomSectionPage() {
 
   if (loading) {
     return (
-      <div className="animate-slide-up">
-        <Card padding="lg" className="h-32 animate-pulse" />
+      <div className="animate-slide-up space-y-4">
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -127,7 +134,7 @@ export default function CustomSectionPage() {
             <Button variant="outline" size="icon" onClick={() => setWeekOffset((p) => p - 1)} aria-label="Previous week">
               <ChevronLeft size={16} />
             </Button>
-            <span className="text-sm font-medium">{weekLabel}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">{weekLabel}</span>
             <Button variant="outline" size="icon" onClick={() => setWeekOffset((p) => p + 1)} aria-label="Next week">
               <ChevronRight size={16} />
             </Button>
@@ -165,7 +172,7 @@ export default function CustomSectionPage() {
         >
           <ChevronLeft size={16} />
         </Button>
-        <span className="text-sm font-medium">{weekLabel}</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">{weekLabel}</span>
         <Button
           variant="outline"
           size="icon"
@@ -177,58 +184,72 @@ export default function CustomSectionPage() {
       </div>
 
       {/* Weekly grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        {DAYS.map((day, idx) => {
-          const dayDate = addDays(weekStart, idx);
-          const entry = getEntryForDay(dayDate);
+      {entries.length === 0 && (
+        <EmptyState
+          icon={Icon}
+          title="No entries this week"
+          description="Log your first entry to start tracking this section."
+          actionLabel="Add Entry"
+          onAction={() => setShowForm(true)}
+        />
+      )}
 
-          return (
-            <Card key={day} padding="md" className="min-h-[120px] flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className={
-                    "text-xs font-semibold " +
-                    (entry ? "text-[var(--accent-color)]" : "text-[var(--text-muted)]")
-                  }>
-                    {day.slice(0, 3)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">{format(dayDate, "MMM d")}</p>
+      {entries.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {DAYS.map((day, idx) => {
+            const dayDate = addDays(weekStart, idx);
+            const entry = getEntryForDay(dayDate);
+
+            return (
+              <Card key={day} padding="md" className="min-h-[120px] flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className={
+                      "text-xs font-semibold " +
+                      (entry ? "text-[var(--accent-color)]" : "text-[var(--text-muted)]")
+                    }>
+                      {day.slice(0, 3)}
+                    </p>
+                    <p className="text-[10px] text-[var(--text-faint)]">{format(dayDate, "MMM d")}</p>
+                  </div>
+                  {entry && (
+                    <Icon size={14} className="text-[var(--accent-color)]" />
+                  )}
                 </div>
-                {entry && (
-                  <Icon size={14} className="text-[var(--accent-color)]" />
+
+                {entry ? (
+                  <div className="flex-1 space-y-1">
+                    {template.fields.map((field) => {
+                      const val = entry.data[field.key];
+                      if (val === undefined || val === null || val === "") return null;
+                      return (
+                        <div key={field.key} className="text-xs">
+                          <span className="text-[var(--text-muted)]">{field.label}: </span>
+                          {field.type === "boolean" ? (
+                            <Check size={10} className="inline text-[var(--accent-color)]" />
+                          ) : field.type === "number" ? (
+                            <span className="num">{String(val)}</span>
+                          ) : (
+                            <span className="text-[var(--text-primary)]">{String(val)}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <button onClick={() => deleteEntry(entry._id)}
+                      className="text-[10px] text-[var(--text-muted)] hover:text-[var(--alert)] flex items-center gap-1 mt-1 p-1 min-h-[44px]">
+                      <Trash2 size={10} /> Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-xs text-[var(--text-faint)]">—</p>
+                  </div>
                 )}
-              </div>
-
-              {entry ? (
-                <div className="flex-1 space-y-1">
-                  {template.fields.map((field) => {
-                    const val = entry.data[field.key];
-                    if (val === undefined || val === null || val === "") return null;
-                    return (
-                      <div key={field.key} className="text-xs">
-                        <span className="text-muted-foreground">{field.label}: </span>
-                        {field.type === "boolean" ? (
-                          <Check size={10} className="inline text-[var(--accent-color)]" />
-                        ) : (
-                          <span>{String(val)}</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <button onClick={() => deleteEntry(entry._id)}
-                    className="text-[10px] text-muted-foreground hover:text-destructive flex items-center gap-1 mt-1 p-1">
-                    <Trash2 size={10} /> Remove
-                  </button>
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center">
-                  <p className="text-xs text-muted-foreground">—</p>
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
       </>
       )}
 

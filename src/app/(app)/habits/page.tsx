@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ProgressPie } from "@/components/ui/progress-pie";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
+import { StatBlock } from "@/components/ui/stat-block";
 import { addMonths, format, getDaysInMonth } from "date-fns";
 
 interface HabitGrid {
@@ -20,6 +21,19 @@ interface HabitGrid {
   emoji: string;
   color: string;
   dates: string[]; // ["2026-05-01", "2026-05-03", ...]
+}
+
+// Map stored hex colors to chart tokens so the grid rings use theme-aware palette
+const COLOR_TOKEN_MAP: Record<string, string> = {
+  "#22C55E": "var(--chart-5)",
+  "#14B8A6": "var(--chart-2)",
+  "#A78BFA": "var(--chart-3)",
+  "#FB7185": "var(--chart-4)",
+  "#60A5FA": "var(--chart-1)",
+};
+
+function resolveColor(color: string): string {
+  return COLOR_TOKEN_MAP[color] ?? color;
 }
 
 export default function HabitsPage() {
@@ -105,7 +119,8 @@ export default function HabitsPage() {
           <>
             <button
               onClick={() => { window.location.href = "/api/export/habits"; }}
-              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors"
+              style={{ color: "var(--text-muted)" }}
               aria-label="Export to Excel"
             >
               <Download size={16} />
@@ -126,7 +141,9 @@ export default function HabitsPage() {
             <Button variant="secondary" size="icon" className="w-7 h-7" aria-label="Previous month" onClick={() => setMonthOffset((p) => p - 1)}>
               <ChevronLeft size={14} />
             </Button>
-            <span className="text-sm font-semibold">{format(currentMonth, "MMMM yyyy")}</span>
+            <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              {format(currentMonth, "MMMM yyyy")}
+            </span>
             <Button variant="secondary" size="icon" className="w-7 h-7" aria-label="Next month" onClick={() => setMonthOffset((p) => p + 1)}>
               <ChevronRight size={14} />
             </Button>
@@ -152,16 +169,16 @@ export default function HabitsPage() {
                   return (
                     <div
                       key={day}
-                      className="flex-1 text-center text-[10px] font-semibold py-1 min-w-[22px]"
+                      className="flex-1 text-center text-[10px] font-semibold py-1 min-w-[22px] num"
                       style={{
-                        color: isToday ? "var(--accent-color)" : "var(--text-muted)",
+                        color: isToday ? "var(--accent-text)" : "var(--text-muted)",
                       }}
                     >
                       {day}
                     </div>
                   );
                 })}
-                <div className="w-16 flex-shrink-0 text-center text-[10px] font-semibold py-1" style={{ color: "var(--text-muted)" }}>
+                <div className="w-16 flex-shrink-0 text-center text-[10px] font-semibold py-1 stat-label">
                   %
                 </div>
               </div>
@@ -170,6 +187,7 @@ export default function HabitsPage() {
               {habits.map((habit) => {
                 const completedDays = habit.dates.length;
                 const pct = Math.round((completedDays / daysInMonth) * 100);
+                const resolvedColor = resolveColor(habit.color);
 
                 return (
                   <div key={habit._id} className="flex items-center group border-t" style={{ borderColor: "var(--border-subtle)" }}>
@@ -202,7 +220,7 @@ export default function HabitsPage() {
                           <div
                             className="w-3.5 h-3.5 rounded-sm transition-all"
                             style={{
-                              background: done ? habit.color : "var(--surface-1)",
+                              background: done ? resolvedColor : "var(--surface-1)",
                               border: done ? "none" : "1px solid var(--border-subtle)",
                               opacity: done ? 1 : 0.4,
                             }}
@@ -214,8 +232,8 @@ export default function HabitsPage() {
                     {/* Percentage */}
                     <div className="w-16 flex-shrink-0 text-center">
                       <span
-                        className="text-xs font-bold"
-                        style={{ color: pct >= 80 ? "var(--accent-color)" : "var(--text-muted)" }}
+                        className="text-xs font-bold num"
+                        style={{ color: pct >= 80 ? "var(--good)" : "var(--text-muted)" }}
                       >
                         {pct}%
                       </span>
@@ -237,20 +255,24 @@ export default function HabitsPage() {
             />
           </Card>
 
-          <Card>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Habits</span>
-                <span className="text-sm font-bold">{habits.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Completed</span>
-                <span className="text-sm font-bold">{totalCompleted}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Possible</span>
-                <span className="text-sm font-bold">{totalPossible}</span>
-              </div>
+          <Card className="flex flex-col gap-4">
+            <StatBlock
+              label="Completions"
+              value={String(totalCompleted)}
+              sub={`of ${totalPossible} possible`}
+              size="lg"
+            />
+            <div className="border-t pt-4 grid grid-cols-2 gap-3" style={{ borderColor: "var(--border-subtle)" }}>
+              <StatBlock
+                label="Habits"
+                value={String(habits.length)}
+                size="sm"
+              />
+              <StatBlock
+                label="Possible"
+                value={String(totalPossible)}
+                size="sm"
+              />
             </div>
           </Card>
         </div>
@@ -278,6 +300,15 @@ export default function HabitsPage() {
   );
 }
 
+// Ordered list of chart token values — stored as CSS var strings
+const COLOR_TOKENS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
+
 function AddHabitModal({
   onClose,
   onSuccess,
@@ -288,8 +319,7 @@ function AddHabitModal({
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("🎯");
   const [loading, setLoading] = useState(false);
-  const colors = ["#22C55E", "#14B8A6", "#A78BFA", "#FB7185", "#60A5FA"];
-  const [color, setColor] = useState(colors[0]);
+  const [color, setColor] = useState(COLOR_TOKENS[0]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,12 +345,20 @@ function AddHabitModal({
         <div className="grid grid-cols-2 gap-4">
           <FormInput label="Emoji" value={emoji} onChange={(e) => setEmoji(e.target.value)} maxLength={2} className="text-center text-xl" />
           <div>
-            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">Color</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Color</label>
             <div className="flex gap-2 pt-1">
-              {colors.map((c) => (
-                <button key={c} type="button" onClick={() => setColor(c)}
-                  className="w-8 h-8 rounded-lg transition-all hover:scale-110 cursor-pointer"
-                  style={{ background: c, opacity: color === c ? 1 : 0.4, boxShadow: color === c ? `0 0 0 2px var(--background), 0 0 0 3px ${c}` : "none" }}
+              {COLOR_TOKENS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className="w-8 h-8 rounded-md transition-all hover:scale-110 cursor-pointer"
+                  style={{
+                    background: c,
+                    opacity: color === c ? 1 : 0.35,
+                    outline: color === c ? "2px solid var(--border-subtle)" : "none",
+                    outlineOffset: "2px",
+                  }}
                   aria-label={`Choose habit color ${c}`}
                   aria-pressed={color === c}
                 />

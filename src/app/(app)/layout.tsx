@@ -54,7 +54,7 @@ export default async function AppLayout({
         <AppSidebar />
         <main className="flex-1 flex flex-col min-w-0">
           <TopBar />
-          <div className="flex-1 overflow-y-auto px-6 py-4 md:px-8 md:py-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4 md:px-8 md:py-6 pb-24 md:pb-6">
             <div className="max-w-6xl mx-auto">
               {children}
             </div>

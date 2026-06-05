@@ -9,6 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
+import { StatBlock } from "@/components/ui/stat-block";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus,
   Trash2,
@@ -202,35 +204,33 @@ export default function HouseworkPage() {
       {/* Manage recurring chores panel */}
       {showManage && (
         <Card padding="md" className="mb-6 space-y-3">
-          <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Recurring Chores</h3>
-          {chores.map((c) => (
-            <Card
-              key={c.name}
-              variant="inset"
-              padding="sm"
-              className="flex items-center gap-3"
-            >
-              <RotateCcw size={12} className="text-[var(--text-muted)] flex-shrink-0" />
-              <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">{c.name}</span>
-              <span
-                className="text-[10px] px-2 py-0.5 rounded-full"
-                style={{ background: "var(--accent-glow)", color: "var(--accent-color)" }}
-              >
-                {c.frequency}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setDeleteChoreName(c.name)}
-                className="hover:text-destructive"
-                aria-label="Delete chore"
-              >
-                <Trash2 size={14} />
-              </Button>
-            </Card>
-          ))}
-          {chores.length === 0 && (
+          <h3 className="stat-label">Recurring Chores</h3>
+          {chores.length === 0 ? (
             <p className="text-xs text-[var(--text-muted)]">No recurring chores yet. Add one below.</p>
+          ) : (
+            chores.map((c) => (
+              <Card
+                key={c.name}
+                variant="inset"
+                padding="sm"
+                className="flex items-center gap-3"
+              >
+                <RotateCcw size={12} className="text-[var(--text-muted)] flex-shrink-0" />
+                <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">{c.name}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--good-wash)] text-[var(--good)]">
+                  {c.frequency}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDeleteChoreName(c.name)}
+                  className="hover:text-destructive"
+                  aria-label="Delete chore"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </Card>
+            ))
           )}
           <div className="flex items-center gap-2 pt-1">
             <FormInput
@@ -276,7 +276,7 @@ export default function HouseworkPage() {
           {format(date, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd") && (
             <button
               onClick={() => setDate(new Date())}
-              className="block mx-auto text-[10px] mt-0.5 text-[var(--accent-color)] hover:underline"
+              className="block mx-auto text-[10px] mt-0.5 text-[var(--accent-text)] hover:underline"
             >
               Go to today
             </button>
@@ -292,14 +292,21 @@ export default function HouseworkPage() {
         </Button>
       </div>
 
-      {/* Progress */}
+      {/* Progress — hero metric */}
       {totalCount > 0 && (
         <Card padding="md" className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-2">
-            <span className="font-medium text-[var(--text-primary)]">Progress</span>
-            <span className="text-[var(--text-muted)]">
-              {completedCount}/{totalCount} done
-            </span>
+          <div className="flex items-end justify-between gap-4 mb-3">
+            <StatBlock
+              label="Today's chores"
+              value={`${completedCount}/${totalCount}`}
+              sub={completedCount === totalCount ? "All done!" : `${totalCount - completedCount} remaining`}
+              size="hero"
+            />
+            {completedCount === totalCount && totalCount > 0 && (
+              <span className="text-xs px-2 py-1 rounded-full bg-[var(--good-wash)] text-[var(--good)] mb-1">
+                Complete
+              </span>
+            )}
           </div>
           <Progress value={totalCount > 0 ? (completedCount / totalCount) * 100 : 0} size="md" />
         </Card>
@@ -308,7 +315,7 @@ export default function HouseworkPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <Card key={i} padding="md" className="h-14 animate-pulse" />
+            <Skeleton key={i} className="h-14" />
           ))}
         </div>
       ) : (
@@ -320,23 +327,22 @@ export default function HouseworkPage() {
               <Card
                 key={item._id || `recurring-${idx}`}
                 padding="md"
-                className="flex items-center gap-3 transition-all"
-                style={{ opacity: item.completed ? 0.5 : 1 }}
+                className={`flex items-center gap-3 transition-all ${item.completed ? "opacity-50" : ""}`}
               >
                 <button
                   onClick={() => toggleItem(item)}
-                  className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all"
-                  style={{
-                    background: item.completed ? "var(--accent-color)" : "transparent",
-                    border: `2px solid ${item.completed ? "var(--accent-color)" : "var(--border-subtle)"}`,
-                  }}
+                  className={[
+                    "w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all border-2",
+                    item.completed
+                      ? "bg-[var(--accent-color)] border-[var(--accent-color)]"
+                      : "bg-transparent border-[var(--border-subtle)] hover:border-[var(--accent-color)]",
+                  ].join(" ")}
                 >
                   {item.completed && <Check size={14} className="text-[var(--background)]" />}
                 </button>
                 <div className="flex-1 min-w-0">
                   <p
-                    className="text-sm font-medium text-[var(--text-primary)]"
-                    style={{ textDecoration: item.completed ? "line-through" : "none" }}
+                    className={`text-sm font-medium text-[var(--text-primary)] ${item.completed ? "line-through" : ""}`}
                   >
                     {item.choreName}
                   </p>
@@ -376,7 +382,7 @@ export default function HouseworkPage() {
           {/* Add one-off task */}
           <button
             onClick={() => setShowAddForm(true)}
-            className="w-full py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 bg-[var(--surface-1)] border border-dashed border-[var(--border-subtle)] text-[var(--text-muted)]"
+            className="w-full min-h-[44px] py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors bg-[var(--surface-1)] border border-dashed border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--accent-color)] hover:text-[var(--accent-text)]"
           >
             <Plus size={14} />
             Add task

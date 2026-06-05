@@ -53,36 +53,34 @@ export default function ExportPage() {
         description="Download your data as Excel"
       />
 
-      <Card padding="lg" className="space-y-6">
-        {/* Type selection */}
+      <Card padding="lg" className="space-y-8">
+        {/* Dataset selection */}
         <div>
-          <label className="block text-xs font-medium text-[var(--text-muted)] mb-3">
-            What to export
-          </label>
+          <p className="stat-label mb-3">What to export</p>
           <div className="space-y-2">
             {EXPORT_TYPES.map((t) => (
               <button
                 key={t.value}
                 onClick={() => setType(t.value)}
                 className={
-                  "w-full p-4 rounded-lg text-left transition-all flex items-center gap-4 border " +
+                  "w-full min-h-[44px] px-4 py-3 rounded-md text-left transition-colors flex items-center gap-4 border " +
                   (type === t.value
                     ? "bg-[var(--accent-glow)] border-[var(--accent-color)]"
-                    : "bg-[var(--surface-2)] border-[var(--border-subtle)]")
+                    : "bg-[var(--surface-2)] border-[var(--border-subtle)] hover:border-[var(--border)]")
                 }
               >
                 <FileSpreadsheet
                   size={18}
                   className={
                     type === t.value
-                      ? "text-[var(--accent-color)]"
-                      : "text-[var(--text-muted)]"
+                      ? "text-[var(--accent-color)] shrink-0"
+                      : "text-[var(--text-muted)] shrink-0"
                   }
                 />
-                <div>
+                <div className="min-w-0">
                   <p
                     className={
-                      "text-sm font-medium " +
+                      "text-sm font-medium leading-snug " +
                       (type === t.value
                         ? "text-[var(--text-primary)]"
                         : "text-[var(--text-muted)]")
@@ -90,7 +88,7 @@ export default function ExportPage() {
                   >
                     {t.label}
                   </p>
-                  <p className="text-xs text-muted-foreground">{t.desc}</p>
+                  <p className="text-xs text-[var(--text-faint)] mt-0.5 truncate">{t.desc}</p>
                 </div>
               </button>
             ))}
@@ -99,10 +97,8 @@ export default function ExportPage() {
 
         {/* Date range */}
         <div>
-          <label className="block text-xs font-medium text-[var(--text-muted)] mb-3">
-            Date range (optional)
-          </label>
-          <div className="grid grid-cols-2 gap-4">
+          <p className="stat-label mb-3">Date range <span className="normal-case font-normal text-[var(--text-faint)]">(optional)</span></p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormInput
               label="From"
               type="date"
@@ -117,9 +113,9 @@ export default function ExportPage() {
             />
           </div>
           {dateError ? (
-            <p className="text-xs text-destructive mt-2">{dateError}</p>
+            <p className="text-xs text-[var(--alert)] mt-2">{dateError}</p>
           ) : (
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-[var(--text-faint)] mt-2">
               Leave empty to export all data
             </p>
           )}
@@ -133,7 +129,7 @@ export default function ExportPage() {
           disabled={!!dateError}
         >
           <Download size={16} />
-          Download CSV
+          Download Excel
         </Button>
       </Card>
     </PageTransition>

@@ -9,17 +9,27 @@ import {
   Download,
   LogOut,
   X,
+  Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signOut } from "next-auth/react";
 import { useSections } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
+import type { SectionId } from "@/lib/constants";
 import { ICON_MAP } from "@/lib/icon-map";
 
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
 }
+
+// Life-area grouping — same mapping as sidebar
+const LIFE_AREA_GROUPS: { label: string; ids: SectionId[] }[] = [
+  { label: "Money", ids: ["work", "finances"] },
+  { label: "Body",  ids: ["gym", "health", "habits"] },
+  { label: "Mind",  ids: ["study", "reading", "journal", "goals"] },
+  { label: "Home",  ids: ["housework", "shopping", "mealprep", "hobbies"] },
+];
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const pathname = usePathname();
@@ -28,22 +38,31 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
-  const sectionItems = useMemo(
-    () => [
-      ...enabledSections.map((id) => ({
-        href: SECTION_META[id].href,
-        icon: ICON_MAP[SECTION_META[id].icon] || ICON_MAP.Briefcase,
-        label: SECTION_META[id].label,
+  const lifeAreaGroups = useMemo(() =>
+    LIFE_AREA_GROUPS
+      .map((group) => ({
+        label: group.label,
+        items: group.ids
+          .filter((id) => enabledSections.includes(id))
+          .map((id) => ({
+            href: SECTION_META[id].href,
+            icon: ICON_MAP[SECTION_META[id].icon] || ICON_MAP.Briefcase,
+            label: SECTION_META[id].label,
+          })),
+      }))
+      .filter((group) => group.items.length > 0),
+    [enabledSections]
+  );
+
+  const customItems = useMemo(() =>
+    customSections
+      .filter((cs) => cs.enabled)
+      .map((cs) => ({
+        href: `/sections/${cs.slug}`,
+        icon: ICON_MAP[cs.icon] || ICON_MAP.Star,
+        label: cs.name,
       })),
-      ...customSections
-        .filter((cs) => cs.enabled)
-        .map((cs) => ({
-          href: `/sections/${cs.slug}`,
-          icon: ICON_MAP[cs.icon] || ICON_MAP.Star,
-          label: cs.name,
-        })),
-    ],
-    [enabledSections, customSections]
+    [customSections]
   );
 
   return (
@@ -77,9 +96,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             >
               {/* Header */}
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  Menu
-                </p>
+                <p className="stat-label" style={{ color: "var(--text-faint)" }}>Menu</p>
                 <button
                   onClick={onClose}
                   className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--surface-1)] transition-colors"
@@ -91,29 +108,60 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
               {/* Nav items */}
               <div className="px-3 pb-2 overflow-y-auto" style={{ maxHeight: "calc(70vh - 100px)" }}>
-                {/* Dashboard */}
+                {/* Today — pinned */}
                 <MenuLink
                   href="/dashboard"
                   icon={LayoutDashboard}
-                  label="Dashboard"
+                  label="Today"
                   active={isActive("/dashboard")}
                   onClick={onClose}
                 />
 
-                {/* Divider */}
-                <div className="my-2 mx-2 border-t border-[var(--border-subtle)]" />
-
-                {/* Sections */}
-                {sectionItems.map((item) => (
-                  <MenuLink
-                    key={item.href}
-                    href={item.href}
-                    icon={item.icon}
-                    label={item.label}
-                    active={isActive(item.href)}
-                    onClick={onClose}
-                  />
+                {/* Life-area groups */}
+                {lifeAreaGroups.map((group) => (
+                  <div key={group.label}>
+                    <div className="my-2 mx-2 border-t border-[var(--border-subtle)]" />
+                    <p className="stat-label px-3 mb-1 mt-2" style={{ color: "var(--text-faint)" }}>{group.label}</p>
+                    {group.items.map((item) => (
+                      <MenuLink
+                        key={item.href}
+                        href={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        active={isActive(item.href)}
+                        onClick={onClose}
+                      />
+                    ))}
+                  </div>
                 ))}
+
+                {/* Custom (AI) sections */}
+                {customItems.length > 0 && (
+                  <div>
+                    <div className="my-2 mx-2 border-t border-[var(--border-subtle)]" />
+                    <p className="stat-label px-3 mb-1 mt-2" style={{ color: "var(--text-faint)" }}>Custom</p>
+                    {customItems.map((item) => (
+                      <MenuLink
+                        key={item.href}
+                        href={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        active={isActive(item.href)}
+                        onClick={onClose}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Shared with me */}
+                <div className="my-2 mx-2 border-t border-[var(--border-subtle)]" />
+                <MenuLink
+                  href="/shared"
+                  icon={Users}
+                  label="Shared with me"
+                  active={isActive("/shared")}
+                  onClick={onClose}
+                />
 
                 {/* Divider */}
                 <div className="my-2 mx-2 border-t border-[var(--border-subtle)]" />

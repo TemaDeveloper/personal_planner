@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormInput } from "@/components/ui/form-input";
+import { StatBlock } from "@/components/ui/stat-block";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 import {
   Plus,
   Trash2,
@@ -17,8 +21,6 @@ import {
   X,
   Download,
 } from "lucide-react";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageTransition } from "@/components/ui/page-transition";
 
 interface ShoppingItem {
   name: string;
@@ -90,14 +92,18 @@ export default function ShoppingPage() {
     updateList(listId, { items: updated });
   };
 
+  const totalPending = lists.reduce(
+    (sum, l) => sum + l.items.filter((i) => !i.checked).length,
+    0
+  );
+
   if (loading) {
     return (
       <div className="animate-slide-up">
         <PageHeader title="Shopping" />
         <div className="space-y-4">
-          {[1, 2].map((i) => (
-            <Card key={i} className="h-32 animate-pulse" />
-          ))}
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-48 w-full" />
         </div>
       </div>
     );
@@ -134,144 +140,141 @@ export default function ShoppingPage() {
           onAction={() => setShowNewList(true)}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* List selector */}
-          <div className="lg:col-span-1 space-y-1">
-            {lists.map((list) => {
-              const pending = list.items.filter((i) => !i.checked).length;
-              const isActive = activeListId === list._id;
-              return (
-                <Card
-                  key={list._id}
-                  variant={isActive ? "elevated" : "default"}
-                  interactive
-                  padding="sm"
-                  onClick={() => setActiveListId(list._id)}
-                  className="flex items-center justify-between"
-                  style={isActive ? {
-                    background: "var(--accent-glow)",
-                    borderColor: "var(--accent-color)",
-                  } : undefined}
-                >
-                  <span
-                    className="text-sm font-medium truncate"
-                    style={{ color: isActive ? "var(--accent-color)" : "var(--text-primary)" }}
+        <div className="space-y-6">
+          {/* Hero metric strip */}
+          <Card padding="md">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+              <StatBlock
+                label="Pending items"
+                value={String(totalPending)}
+                sub={totalPending === 1 ? "item to pick up" : "items to pick up"}
+                size="hero"
+              />
+              <StatBlock
+                label="Lists"
+                value={String(lists.length)}
+                sub="active lists"
+                size="lg"
+              />
+              {activeList && (
+                <StatBlock
+                  label="In this list"
+                  value={String(activeList.items.filter((i) => !i.checked).length)}
+                  sub={`of ${activeList.items.length} items`}
+                  size="lg"
+                />
+              )}
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {/* List selector */}
+            <div className="lg:col-span-1 space-y-1">
+              {lists.map((list) => {
+                const pending = list.items.filter((i) => !i.checked).length;
+                const isActive = activeListId === list._id;
+                return (
+                  <Card
+                    key={list._id}
+                    variant={isActive ? "elevated" : "default"}
+                    interactive
+                    padding="sm"
+                    onClick={() => setActiveListId(list._id)}
+                    className={[
+                      "flex items-center justify-between min-h-[44px]",
+                      isActive
+                        ? "border-[var(--accent-color)] bg-[var(--accent-wash,var(--surface-1))]"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
-                    {list.name}
-                  </span>
-                  {pending > 0 && (
                     <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent-color)] text-[var(--background)]"
-                    >
-                      {pending}
-                    </span>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Active list items */}
-          <div className="lg:col-span-3">
-            {activeList ? (
-              <Card padding="md">
-                <div className="flex items-center justify-between mb-4 gap-2">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">{activeList.name}</h3>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        updateList(activeList._id, { archived: true });
-                        setLists((prev) => prev.filter((l) => l._id !== activeList._id));
-                        setActiveListId(lists.find((l) => l._id !== activeList._id)?._id || null);
-                        toast.success("List archived");
+                      className="text-sm font-medium truncate"
+                      style={{
+                        color: isActive
+                          ? "var(--accent-text)"
+                          : "var(--text-primary)",
                       }}
-                      title="Archive list"
-                      aria-label="Archive list"
                     >
-                      <Archive size={14} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteTarget(activeList._id)}
-                      className="hover:text-destructive"
-                      aria-label="Delete list"
-                    >
-                      <Trash2 size={14} />
-                    </Button>
+                      {list.name}
+                    </span>
+                    {pending > 0 && (
+                      <span
+                        className="num text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ml-2"
+                        style={{
+                          background: "var(--warn-wash)",
+                          color: "var(--warn)",
+                        }}
+                      >
+                        {pending}
+                      </span>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Active list items */}
+            <div className="lg:col-span-3">
+              {activeList ? (
+                <Card padding="md">
+                  <div className="flex items-center justify-between mb-4 gap-2">
+                    <h3 className="text-base font-semibold text-[var(--text-primary)] truncate">
+                      {activeList.name}
+                    </h3>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          updateList(activeList._id, { archived: true });
+                          setLists((prev) => prev.filter((l) => l._id !== activeList._id));
+                          setActiveListId(lists.find((l) => l._id !== activeList._id)?._id || null);
+                          toast.success("List archived");
+                        }}
+                        title="Archive list"
+                        aria-label="Archive list"
+                      >
+                        <Archive size={14} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteTarget(activeList._id)}
+                        className="hover:text-destructive"
+                        aria-label="Delete list"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Unchecked items */}
-                <div className="space-y-1 mb-3">
-                  {activeList.items
-                    .map((item, idx) => ({ item, idx }))
-                    .filter(({ item }) => !item.checked)
-                    .map(({ item, idx }) => (
-                      <Card key={idx} variant="inset" padding="sm" className="flex items-center gap-3">
-                        <button
-                          onClick={() => toggleItem(activeList._id, idx)}
-                          className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border-2 border-[var(--border-subtle)]"
-                          aria-label="Mark as complete"
-                        />
-                        <span className="text-sm flex-1 text-[var(--text-primary)]">{item.name}</span>
-                        {item.quantity > 1 && (
-                          <span className="text-xs text-[var(--text-muted)]">x{item.quantity}</span>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeItem(activeList._id, idx)}
-                          className="hover:text-destructive h-7 w-7"
-                          aria-label="Remove item"
-                        >
-                          <X size={12} />
-                        </Button>
-                      </Card>
-                    ))}
-                </div>
-
-                {/* Add item inline */}
-                <form
-                  onSubmit={(e) => { e.preventDefault(); addItem(); }}
-                  className="flex gap-2 mb-4"
-                >
-                  <FormInput
-                    type="text"
-                    placeholder="Add item..."
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!newItemName.trim()}
-                    size="icon"
-                    aria-label="Add item"
-                  >
-                    <Plus size={14} />
-                  </Button>
-                </form>
-
-                {/* Checked items (faded) */}
-                {activeList.items.some((i) => i.checked) && (
-                  <div className="space-y-1 opacity-50">
-                    <p className="text-[10px] text-[var(--text-muted)] mb-1">Completed</p>
+                  {/* Unchecked items */}
+                  <div className="space-y-1 mb-3">
                     {activeList.items
                       .map((item, idx) => ({ item, idx }))
-                      .filter(({ item }) => item.checked)
+                      .filter(({ item }) => !item.checked)
                       .map(({ item, idx }) => (
-                        <Card key={idx} variant="inset" padding="sm" className="flex items-center gap-3">
+                        <Card
+                          key={idx}
+                          variant="inset"
+                          padding="sm"
+                          className="flex items-center gap-3 min-h-[44px]"
+                        >
                           <button
                             onClick={() => toggleItem(activeList._id, idx)}
-                            className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 bg-[var(--accent-color)] border-2 border-[var(--accent-color)]"
-                            aria-label="Mark as incomplete"
-                          >
-                            <Check size={12} className="text-[var(--background)]" />
-                          </button>
-                          <span className="text-sm flex-1 line-through text-[var(--text-primary)]">{item.name}</span>
+                            className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border-2 border-[var(--border-subtle)] hover:border-[var(--accent-color)] transition-colors"
+                            aria-label="Mark as complete"
+                          />
+                          <span className="text-sm flex-1 text-[var(--text-primary)]">
+                            {item.name}
+                          </span>
+                          {item.quantity > 1 && (
+                            <span className="num text-xs text-[var(--text-muted)]">
+                              x{item.quantity}
+                            </span>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -283,14 +286,81 @@ export default function ShoppingPage() {
                           </Button>
                         </Card>
                       ))}
+
+                    {activeList.items.filter((i) => !i.checked).length === 0 && (
+                      <p className="text-sm text-[var(--text-muted)] py-2">
+                        All items checked off. Add more below.
+                      </p>
+                    )}
                   </div>
-                )}
-              </Card>
-            ) : (
-              <Card padding="lg" className="text-center">
-                <p className="text-sm text-[var(--text-muted)]">Select a list</p>
-              </Card>
-            )}
+
+                  {/* Add item inline */}
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); addItem(); }}
+                    className="flex gap-2 mb-4"
+                  >
+                    <FormInput
+                      type="text"
+                      placeholder="Add item..."
+                      value={newItemName}
+                      onChange={(e) => setNewItemName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!newItemName.trim()}
+                      size="icon"
+                      aria-label="Add item"
+                    >
+                      <Plus size={14} />
+                    </Button>
+                  </form>
+
+                  {/* Checked items (faded) */}
+                  {activeList.items.some((i) => i.checked) && (
+                    <div className="space-y-1 opacity-50">
+                      <p className="stat-label mb-1">Completed</p>
+                      {activeList.items
+                        .map((item, idx) => ({ item, idx }))
+                        .filter(({ item }) => item.checked)
+                        .map(({ item, idx }) => (
+                          <Card
+                            key={idx}
+                            variant="inset"
+                            padding="sm"
+                            className="flex items-center gap-3 min-h-[44px]"
+                          >
+                            <button
+                              onClick={() => toggleItem(activeList._id, idx)}
+                              className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 bg-[var(--accent-color)] border-2 border-[var(--accent-color)]"
+                              aria-label="Mark as incomplete"
+                            >
+                              <Check size={12} className="text-[var(--background)]" />
+                            </button>
+                            <span className="text-sm flex-1 line-through text-[var(--text-primary)]">
+                              {item.name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeItem(activeList._id, idx)}
+                              className="hover:text-destructive h-7 w-7"
+                              aria-label="Remove item"
+                            >
+                              <X size={12} />
+                            </Button>
+                          </Card>
+                        ))}
+                    </div>
+                  )}
+                </Card>
+              ) : (
+                <Card padding="lg" className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                  <ShoppingCart size={32} className="text-[var(--text-faint)]" />
+                  <p className="text-sm text-[var(--text-muted)]">Select a list to view its items</p>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
       )}

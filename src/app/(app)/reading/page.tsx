@@ -9,8 +9,10 @@ import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
-import { Plus, Trash2, BookOpen, Star, Download } from "lucide-react";
+import { StatBlock } from "@/components/ui/stat-block";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Plus, Trash2, BookOpen, Star, Download } from "lucide-react";
 import { PageTransition } from "@/components/ui/page-transition";
 
 interface Book {
@@ -30,6 +32,16 @@ const FILTER_TABS = [
   { id: "completed", label: "Completed" },
   { id: "want-to-read", label: "Want to Read" },
 ];
+
+function statusPillStyle(status: string): { background: string; color: string } {
+  if (status === "reading") {
+    return { background: "var(--good-wash)", color: "var(--good)" };
+  }
+  if (status === "completed") {
+    return { background: "var(--surface-2)", color: "var(--text-muted)" };
+  }
+  return { background: "var(--surface-2)", color: "var(--text-faint)" };
+}
 
 export default function ReadingPage() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -62,13 +74,18 @@ export default function ReadingPage() {
     }
   };
 
+  // Summary stats
+  const totalBooks = books.length;
+  const readingNow = books.filter((b) => b.status === "reading").length;
+  const completed = books.filter((b) => b.status === "completed").length;
+
   if (loading) {
     return (
       <div className="animate-slide-up">
         <PageHeader title="Reading" />
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="h-24 animate-pulse" />
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
           ))}
         </div>
       </div>
@@ -97,6 +114,17 @@ export default function ReadingPage() {
         }
       />
 
+      {/* Summary stats — only shown when there are books */}
+      {totalBooks > 0 && (
+        <Card padding="md" className="mb-6">
+          <div className="grid grid-cols-3 gap-4 divide-x divide-[var(--border)]">
+            <StatBlock label="Total" value={String(totalBooks)} size="lg" />
+            <StatBlock label="Reading Now" value={String(readingNow)} size="lg" className="pl-4" />
+            <StatBlock label="Completed" value={String(completed)} size="lg" className="pl-4" />
+          </div>
+        </Card>
+      )}
+
       {/* Filter tabs */}
       <div className="flex gap-1 mb-6 p-1 rounded-lg bg-[var(--surface-1)]">
         {FILTER_TABS.map((t) => (
@@ -122,33 +150,36 @@ export default function ReadingPage() {
             onAction={() => setShowForm(true)}
           />
         ) : (
-          <Card className="text-center">
-            <BookOpen size={32} className="mx-auto mb-3 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No books match this filter.</p>
-          </Card>
+          <EmptyState
+            icon={BookOpen}
+            title="No books match this filter"
+            description="Try a different status filter above."
+          />
         )
       ) : (
         <div className="space-y-3">
           {filtered.map((book) => {
             const pct = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0;
+            const pillStyle = statusPillStyle(book.status);
             return (
               <Card key={book._id} padding="md">
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
+                    {/* Title + status pill */}
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <span className="text-sm font-semibold truncate max-w-[200px] sm:max-w-none">{book.title}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate max-w-[200px] sm:max-w-none">
+                        {book.title}
+                      </span>
                       <span
                         className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize"
-                        style={{
-                          background: book.status === "reading" ? "var(--accent-glow)" : "var(--surface-2)",
-                          color: book.status === "reading" ? "var(--accent-color)" : "var(--text-muted)",
-                        }}
+                        style={pillStyle}
                       >
                         {book.status.replace("-", " ")}
                       </span>
                     </div>
+
                     {book.author && (
-                      <p className="text-xs text-muted-foreground mb-2">by {book.author}</p>
+                      <p className="text-xs text-[var(--text-muted)] mb-2">by {book.author}</p>
                     )}
 
                     {/* Progress bar for reading books */}
@@ -156,7 +187,7 @@ export default function ReadingPage() {
                       <div className="mb-2">
                         <div className="flex items-center gap-2 mb-1">
                           <Progress value={pct} size="sm" className="flex-1" />
-                          <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                          <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 num">
                             {book.currentPage}/{book.totalPages}
                           </span>
                         </div>
@@ -167,17 +198,20 @@ export default function ReadingPage() {
                           value={book.currentPage}
                           onChange={(e) => updateBook(book._id, { currentPage: Number(e.target.value) })}
                           className="w-full h-1 accent-primary"
+                          style={{ minHeight: 44 }}
                         />
                       </div>
                     )}
 
-                    {/* Rating */}
+                    {/* Rating stars */}
                     <div className="flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <button
                           key={s}
                           onClick={() => updateBook(book._id, { rating: s })}
                           className="p-0.5"
+                          style={{ minWidth: 44, minHeight: 44 }}
+                          aria-label={`Rate ${s} star${s !== 1 ? "s" : ""}`}
                         >
                           <Star
                             size={14}
@@ -204,7 +238,7 @@ export default function ReadingPage() {
                       size="icon"
                       aria-label="Delete book"
                       onClick={() => setDeleteTarget(book._id)}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="text-[var(--text-muted)] hover:text-[var(--alert)]"
                     >
                       <Trash2 size={14} />
                     </Button>

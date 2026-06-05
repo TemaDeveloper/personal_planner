@@ -10,6 +10,10 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Progress } from "@/components/ui/progress";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { StatBlock } from "@/components/ui/stat-block";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageTransition } from "@/components/ui/page-transition";
 import {
   Plus,
   Trash2,
@@ -20,8 +24,6 @@ import {
   Download,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageTransition } from "@/components/ui/page-transition";
 
 interface HobbySession {
   _id: string;
@@ -48,13 +50,27 @@ interface HobbyConfig {
 
 type Tab = "overview" | "log" | "projects";
 
-const STATUS_COLORS: Record<string, string> = {
-  "in-progress": "var(--accent-color)",
-  completed: "#22c55e",
-  paused: "var(--text-muted)",
+// Status tokens: use semantic token pairs (text on wash background)
+const STATUS_TOKENS: Record<string, { color: string; bg: string; label: string }> = {
+  "in-progress": { color: "var(--accent-text)", bg: "var(--accent-glow)", label: "In Progress" },
+  completed: { color: "var(--good)", bg: "var(--good-wash)", label: "Completed" },
+  paused: { color: "var(--text-muted)", bg: "var(--surface-1)", label: "Paused" },
 };
 
-const HOBBY_COLORS = ["#f59e0b", "#ef4444", "#3b82f6", "#22c55e", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
+// Chart token colors for hobby swatches — no hardcoded hex
+const HOBBY_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--accent-color)",
+  "var(--warn)",
+  "var(--alert)",
+];
+
+// Fallback hex values only used for visual swatch rendering where CSS vars can't be used in bg-color picker buttons
+const HOBBY_COLORS_HEX = ["#f59e0b", "#ef4444", "#3b82f6", "#22c55e", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
 
 const TAB_SEGMENTS: { value: Tab; label: string }[] = [
   { value: "overview", label: "Overview" },
@@ -73,7 +89,7 @@ export default function HobbiesPage() {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const [newHobbyName, setNewHobbyName] = useState("");
-  const [newHobbyColor, setNewHobbyColor] = useState(HOBBY_COLORS[0]);
+  const [newHobbyColor, setNewHobbyColor] = useState(HOBBY_COLORS_HEX[0]);
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [deleteHobbyName, setDeleteHobbyName] = useState<string | null>(null);
@@ -114,7 +130,7 @@ export default function HobbiesPage() {
     if (res.ok) {
       setHobbies(updated);
       setNewHobbyName("");
-      setNewHobbyColor(HOBBY_COLORS[(updated.length) % HOBBY_COLORS.length]);
+      setNewHobbyColor(HOBBY_COLORS_HEX[(updated.length) % HOBBY_COLORS_HEX.length]);
       toast.success("Hobby added");
     }
   };
@@ -162,6 +178,8 @@ export default function HobbiesPage() {
   }, [weeklySessions]);
 
   const totalWeeklyMinutes = weeklySessions.reduce((s, x) => s + x.minutes, 0);
+  const totalWeeklyHours = Math.floor(totalWeeklyMinutes / 60);
+  const totalWeeklyRem = totalWeeklyMinutes % 60;
 
   if (loading) {
     return (
@@ -169,7 +187,7 @@ export default function HobbiesPage() {
         <PageHeader title="Hobbies" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="h-32 animate-pulse" />
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
       </div>
@@ -206,13 +224,17 @@ export default function HobbiesPage() {
       {showManage && (
         <Card className="mb-6">
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Manage Hobbies
-            </h3>
+            <p className="stat-label">Manage Hobbies</p>
+            {hobbies.length === 0 && (
+              <p className="text-sm text-[var(--text-muted)]">No hobbies configured yet.</p>
+            )}
             {hobbies.map((h) => (
               <Card key={h.name} variant="inset" padding="sm" className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: h.color }} />
-                <span className="flex-1 text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{h.name}</span>
+                <div
+                  className="w-4 h-4 rounded-full flex-shrink-0"
+                  style={{ background: h.color }}
+                />
+                <span className="flex-1 text-sm font-medium truncate text-[var(--text-primary)]">{h.name}</span>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -226,19 +248,27 @@ export default function HobbiesPage() {
             ))}
             <div className="space-y-2 pt-1">
               <div className="flex gap-2 flex-wrap">
-                {HOBBY_COLORS.map((c) => (
+                {HOBBY_COLORS_HEX.map((c) => (
                   <button
                     key={c}
                     onClick={() => setNewHobbyColor(c)}
-                    className="w-6 h-6 rounded-full transition-all"
+                    className="w-7 h-7 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                     style={{
-                      background: c,
-                      opacity: newHobbyColor === c ? 1 : 0.35,
-                      boxShadow: newHobbyColor === c ? `0 0 0 2px var(--background), 0 0 0 3px ${c}` : "none",
+                      background: "transparent",
                     }}
                     aria-label={`Choose hobby color ${c}`}
                     aria-pressed={newHobbyColor === c}
-                  />
+                  >
+                    <span
+                      className="w-5 h-5 rounded-full block"
+                      style={{
+                        background: c,
+                        opacity: newHobbyColor === c ? 1 : 0.35,
+                        outline: newHobbyColor === c ? `2px solid ${c}` : "none",
+                        outlineOffset: "2px",
+                      }}
+                    />
+                  </button>
                 ))}
               </div>
               <div className="flex items-center gap-2">
@@ -266,8 +296,10 @@ export default function HobbiesPage() {
       {activeHobbies.length === 0 && !showManage && (
         <EmptyState
           icon={Palette}
-          title="No hobby sessions yet"
-          description="Log time spent on your hobbies and projects."
+          title="No hobbies configured"
+          description="Add your hobbies via the settings button, then start logging time and projects."
+          actionLabel="Set up hobbies"
+          onAction={() => setShowManage(true)}
         />
       )}
 
@@ -283,20 +315,29 @@ export default function HobbiesPage() {
       {/* Overview tab */}
       {tab === "overview" && (
         <div className="space-y-4">
+          {/* Hero weekly stat */}
           <Card>
-            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text-primary)" }}>This Week</h3>
+            <StatBlock
+              label="This Week"
+              value={`${totalWeeklyHours}h ${totalWeeklyRem}m`}
+              sub={`${weeklySessions.length} session${weeklySessions.length !== 1 ? "s" : ""} across ${weeklyByHobby.length} hobb${weeklyByHobby.length !== 1 ? "ies" : "y"}`}
+              size="hero"
+              className="mb-4"
+            />
             {weeklyByHobby.length === 0 ? (
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>No time logged this week.</p>
+              <p className="text-sm text-[var(--text-muted)]">No time logged this week.</p>
             ) : (
               <div className="space-y-3">
                 {weeklyByHobby.map(([hobby, mins]) => {
                   const pct = totalWeeklyMinutes > 0 ? (mins / totalWeeklyMinutes) * 100 : 0;
+                  const h = Math.floor(mins / 60);
+                  const m = mins % 60;
                   return (
                     <div key={hobby}>
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-medium" style={{ color: "var(--text-primary)" }}>{hobby}</span>
-                        <span style={{ color: "var(--text-muted)" }}>
-                          {Math.floor(mins / 60)}h {mins % 60}m
+                        <span className="font-medium text-[var(--text-primary)]">{hobby}</span>
+                        <span className="num text-[var(--text-muted)]">
+                          {h}h {m}m
                         </span>
                       </div>
                       <Progress
@@ -307,18 +348,21 @@ export default function HobbiesPage() {
                     </div>
                   );
                 })}
-                <p className="text-xs pt-2" style={{ color: "var(--text-muted)" }}>
-                  Total: {Math.floor(totalWeeklyMinutes / 60)}h {totalWeeklyMinutes % 60}m
-                </p>
               </div>
             )}
           </Card>
 
           {/* Active projects summary */}
           <Card>
-            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Active Projects</h3>
+            <p className="stat-label mb-3">Active Projects</p>
             {projects.filter((p) => p.status === "in-progress").length === 0 ? (
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>No active projects.</p>
+              <EmptyState
+                icon={FolderOpen}
+                title="No active projects"
+                description="Start a new project in the Projects tab."
+                actionLabel="New project"
+                onAction={() => setTab("projects")}
+              />
             ) : (
               <div className="space-y-2">
                 {projects
@@ -330,8 +374,8 @@ export default function HobbiesPage() {
                         style={{ background: hobbyColorMap[p.hobby] || "var(--accent-color)" }}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{p.name}</p>
-                        <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{p.hobby}</p>
+                        <p className="text-sm font-medium truncate text-[var(--text-primary)]">{p.name}</p>
+                        <p className="text-[10px] text-[var(--text-muted)]">{p.hobby}</p>
                       </div>
                     </Card>
                   ))}
@@ -354,10 +398,13 @@ export default function HobbiesPage() {
           </Button>
 
           {sessions.length === 0 ? (
-            <Card className="text-center">
-              <Clock size={32} className="mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>No sessions logged yet.</p>
-            </Card>
+            <EmptyState
+              icon={Clock}
+              title="No sessions logged yet"
+              description="Log your first hobby session to start tracking time."
+              actionLabel="Log time"
+              onAction={() => setShowLogForm(true)}
+            />
           ) : (
             <div className="space-y-2">
               {sessions.slice(0, 50).map((s) => (
@@ -368,15 +415,15 @@ export default function HobbiesPage() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.hobby}</span>
-                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{s.hobby}</span>
+                      <span className="num text-xs text-[var(--text-muted)]">
                         {Math.floor(s.minutes / 60)}h {s.minutes % 60}m
                       </span>
                     </div>
                     {s.note && (
-                      <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{s.note}</p>
+                      <p className="text-xs truncate text-[var(--text-muted)]">{s.note}</p>
                     )}
-                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-[10px] text-[var(--text-faint)]">
                       {format(new Date(s.date), "MMM d, yyyy")}
                     </p>
                   </div>
@@ -409,74 +456,80 @@ export default function HobbiesPage() {
           </Button>
 
           {projects.length === 0 ? (
-            <Card className="text-center">
-              <FolderOpen size={32} className="mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>No projects yet.</p>
-            </Card>
+            <EmptyState
+              icon={FolderOpen}
+              title="No projects yet"
+              description="Create a project to track longer-term hobby work."
+              actionLabel="New project"
+              onAction={() => setShowProjectForm(true)}
+            />
           ) : (
             <div className="space-y-2">
-              {projects.map((p) => (
-                <Card key={p._id} padding="md">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
-                      style={{ background: hobbyColorMap[p.hobby] || "var(--accent-color)" }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{p.name}</span>
-                        <span
-                          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                          style={{
-                            background: `${STATUS_COLORS[p.status]}20`,
-                            color: STATUS_COLORS[p.status],
-                          }}
-                        >
-                          {p.status}
-                        </span>
+              {projects.map((p) => {
+                const statusToken = STATUS_TOKENS[p.status] ?? STATUS_TOKENS["paused"];
+                return (
+                  <Card key={p._id} padding="md">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                        style={{ background: hobbyColorMap[p.hobby] || "var(--accent-color)" }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-[var(--text-primary)]">{p.name}</span>
+                          <span
+                            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                            style={{
+                              background: statusToken.bg,
+                              color: statusToken.color,
+                            }}
+                          >
+                            {statusToken.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--text-muted)]">{p.hobby}</p>
+                        {p.description && (
+                          <p className="text-xs mt-1 text-[var(--text-muted)]">{p.description}</p>
+                        )}
                       </div>
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.hobby}</p>
-                      {p.description && (
-                        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{p.description}</p>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <FormSelect
+                          value={p.status}
+                          onChange={async (e) => {
+                            const newStatus = e.target.value;
+                            const res = await fetch(`/api/hobbies/projects/${p._id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ status: newStatus }),
+                            });
+                            if (res.ok) {
+                              setProjects((prev) =>
+                                prev.map((x) =>
+                                  x._id === p._id ? { ...x, status: newStatus as HobbyProject["status"] } : x
+                                )
+                              );
+                            }
+                          }}
+                          className="text-xs"
+                        >
+                          <option value="in-progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                          <option value="paused">Paused</option>
+                        </FormSelect>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteProjectId(p._id)}
+                          className="hover:text-destructive"
+                          aria-label="Delete project"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <FormSelect
-                        value={p.status}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value;
-                          const res = await fetch(`/api/hobbies/projects/${p._id}`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ status: newStatus }),
-                          });
-                          if (res.ok) {
-                            setProjects((prev) =>
-                              prev.map((x) =>
-                                x._id === p._id ? { ...x, status: newStatus as HobbyProject["status"] } : x
-                              )
-                            );
-                          }
-                        }}
-                        className="text-xs"
-                      >
-                        <option value="in-progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="paused">Paused</option>
-                      </FormSelect>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteProjectId(p._id)}
-                        className="hover:text-destructive"
-                        aria-label="Delete project"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
