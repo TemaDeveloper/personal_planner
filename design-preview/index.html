@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>Planner — Editorial Calm (Responsive Preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   EDITORIAL CALM — responsive, cross-browser design preview
+   Mobile-first. Tested 320 / 375 / 768 / 1024 / 1280 / 1536.
+   No glass-by-default · warm neutrals · one clay accent ·
+   tabular figures · hairline surfaces.
+   ============================================================ */
+:root {
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface-2: #FCFBF9;
+  --topbar-bg: rgba(247,246,243,0.86);
+  --hair: rgba(28,25,23,0.10);
+  --hair-strong: rgba(28,25,23,0.16);
+  --t1: rgba(28,25,23,0.92);
+  --t2: rgba(28,25,23,0.56);
+  --t3: rgba(28,25,23,0.38);
+  --accent: #C0613C;
+  --accent-press: #A24E2E;
+  --accent-wash: rgba(192,97,60,0.09);
+  --good: #5E8C6A;  --good-wash: rgba(94,140,106,0.15);
+  --warn: #C99A3B;  --warn-wash: rgba(201,154,59,0.17);
+  --alert: #C0563C; --alert-wash: rgba(192,86,60,0.15);
+  --radius: 7px;
+  --radius-lg: 11px;
+  --shadow-overlay: 0 16px 48px rgba(28,25,23,0.14), 0 4px 12px rgba(28,25,23,0.06);
+  --content-max: 1120px;
+}
+html[data-mode="dark"] {
+  --bg: #0F0F0E;
+  --surface: #1A1A17;
+  --surface-2: #211F1C;
+  --topbar-bg: rgba(15,15,14,0.86);
+  --hair: rgba(255,255,255,0.10);
+  --hair-strong: rgba(255,255,255,0.18);
+  --t1: rgba(245,243,240,0.94);
+  --t2: rgba(245,243,240,0.58);
+  --t3: rgba(245,243,240,0.40);
+  --accent: #D2724A;
+  --accent-press: #E08358;
+  --accent-wash: rgba(210,114,74,0.13);
+  --good: #7BA888;  --good-wash: rgba(123,168,136,0.16);
+  --warn: #D8B057;  --warn-wash: rgba(216,176,87,0.16);
+  --alert: #D87358; --alert-wash: rgba(216,115,88,0.16);
+  --shadow-overlay: 0 24px 64px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+.label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--t2); }
+.muted { color: var(--t2); } .faint { color: var(--t3); }
+a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+img, svg { display: block; }
+
+/* ── App shell (mobile-first: single column) ── */
+.app { min-height: 100vh; min-height: 100dvh; }
+
+/* ── Sidebar: off-canvas drawer on mobile ── */
+.side {
+  position: fixed; top: 0; left: 0; z-index: 70;
+  width: 264px; max-width: 84vw; height: 100vh; height: 100dvh;
+  background: var(--surface-2); border-right: 1px solid var(--hair);
+  display: flex; flex-direction: column;
+  transform: translateX(-100%); transition: transform .26s cubic-bezier(.22,1,.36,1);
+  -webkit-overflow-scrolling: touch;
+}
+.app.drawer-open .side { transform: translateX(0); }
+.scrim {
+  position: fixed; inset: 0; z-index: 65; background: rgba(20,18,16,0.36);
+  opacity: 0; visibility: hidden; transition: opacity .26s;
+}
+.app.drawer-open .scrim { opacity: 1; visibility: visible; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 18px; height: 56px; border-bottom: 1px solid var(--hair); flex: none; }
+.brand .mark { width: 26px; height: 26px; border-radius: 7px; flex: none; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.brand .name { font-weight: 650; font-size: 14.5px; letter-spacing: -0.01em; }
+.brand .close { margin-left: auto; width: 40px; height: 40px; border: 0; background: none; color: var(--t2); display: grid; place-items: center; border-radius: 8px; }
+.brand .close:hover { background: var(--hair); }
+.nav { flex: 1; overflow-y: auto; padding: 14px 10px; }
+.nav-group { margin-bottom: 16px; }
+.nav-group > .gl { padding: 0 10px 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t3); }
+.nav-item {
+  display: flex; align-items: center; gap: 11px; min-height: 40px; padding: 0 10px;
+  border-radius: var(--radius); color: var(--t2); font-size: 14.5px; font-weight: 500;
+  position: relative; transition: background .15s, color .15s;
+}
+.nav-item:hover { background: var(--hair); color: var(--t1); }
+.nav-item.active { color: var(--accent); background: var(--accent-wash); font-weight: 600; }
+.nav-item.active::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 2.5px; height: 16px; border-radius: 0 3px 3px 0; background: var(--accent); }
+.nav-item .ic { width: 18px; height: 18px; flex: none; opacity: .9; }
+.side-foot { padding: 10px; border-top: 1px solid var(--hair); flex: none; }
+
+/* ── Top bar ── */
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 100vh; min-height: 100dvh; }
+.topbar {
+  height: 56px; border-bottom: 1px solid var(--hair); display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; position: sticky; top: 0; z-index: 40; background: var(--topbar-bg);
+  padding-top: env(safe-area-inset-top);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .topbar { -webkit-backdrop-filter: saturate(140%) blur(8px); backdrop-filter: saturate(140%) blur(8px); }
+}
+.hamb { width: 40px; height: 40px; border: 0; background: none; color: var(--t1); display: grid; place-items: center; border-radius: 8px; flex: none; }
+.hamb:hover { background: var(--hair); }
+.crumb { font-size: 14.5px; font-weight: 600; color: var(--t1); letter-spacing: -.01em; }
+.spacer { flex: 1; }
+.cmdk {
+  display: none; align-items: center; gap: 8px; height: 36px; padding: 0 10px 0 12px; min-width: 200px;
+  border: 1px solid var(--hair); border-radius: var(--radius); color: var(--t3); font-size: 13px; background: var(--surface);
+}
+.cmdk kbd { font-family: inherit; font-size: 11px; font-weight: 600; color: var(--t2); border: 1px solid var(--hair); border-radius: 4px; padding: 1px 5px; background: var(--bg); }
+.btn {
+  min-height: 40px; padding: 0 15px; border-radius: var(--radius); border: 1px solid transparent;
+  font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  transition: background .15s, transform .08s, border-color .15s; white-space: nowrap;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-press); }
+.btn-ghost { background: transparent; color: var(--t2); border-color: var(--hair); }
+.btn-ghost:hover { color: var(--t1); border-color: var(--hair-strong); }
+.icon-btn { width: 40px; height: 40px; border-radius: var(--radius); border: 1px solid var(--hair); background: var(--surface); color: var(--t2); display: grid; place-items: center; flex: none; }
+.icon-btn:hover { color: var(--t1); border-color: var(--hair-strong); }
+.add-label { display: none; }
+.top-add, .top-ai { width: 40px; height: 40px; padding: 0; }
+.btn-ai { background: var(--accent-wash); color: var(--accent); border-color: transparent; }
+.btn-ai:hover { background: var(--accent); color: #fff; }
+.btn-ai:hover .ic { stroke: #fff; }
+
+/* ── Content ── */
+.content {
+  flex: 1; width: 100%; max-width: var(--content-max); margin: 0 auto;
+  padding: 18px 16px calc(96px + env(safe-area-inset-bottom));
+}
+.screen { display: none; }
+.screen.show { display: block; animation: rise .35s cubic-bezier(.22,1,.36,1); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { *, .screen.show { animation: none !important; transition: none !important; } }
+
+.page-h { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; gap: 14px; flex-wrap: wrap; }
+.page-h h1 { font-size: clamp(21px, 5vw, 25px); font-weight: 700; letter-spacing: -0.025em; }
+.page-h p { font-size: 13.5px; color: var(--t2); margin-top: 2px; }
+
+/* ── Surfaces ── */
+.card { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius-lg); padding: clamp(16px, 4vw, 22px); }
+.card.pad-lg { padding: clamp(18px, 4vw, 26px); }
+.row { display: grid; gap: 14px; }
+.g2 { grid-template-columns: 1fr; }
+.g3 { grid-template-columns: 1fr; }
+.g4 { grid-template-columns: repeat(2, 1fr); }
+
+/* ── Stat block (signature element), fluid ── */
+.stat .label { margin-bottom: 7px; }
+.stat .v { font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.stat.hero .v { font-size: clamp(40px, 13vw, 56px); }
+.stat.lg .v { font-size: clamp(26px, 7vw, 30px); }
+.stat.md .v { font-size: 22px; }
+.stat .sub { font-size: 12.5px; color: var(--t2); margin-top: 8px; }
+
+/* ── Hero band ── */
+.hero { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius-lg); padding: clamp(18px, 5vw, 26px); margin-bottom: 16px; }
+.hero .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.hero .date { font-size: 12.5px; color: var(--t2); }
+.hero .bigdate { font-size: clamp(24px, 7vw, 32px); font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+
+/* ── Quick log row ── */
+.qlog { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--hair); background: var(--surface-2); font-size: 13.5px; font-weight: 550; color: var(--t1); transition: border-color .15s, background .15s; }
+.chip:hover, .chip:active { border-color: var(--accent); background: var(--accent-wash); }
+.chip .plus { color: var(--accent); font-weight: 700; font-size: 16px; }
+
+/* ── Today list ── */
+.tl-item { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 2px; border-bottom: 1px solid var(--hair); }
+.tl-item:last-child { border-bottom: 0; }
+.check { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--hair-strong); flex: none; transition: .15s; background: none; }
+.check.done { background: var(--good); border-color: var(--good); position: relative; }
+.check.done::after { content: "✓"; color: #fff; font-size: 13px; position: absolute; inset: 0; display: grid; place-items: center; }
+.tl-item .t { flex: 1; font-size: 14px; }
+.tl-item.is-done .t { color: var(--t3); text-decoration: line-through; }
+.pill { font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.good { color: var(--good); background: var(--good-wash); }
+.pill.warn { color: var(--warn); background: var(--warn-wash); }
+.pill.alert { color: var(--alert); background: var(--alert-wash); }
+
+/* ── Summary rows ── */
+.sumrow { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+.sumrow:last-child { border-bottom: 0; }
+.sumrow .k { width: 84px; flex: none; }
+.sumrow .vals { display: flex; gap: 18px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.sumrow .vals .v { font-size: 14.5px; font-weight: 600; }
+.sumrow .go { color: var(--t3); font-size: 18px; flex: none; }
+.bar { height: 6px; border-radius: 999px; background: var(--hair); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+/* ── Section tabs (scrollable on mobile) ── */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--hair); margin-bottom: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 11px 15px; font-size: 13.5px; font-weight: 550; color: var(--t2); border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; white-space: nowrap; flex: none; min-height: 44px; }
+.tab:hover { color: var(--t1); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 650; }
+.tabpane { display: none; }
+.tabpane.show { display: block; animation: rise .3s ease; }
+
+/* ── Setup fields ── */
+.setup-card { border: 1px solid var(--hair); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--t2); margin-bottom: 6px; }
+.input { width: 100%; min-height: 42px; padding: 0 12px; font-size: 16px; font-family: inherit; background: var(--surface-2); border: 1px solid var(--hair); border-radius: var(--radius); color: var(--t1); -webkit-appearance: none; appearance: none; }
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
+.inline-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.add-row { width: 100%; min-height: 44px; border: 1px dashed var(--hair-strong); border-radius: var(--radius); background: none; color: var(--t2); font-weight: 600; font-size: 13.5px; }
+.add-row:hover { color: var(--accent); border-color: var(--accent); }
+
+/* swatches / seg */
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.sw { width: 40px; height: 40px; border-radius: 9px; border: 2px solid transparent; }
+.sw.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px currentColor; }
+.seg { display: inline-flex; border: 1px solid var(--hair); border-radius: var(--radius); padding: 3px; background: var(--surface-2); flex-wrap: wrap; }
+.seg button { min-height: 34px; padding: 0 15px; border: 0; background: none; font-size: 13.5px; font-weight: 550; color: var(--t2); border-radius: 4px; }
+.seg button.on { background: var(--surface); color: var(--t1); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+/* empty state */
+.empty { text-align: center; padding: clamp(32px, 9vw, 52px) 18px; }
+.empty .ring { width: 54px; height: 54px; border-radius: 14px; border: 1px solid var(--hair); display: inline-grid; place-items: center; color: var(--t3); margin-bottom: 14px; }
+.empty h3 { font-size: 16px; font-weight: 650; margin-bottom: 4px; }
+.empty p { font-size: 13.5px; color: var(--t2); max-width: 340px; margin: 0 auto 18px; }
+
+.section-title { font-size: 13px; font-weight: 650; color: var(--t1); margin-bottom: 13px; letter-spacing: -0.01em; }
+.mt { margin-top: 16px; }
+
+/* ── Bottom nav (mobile only) ── */
+.bottomnav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex;
+  background: var(--topbar-bg); border-top: 1px solid var(--hair);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .bottomnav { -webkit-backdrop-filter: saturate(140%) blur(10px); backdrop-filter: saturate(140%) blur(10px); }
+}
+.bn-item { flex: 1; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none; color: var(--t3); font-size: 10.5px; font-weight: 600; }
+.bn-item .ic { width: 21px; height: 21px; }
+.bn-item.active { color: var(--accent); }
+.fab {
+  position: fixed; z-index: 51; right: 16px; bottom: calc(70px + env(safe-area-inset-bottom));
+  width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--accent); color: #fff;
+  display: grid; place-items: center; box-shadow: 0 8px 24px rgba(192,97,60,0.4);
+  transition: transform .1s;
+}
+.fab:active { transform: scale(.94); }
+
+/* ── cmdk overlay ── */
+.overlay { position: fixed; inset: 0; background: rgba(20,18,16,.32); display: none; z-index: 80; padding: 12vh 16px 16px; }
+.overlay.show { display: flex; justify-content: center; align-items: flex-start; }
+.palette { width: 540px; max-width: 100%; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; box-shadow: var(--shadow-overlay); overflow: hidden; }
+.palette .pin { min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--hair); }
+.palette .pin input { flex: 1; min-height: 44px; border: 0; background: none; font-family: inherit; font-size: 16px; color: var(--t1); outline: none; }
+.palette .grp { padding: 8px; }
+.palette .gh { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--t3); padding: 6px 10px; }
+.palette .pi { display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 9px 10px; border-radius: 6px; font-size: 14.5px; color: var(--t1); }
+.palette .pi:hover, .palette .pi.sel { background: var(--accent-wash); color: var(--accent); }
+.palette .pi .k { margin-left: auto; font-size: 11px; color: var(--t3); }
+
+svg.ic { stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── AI Studio panel ── */
+.ai-studio { width: 600px; max-width: 100%; max-height: 84vh; max-height: 84dvh; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; box-shadow: var(--shadow-overlay); overflow: hidden; }
+.ai-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--hair); flex: none; }
+.ai-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-wash); color: var(--accent); display: grid; place-items: center; flex: none; }
+.ai-title { font-weight: 700; font-size: 15.5px; letter-spacing: -.01em; }
+.ai-sub { font-size: 12px; color: var(--t2); }
+.close2 { margin-left: auto; width: 38px; height: 38px; border: 0; background: none; color: var(--t2); border-radius: 8px; display: grid; place-items: center; flex: none; }
+.close2:hover { background: var(--hair); }
+.ai-body { padding: 18px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.ai-text { width: 100%; min-height: 92px; resize: vertical; padding: 12px 13px; font-family: inherit; font-size: 16px; line-height: 1.5; background: var(--surface-2); border: 1px solid var(--hair); border-radius: 10px; color: var(--t1); -webkit-appearance: none; appearance: none; }
+.ai-text:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
+.sugs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.sug { font-size: 12.5px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--hair); background: var(--surface-2); color: var(--t2); }
+.sug:hover { border-color: var(--accent); color: var(--accent); }
+.fieldlabel { font-size: 12px; font-weight: 600; color: var(--t2); margin: 16px 0 8px; }
+.fieldlabel.first { margin-top: 0; }
+.checkrow { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 2px; border-bottom: 1px solid var(--hair); }
+.checkrow:last-child { border-bottom: 0; }
+.cbox { width: 21px; height: 21px; border-radius: 6px; border: 1.5px solid var(--hair-strong); flex: none; }
+.checkrow.on .cbox { background: var(--accent); border-color: var(--accent); position: relative; }
+.checkrow.on .cbox::after { content: "✓"; color: #fff; font-size: 13px; position: absolute; inset: 0; display: grid; place-items: center; }
+.checkrow .cl { flex: 1; font-size: 14.5px; }
+.checkrow .meta { font-size: 12px; color: var(--t3); }
+.ai-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.ai-actions .btn { flex: 1; min-width: 140px; }
+.linkbox { margin-top: 16px; padding: 12px 13px; border: 1px solid var(--hair); border-radius: 10px; background: var(--surface-2); display: flex; align-items: center; gap: 10px; }
+.linkbox .url { flex: 1; min-width: 0; font-size: 13px; color: var(--t2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linkbox .copy { flex: none; }
+.share-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 0; border-bottom: 1px solid var(--hair); }
+.share-row:last-child { border-bottom: 0; }
+.share-row .si { flex: 1; min-width: 0; }
+.share-row .sn { font-size: 14px; font-weight: 550; }
+.share-row .sm { font-size: 12px; color: var(--t3); }
+.role-pill { font-size: 10.5px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: var(--accent-wash); color: var(--accent); text-transform: uppercase; letter-spacing: .04em; flex: none; }
+.role-pill.view { background: var(--good-wash); color: var(--good); }
+
+/* ════════ BREAKPOINTS ════════ */
+/* sm — ≥640: two-up stat grids */
+@media (min-width: 640px) {
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .content { padding: 22px 22px calc(100px + env(safe-area-inset-bottom)); }
+  .add-label { display: inline; }
+  .top-add, .top-ai { width: auto; height: 40px; padding: 0 15px; }
+}
+/* lg — ≥1000: persistent sidebar, no drawer/bottom-nav */
+@media (min-width: 1000px) {
+  .app { display: grid; grid-template-columns: 256px 1fr; }
+  .side { position: sticky; transform: none; max-width: none; height: 100vh; height: 100dvh; z-index: 10; }
+  .brand .close { display: none; }
+  .scrim { display: none; }
+  .hamb { display: none; }
+  .bottomnav, .fab { display: none; }
+  .topbar { padding: 0 22px; }
+  .content { padding: 28px 30px 60px; }
+}
+/* xl — ≥1440: a touch more breathing room */
+@media (min-width: 1440px) {
+  :root { --content-max: 1180px; }
+  .content { padding: 32px 36px 72px; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="scrim" onclick="closeDrawer()"></div>
+
+  <!-- ════════ SIDEBAR / DRAWER ════════ -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">P</div>
+      <div class="name">Planner</div>
+      <button class="close" onclick="closeDrawer()" aria-label="Close menu"><svg class="ic" style="width:20px;height:20px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <nav class="nav">
+      <div class="nav-group">
+        <a class="nav-item active" data-screen="dashboard"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg> Today</a>
+      </div>
+      <div class="nav-group">
+        <div class="gl">Money</div>
+        <a class="nav-item" data-screen="work"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Work</a>
+        <a class="nav-item" data-screen="finances"><svg class="ic" viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> Finances</a>
+      </div>
+      <div class="nav-group">
+        <div class="gl">Body</div>
+        <a class="nav-item" data-screen="placeholder" data-title="Gym"><svg class="ic" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7"/></svg> Gym</a>
+        <a class="nav-item" data-screen="placeholder" data-title="Health"><svg class="ic" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.4 3-5.5A3.5 3.5 0 0012 6 3.5 3.5 0 002 8.5C2 10.6 3.5 12.5 5 14l7 7z"/></svg> Health</a>
+        <a class="nav-item" data-screen="placeholder" data-title="Habits"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2s5 4 5 9a5 5 0 01-10 0c0-2 1-3 1-3"/></svg> Habits</a>
+      </div>
+      <div class="nav-group">
+        <div class="gl">Mind</div>
+        <a class="nav-item" data-screen="placeholder" data-title="Study"><svg class="ic" viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg> Study</a>
+        <a class="nav-item" data-screen="placeholder" data-title="Reading"><svg class="ic" viewBox="0 0 24 24"><path d="M2 4h7a3 3 0 013 3v13a2.5 2.5 0 00-2.5-2.5H2zM22 4h-7a3 3 0 00-3 3v13a2.5 2.5 0 012.5-2.5H22z"/></svg> Reading</a>
+        <a class="nav-item" data-screen="placeholder" data-title="Journal"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h13l3 3v13H4zM8 4v6h7"/></svg> Journal</a>
+      </div>
+      <div class="nav-group">
+        <div class="gl">Home</div>
+        <a class="nav-item" data-screen="placeholder" data-title="Housework"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 9v11h14V9"/></svg> Housework</a>
+        <a class="nav-item" data-screen="placeholder" data-title="Shopping"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12zM6 6L5 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg> Shopping</a>
+        <a class="nav-item" data-screen="placeholder" data-title="Meals"><svg class="ic" viewBox="0 0 24 24"><path d="M4 3v7a3 3 0 006 0V3M7 13v8M17 3c-2 0-3 2-3 5s1 4 3 4 3-1 3-4-1-5-3-5zM17 16v5"/></svg> Meals</a>
+      </div>
+    </nav>
+    <div class="side-foot">
+      <a class="nav-item" data-screen="settings"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 2h-5l-.4 2.5a7 7 0 00-1.7 1l-2.3-1-2 3.4L3 11a7 7 0 000 2l-2 1.6 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.5h5l.4-2.5a7 7 0 001.7-1l2.3 1 2-3.4-2-1.6a7 7 0 00.1-1z"/></svg> Settings</a>
+    </div>
+  </aside>
+
+  <!-- ════════ MAIN ════════ -->
+  <div class="main">
+    <div class="topbar">
+      <button class="hamb" onclick="openDrawer()" aria-label="Open menu"><svg class="ic" style="width:22px;height:22px" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <div class="crumb" id="crumb">Today</div>
+      <div class="spacer"></div>
+      <button class="btn btn-ai top-ai" onclick="openAI()" aria-label="AI Studio"><svg class="ic" style="width:17px;height:17px" viewBox="0 0 24 24"><path d="M12 3l1.7 4.6L18.3 9l-4.6 1.4L12 15l-1.7-4.6L5.7 9l4.6-1.4z"/><path d="M19 13.5l.8 2.1 2.2.9-2.2.9-.8 2.1-.8-2.1-2.2-.9 2.2-.9z"/></svg><span class="add-label">AI</span></button>
+      <button class="icon-btn" onclick="toggleMode()" aria-label="Toggle theme"><svg class="ic" style="width:17px;height:17px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg></button>
+      <button class="btn btn-primary top-add"><svg class="ic" style="width:16px;height:16px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="add-label">Add</span></button>
+    </div>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <section class="screen show" id="s-dashboard">
+        <div class="hero">
+          <div class="top">
+            <div>
+              <div class="label" style="margin-bottom:8px">This week · earned</div>
+              <div class="stat hero"><span class="v num">$1,240</span></div>
+              <div class="sub num">31.5 h logged · 3 jobs · $39/hr avg</div>
+            </div>
+            <div style="text-align:right">
+              <div class="date">Thursday</div>
+              <div class="bigdate num">Jun 5</div>
+            </div>
+          </div>
+          <div class="qlog">
+            <button class="chip"><span class="plus">+</span> Log work</button>
+            <button class="chip"><span class="plus">+</span> Gym</button>
+            <button class="chip"><span class="plus">+</span> Habit</button>
+            <button class="chip"><span class="plus">+</span> Expense</button>
+            <button class="chip"><span class="plus">+</span> Journal</button>
+          </div>
+        </div>
+
+        <div class="row g2" style="align-items:start">
+          <div class="card">
+            <div class="section-title">Today</div>
+            <div class="tl-item is-done"><div class="check done"></div><div class="t">Wuzzals — morning shift, 4h</div><span class="pill good num">$152</span></div>
+            <div class="tl-item"><div class="check"></div><div class="t">Gym — not logged yet</div><span class="pill warn">due</span></div>
+            <div class="tl-item"><div class="check"></div><div class="t">Advapay — review task</div><span class="pill alert">overdue</span></div>
+            <div class="tl-item"><div class="check"></div><div class="t">2 habits remaining</div><span class="pill">2 left</span></div>
+          </div>
+          <div class="card">
+            <div class="section-title">This week at a glance</div>
+            <div class="sumrow"><div class="k label">Body</div><div class="vals"><span class="v num">Gym 4/5</span><span class="v num muted">Sleep 7.4h</span></div><span class="go">›</span></div>
+            <div class="sumrow"><div class="k label">Mind</div><div class="vals"><span class="v num">Study 3.2h</span><span class="v num muted">2 books</span></div><span class="go">›</span></div>
+            <div class="sumrow"><div class="k label">Money</div><div class="vals"><span class="v num">+$1,240</span><span class="v num muted">Bills $820</span></div><span class="go">›</span></div>
+            <div class="sumrow"><div class="k label">Home</div><div class="vals"><span class="v num">Chores 3/6</span><span class="v num muted">Shop 5</span></div><span class="go">›</span></div>
+          </div>
+        </div>
+
+        <div class="row g3 mt">
+          <div class="card stat lg"><div class="label">Gym this week</div><div class="v num">4<span class="faint" style="font-size:20px">/5</span></div><div class="bar" style="margin-top:12px"><span style="width:80%"></span></div></div>
+          <div class="card stat lg"><div class="label">Study this week</div><div class="v num">3.2<span class="faint" style="font-size:20px">h</span></div><div class="bar" style="margin-top:12px"><span style="width:46%"></span></div></div>
+          <div class="card stat lg"><div class="label">Sleep avg</div><div class="v num">7.4<span class="faint" style="font-size:20px">h</span></div><div class="bar" style="margin-top:12px"><span style="width:88%"></span></div></div>
+        </div>
+      </section>
+
+      <!-- WORK -->
+      <section class="screen" id="s-work">
+        <div class="page-h"><div><h1>Work</h1><p>Track hours and earnings across your jobs</p></div><button class="btn btn-primary"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Log session</button></div>
+        <div class="tabs"><button class="tab active" data-tab="log">Log</button><button class="tab" data-tab="summary">Summary</button><button class="tab" data-tab="setup">⚙ Setup</button></div>
+        <div class="tabpane show" id="tab-log">
+          <div class="row g3" style="margin-bottom:16px">
+            <div class="card stat lg"><div class="label">Today</div><div class="v num">$152</div><div class="sub num">4.0 h · Wuzzals</div></div>
+            <div class="card stat lg"><div class="label">This week</div><div class="v num">$1,240</div><div class="sub num">31.5 h</div></div>
+            <div class="card stat lg"><div class="label">This month</div><div class="v num">$4,980</div><div class="sub num">126 h</div></div>
+          </div>
+          <div class="card"><div class="section-title">Recent sessions</div>
+            <div class="sumrow"><div class="k num">Jun 5</div><div class="vals"><span class="v">Wuzzals</span><span class="v muted num">4.0 h</span></div><span class="v num">$152</span></div>
+            <div class="sumrow"><div class="k num">Jun 4</div><div class="vals"><span class="v">Advapay</span><span class="v muted num">6.0 h</span></div><span class="v num">$240</span></div>
+            <div class="sumrow"><div class="k num">Jun 3</div><div class="vals"><span class="v">Wuzzals</span><span class="v muted num">5.5 h</span></div><span class="v num">$209</span></div>
+          </div>
+        </div>
+        <div class="tabpane" id="tab-summary">
+          <div class="card"><div class="section-title">Per-job breakdown · June</div>
+            <div class="sumrow"><div class="k">Wuzzals</div><div class="vals"><div class="bar" style="width:100%"><span style="width:64%"></span></div></div><span class="v num">$3,180</span></div>
+            <div class="sumrow"><div class="k">Advapay</div><div class="vals"><div class="bar" style="width:100%"><span style="width:36%"></span></div></div><span class="v num">$1,800</span></div>
+          </div>
+        </div>
+        <div class="tabpane" id="tab-setup">
+          <p class="muted" style="font-size:13px;margin-bottom:16px">Configure jobs and driving costs right here, where you use them. <span class="faint">(These used to be buried in global Settings.)</span></p>
+          <div class="section-title">Jobs</div>
+          <div class="setup-card"><div class="field"><label>Job name</label><input class="input" value="Wuzzals" /></div><div class="inline-fields"><div class="field"><label>Hourly rate ($)</label><input class="input num" value="38.00" /></div><div class="field"><label>Weekly target (h)</label><input class="input num" value="20" /></div></div></div>
+          <div class="setup-card"><div class="field"><label>Job name</label><input class="input" value="Advapay" /></div><div class="inline-fields"><div class="field"><label>Hourly rate ($)</label><input class="input num" value="40.00" /></div><div class="field"><label>Weekly target (h)</label><input class="input num" value="15" /></div></div></div>
+          <button class="add-row">+ Add job</button>
+          <div class="section-title mt">Driving · gas &amp; km</div>
+          <div class="setup-card"><div class="inline-fields"><div class="field"><label>Gas price (¢/L)</label><input class="input num" value="210.2" /></div><div class="field"><label>Consumption (L/100km)</label><input class="input num" value="9.0" /></div></div></div>
+        </div>
+      </section>
+
+      <!-- FINANCES -->
+      <section class="screen" id="s-finances">
+        <div class="page-h"><div><h1>Finances</h1><p>Income, expenses &amp; monthly bills</p></div><button class="btn btn-primary"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add expense</button></div>
+        <div class="hero"><div class="label" style="margin-bottom:8px">Net this month</div><div class="stat hero"><span class="v num">+$3,160</span></div><div class="sub num">Income $4,980 · Bills $820 · Expenses $1,000</div></div>
+        <div class="row g2 mt">
+          <div class="card"><div class="section-title">Monthly bills</div>
+            <div class="sumrow"><div class="k">Rent</div><div class="vals"><span class="v muted num">Due 1st</span></div><span class="v num">$650</span></div>
+            <div class="sumrow"><div class="k">Utilities</div><div class="vals"><span class="v muted num">Due 15th</span></div><span class="v num">$120</span></div>
+            <div class="sumrow"><div class="k">Subscriptions</div><div class="vals"><span class="v muted num">Due 20th</span></div><span class="v num">$50</span></div>
+          </div>
+          <div class="card"><div class="section-title">Top expense categories</div>
+            <div class="sumrow"><div class="k">Travel</div><div class="vals"><div class="bar" style="width:100%"><span style="width:70%"></span></div></div><span class="v num">$420</span></div>
+            <div class="sumrow"><div class="k">Meals</div><div class="vals"><div class="bar" style="width:100%"><span style="width:45%"></span></div></div><span class="v num">$280</span></div>
+            <div class="sumrow"><div class="k">Equipment</div><div class="vals"><div class="bar" style="width:100%"><span style="width:30%"></span></div></div><span class="v num">$180</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="screen" id="s-settings">
+        <div class="page-h"><div><h1>Settings</h1><p>Account &amp; global preferences only — section setup now lives in each section</p></div></div>
+        <div class="card pad-lg" style="margin-bottom:14px"><div class="section-title">Account</div><div class="inline-fields"><div class="field"><label>Name</label><input class="input" value="Artemii" /></div><div class="field"><label>Email</label><input class="input" value="artemiifrid@gmail.com" /></div></div></div>
+        <div class="card pad-lg" style="margin-bottom:14px"><div class="section-title">Appearance</div>
+          <div class="field"><label>Theme</label><div class="seg"><button onclick="setMode('light')" id="segLight" class="on">Light</button><button onclick="setMode('system')" id="segSys">System</button><button onclick="setMode('dark')" id="segDark">Dark</button></div></div>
+          <div class="field"><label>Accent</label><div class="swatches"><div class="sw on" style="background:#C0613C;color:#C0613C"></div><div class="sw" style="background:#5E8C6A"></div><div class="sw" style="background:#3F6B8C"></div><div class="sw" style="background:#8C6A3F"></div><div class="sw" style="background:#7A5C7E"></div></div><p class="faint" style="font-size:11.5px;margin-top:8px">Muted single hues only — no neon, one accent at a time.</p></div>
+        </div>
+        <div class="card pad-lg" style="margin-bottom:14px"><div class="section-title">Regional</div><div class="row g3"><div class="field"><label>Currency</label><div class="seg"><button class="on">CAD</button><button>USD</button><button>EUR</button></div></div><div class="field"><label>Week starts</label><div class="seg"><button class="on">Mon</button><button>Sun</button></div></div><div class="field"><label>Time</label><div class="seg"><button class="on">24h</button><button>12h</button></div></div></div></div>
+        <div class="row g2"><div class="card"><div class="section-title">AI</div><p class="muted" style="font-size:13px">Powers smart onboarding &amp; AI-generated sections.</p><button class="btn btn-ghost mt">Manage API key</button></div><div class="card"><div class="section-title">Data</div><p class="muted" style="font-size:13px">Export sections to Excel, or manage sharing &amp; access.</p><div style="display:flex;gap:10px;flex-wrap:wrap" class="mt"><button class="btn btn-ghost" onclick="openOv('overlayExport')"><svg class="ic" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Export to Excel</button><button class="btn btn-ghost" onclick="openOv('overlayShare')"><svg class="ic" style="width:15px;height:15px" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg> Sharing &amp; access</button></div></div></div>
+      </section>
+
+      <!-- PLACEHOLDER -->
+      <section class="screen" id="s-placeholder">
+        <div class="page-h"><div><h1 id="ph-title">Section</h1><p>Reuses the same patterns as Today, Work &amp; Finances</p></div></div>
+        <div class="card"><div class="empty"><div class="ring"><svg class="ic" style="width:22px;height:22px" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><h3>Nothing logged yet</h3><p>Real sections reuse the stat-block, quick-log, tabs and in-context Setup you already saw. This is the composed empty state — one clear action, no dead "No data".</p><button class="btn btn-primary">Log your first entry</button></div></div>
+      </section>
+    </div>
+
+    <!-- ════════ BOTTOM NAV (mobile) ════════ -->
+    <nav class="bottomnav">
+      <button class="bn-item active" data-screen="dashboard"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Today</button>
+      <button class="bn-item" data-screen="work"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Money</button>
+      <button class="bn-item" data-screen="placeholder" data-title="Gym"><svg class="ic" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M3 3l1 1M2 6l4-4M3 10l7-7M14 21l7-7"/></svg>Body</button>
+      <button class="bn-item" data-screen="placeholder" data-title="Study"><svg class="ic" viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>Mind</button>
+      <button class="bn-item" onclick="openDrawer()"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>More</button>
+    </nav>
+    <button class="fab" aria-label="AI Studio" onclick="openAI()"><svg class="ic" style="width:24px;height:24px;stroke:#fff;stroke-width:1.7" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></button>
+  </div>
+</div>
+
+<!-- AI Studio overlay — generate & update personalized sections only -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeOv('overlay')">
+  <div class="ai-studio">
+    <div class="ai-head">
+      <div class="ai-icon"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg></div>
+      <div><div class="ai-title">AI Studio</div><div class="ai-sub">Generate &amp; update your personalized sections</div></div>
+      <button class="close2" onclick="closeOv('overlay')" aria-label="Close"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="ai-body">
+      <div class="fieldlabel first">Describe a section or a change</div>
+      <textarea class="ai-text" placeholder="e.g. “Create a water-intake tracker with a daily goal” · “Add a Tips column to my Work table” · “Make a Travel section with destinations, dates and budget”"></textarea>
+      <div class="sugs">
+        <button class="sug">＋ Water tracker</button>
+        <button class="sug">＋ Mood journal</button>
+        <button class="sug">＋ Tips column → Work</button>
+        <button class="sug">＋ Travel budget section</button>
+      </div>
+      <div class="ai-actions">
+        <button class="btn btn-ghost">Update existing section…</button>
+        <button class="btn btn-primary"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Generate</button>
+      </div>
+      <p class="faint" style="font-size:11.5px;margin-top:14px">The AI builds the fields, layout and UI for the section, adds it to your nav, and you can edit or remove it anytime.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Export modal (opened from Settings → Data) -->
+<div class="overlay" id="overlayExport" onclick="if(event.target===this)closeOv('overlayExport')">
+  <div class="ai-studio">
+    <div class="ai-head">
+      <div class="ai-icon"><svg class="ic" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></div>
+      <div><div class="ai-title">Export to Excel</div><div class="ai-sub">Choose which sections to include</div></div>
+      <button class="close2" onclick="closeOv('overlayExport')" aria-label="Close"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="ai-body">
+      <div class="fieldlabel first">Sections</div>
+      <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Work <span class="meta">· hours, earnings, gas/km</span></div></div>
+      <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Finances <span class="meta">· income, bills, expenses</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Gym <span class="meta">· attendance</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Study <span class="meta">· sessions, grades</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Journal <span class="meta">· entries</span></div></div>
+      <div class="fieldlabel">Date range</div>
+      <div class="seg"><button class="on">This month</button><button>This year</button><button>All time</button></div>
+      <div class="ai-actions">
+        <button class="btn btn-primary" style="flex:1"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Export 2 sections (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Share modal (opened from Settings → Data) -->
+<div class="overlay" id="overlayShare" onclick="if(event.target===this)closeOv('overlayShare')">
+  <div class="ai-studio">
+    <div class="ai-head">
+      <div class="ai-icon"><svg class="ic" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></div>
+      <div><div class="ai-title">Sharing &amp; access</div><div class="ai-sub">Share sections with viewer or editor access</div></div>
+      <button class="close2" onclick="closeOv('overlayShare')" aria-label="Close"><svg class="ic" style="width:19px;height:19px" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="ai-body">
+      <div class="fieldlabel first">What to share</div>
+      <div class="checkrow on" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Work <span class="meta">· all jobs</span></div></div>
+      <div class="checkrow" onclick="this.classList.toggle('on')"><div class="cbox"></div><div class="cl">Finances</div></div>
+      <div class="fieldlabel">Access level</div>
+      <div class="seg"><button class="on">Viewer</button><button>Editor</button></div>
+      <div class="fieldlabel">Share with</div>
+      <div class="seg" id="shareMethod"><button class="on" onclick="setShareMethod('link',this)">Magic link</button><button onclick="setShareMethod('people',this)">Specific people</button></div>
+      <div id="shareEmail" style="display:none"><div class="fieldlabel">Emails or accounts</div><input class="input" placeholder="supervisor@company.com, teammate@…" /></div>
+      <div class="ai-actions">
+        <button class="btn btn-primary" style="flex:1"><svg class="ic" style="width:15px;height:15px;stroke:#fff" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1"/></svg> Create share link</button>
+      </div>
+      <div class="linkbox"><span class="url num">planner.app/s/8fK2-q9Lm…</span><button class="btn btn-ghost copy">Copy</button></div>
+      <div class="fieldlabel">Active shares</div>
+      <div class="share-row"><div class="si"><div class="sn">Work — all jobs</div><div class="sm">supervisor@company.com · expires Aug 1</div></div><span class="role-pill view">Viewer</span></div>
+      <div class="share-row"><div class="si"><div class="sn">Finances</div><div class="sm">Magic link · no expiry</div></div><span class="role-pill">Editor</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const app = document.getElementById('app');
+const screens = document.querySelectorAll('.screen');
+function setActive(screen, title){
+  document.querySelectorAll('.nav-item, .bn-item').forEach(n=>{
+    const match = n.dataset.screen===screen && (!n.dataset.title || n.dataset.title===title);
+    n.classList.toggle('active', !!n.dataset.screen && match);
+  });
+}
+function show(id, title){
+  screens.forEach(s=>s.classList.toggle('show', s.id==='s-'+id));
+  document.getElementById('crumb').textContent = title || (id.charAt(0).toUpperCase()+id.slice(1));
+  window.scrollTo(0,0);
+}
+function navTo(el){
+  const scr = el.dataset.screen;
+  if(!scr) return;
+  if(scr==='placeholder'){ document.getElementById('ph-title').textContent = el.dataset.title; show('placeholder', el.dataset.title); setActive('placeholder', el.dataset.title); }
+  else { show(scr, scr==='dashboard'?'Today':null); setActive(scr); }
+  closeDrawer();
+}
+document.querySelectorAll('.nav-item, .bn-item').forEach(el=>{
+  if(el.dataset.screen) el.addEventListener('click', ()=>navTo(el));
+});
+// drawer
+function openDrawer(){ app.classList.add('drawer-open'); }
+function closeDrawer(){ app.classList.remove('drawer-open'); }
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('show'));
+  document.getElementById('tab-'+t.dataset.tab).classList.add('show');
+}));
+// checkboxes
+document.querySelectorAll('#s-dashboard .check').forEach(c=>c.addEventListener('click',()=>{ c.classList.toggle('done'); c.closest('.tl-item').classList.toggle('is-done'); }));
+// mode
+function setMode(m){
+  const real = m==='system' ? (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light') : m;
+  document.documentElement.dataset.mode = real;
+  ['segLight','segSys','segDark'].forEach(id=>document.getElementById(id)&&document.getElementById(id).classList.remove('on'));
+  const map={light:'segLight',system:'segSys',dark:'segDark'};
+  document.getElementById(map[m]) && document.getElementById(map[m]).classList.add('on');
+}
+function toggleMode(){ setMode(document.documentElement.dataset.mode==='dark'?'light':'dark'); }
+// Overlays (AI Studio · Export · Share)
+function openOv(id){ document.getElementById(id).classList.add('show'); closeDrawer(); }
+function closeOv(id){ document.getElementById(id).classList.remove('show'); }
+function closeAllOv(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); }
+function openAI(){ openOv('overlay'); }
+document.querySelectorAll('.sug').forEach(s=>s.addEventListener('click',()=>{
+  const ta = document.querySelector('#overlay .ai-text');
+  ta.value = (ta.value ? ta.value+'\n' : '') + s.textContent.replace('＋','Add a').trim();
+  ta.focus();
+}));
+function setShareMethod(m, btn){
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  document.getElementById('shareEmail').style.display = m==='people' ? 'block' : 'none';
+}
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openAI(); }
+  if(e.key==='Escape'){ closeAllOv(); closeDrawer(); }
+});
+</script>
+</body>
+</html>

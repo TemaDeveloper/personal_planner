@@ -1,14 +1,14 @@
 export const COLOR_MODES = ["system", "light", "dark"] as const;
 export type ColorMode = (typeof COLOR_MODES)[number];
 
-export const THEMES = ["amber", "teal", "violet", "rose", "sage", "ocean", "sunset"] as const;
+export const THEMES = ["clay", "sage", "ocean", "amber", "plum"] as const;
 export type AccentTheme = (typeof THEMES)[number];
 
 export const FONTS = ["sans", "inter", "geometric", "serif", "mono"] as const;
 export type FontStyle = (typeof FONTS)[number];
 
 export const FONT_META: Record<FontStyle, { label: string; description: string; preview: string }> = {
-  sans:      { label: "Jakarta",       description: "Modern & friendly",    preview: "Aa" },
+  sans:      { label: "Hanken",        description: "Editorial & clean",    preview: "Aa" },
   inter:     { label: "Inter",         description: "Modern & neutral",     preview: "Aa" },
   geometric: { label: "Space Grotesk", description: "Bold & geometric",     preview: "Aa" },
   serif:     { label: "Playfair",      description: "Elegant & editorial",  preview: "Aa" },
@@ -48,13 +48,11 @@ export const BILL_CATEGORIES = [
 ] as const;
 
 export const THEME_COLORS: Record<AccentTheme, string> = {
-  amber: "#22C55E",
-  teal: "#14B8A6",
-  violet: "#A78BFA",
-  rose: "#FB7185",
-  sage: "#4ADE80",
-  ocean: "#60A5FA",
-  sunset: "#FB923C",
+  clay: "#C0613C",
+  sage: "#5E8C6A",
+  ocean: "#3F6B8C",
+  amber: "#B07D2B",
+  plum: "#7A5C7E",
 };
 
 export const DEFAULT_GAS_PRICE = 210.2; // cents per litre

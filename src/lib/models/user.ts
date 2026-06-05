@@ -132,8 +132,8 @@ const UserSchema = new Schema<IUser>(
     preferences: {
       accentTheme: {
         type: String,
-        enum: ["amber", "teal", "violet", "rose", "sage", "ocean", "sunset"],
-        default: "amber",
+        enum: ["clay", "sage", "ocean", "amber", "plum"],
+        default: "clay",
       },
       fontStyle: {
         type: String,

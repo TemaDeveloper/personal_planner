@@ -16,9 +16,9 @@ const variantClasses = {
 
 const sizeClasses = {
   sm: "h-8 px-3 text-xs gap-1.5 rounded-md",
-  md: "h-9 px-4 text-sm gap-2 rounded-lg",
-  lg: "h-10 px-5 text-sm gap-2 rounded-lg",
-  icon: "h-9 w-9 rounded-lg",
+  md: "h-9 px-4 text-sm gap-2 rounded-md",
+  lg: "h-10 px-5 text-sm gap-2 rounded-md",
+  icon: "h-9 w-9 rounded-md",
 } as const;
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

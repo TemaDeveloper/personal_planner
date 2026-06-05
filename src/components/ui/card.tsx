@@ -31,7 +31,7 @@ export function Card({
     <div
       className={cn(
         variantClasses[variant],
-        interactive && "interactive cursor-pointer hover:scale-[1.01] transition-transform duration-150",
+        interactive && "interactive cursor-pointer transition-colors duration-150",
         paddingClasses[padding],
         className
       )}

@@ -21,7 +21,7 @@ export function Progress({
     <div className={cn("flex items-center gap-2", className)}>
       <div
         className={cn(
-          "flex-1 rounded-full overflow-hidden bg-[var(--surface-2)]",
+          "flex-1 rounded-full overflow-hidden bg-[var(--border-subtle)]",
           size === "sm" ? "h-1.5" : "h-2"
         )}
       >
