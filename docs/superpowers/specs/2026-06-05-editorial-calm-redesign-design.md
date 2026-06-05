@@ -83,6 +83,29 @@ Implemented as a `<StatBlock>` primitive with size variants (`hero | lg | md | s
 - Spacing scale: 4 / 8 / 12 / 16 / 24 / 32. Radius reduced to `6px` (`--radius: 0.375rem`), down from `0.75rem`.
 - Real empty/first-run states (composed, with one clear CTA) replacing bare "No data" text.
 
+## 3A. Information Architecture (UX / flow)
+
+The redesign is **not only visual** — research (Apple HIG, NN/g, Reddit usability threads) identified the IA as the root cause of "I don't understand how to use it." A local clickable prototype (`design-preview/index.html`) validated the following decisions; the user approved the direction.
+
+Governing finding: *users abandon apps when the system becomes the work.* Favor working defaults, one-tap logging, a glanceable "today," and zero maintenance.
+
+**1. Configuration moves in-context (Apple HIG).** The 1,072-line global Settings page is decomposed. Per-section config relocates *into the section it affects*, via a **Setup tab** on that section:
+- Work → jobs, hourly rates, weekly targets, gas/km config
+- Finances → monthly bills, expense categories
+- Study → subjects
+- Gym → target days/week
+Global **Settings** shrinks to only: Account · Appearance · Regional · AI · Data (export/sharing). "Sections" enable/disable + custom-section management becomes its own lightweight screen (or stays in Settings as a single "Manage sections" entry).
+
+**2. Navigation grouped by life-area (NN/g ≤2 levels; Miller 7±2).** The flat list of up to 13 sections becomes 5 top-level groups with nested items: **Today** (home, pinned) · **Money** (Work, Finances) · **Body** (Gym, Health, Habits) · **Mind** (Study, Reading, Journal, Goals) · **Home** (Housework, Shopping, Meals, Hobbies). Plain labels, active "you are here" state, ≤2 levels.
+
+**3. Dashboard becomes "Today" — an action hub, not a chart wall.** Top-left hero metric (one primary number), a **quick-log chip row**, a today action list (with one-tap done), and a glanceable life-area summary with drill-down. Deep analytics live one level down inside each section.
+
+**4. Global quick-capture.** A persistent **`+` Add** button on every screen + a **`⌘K` command palette** for create + search + jump-to-section, so logging never requires navigating into a module first (Linear/Obsidian pattern).
+
+**5. Onboarding (later phase).** Pick a few life-areas with sensible defaults pre-selected; setup-as-you-go rather than upfront full config; a zero-config user still gets a working planner.
+
+These IA changes interleave with the visual phases below (a section's Phase-N restyle includes adding its Setup tab and wiring it to the new nav).
+
 ## 4. Affected Surfaces
 
 **Token layer:** `src/app/globals.css` (full rewrite of the system, keep structure/var names where consumed).
