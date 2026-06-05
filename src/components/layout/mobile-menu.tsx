@@ -72,8 +72,6 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               className="mx-3 rounded-2xl border border-[var(--border-subtle)] overflow-hidden"
               style={{
                 background: "var(--surface-3)",
-                backdropFilter: "blur(32px) saturate(180%)",
-                WebkitBackdropFilter: "blur(32px) saturate(180%)",
                 maxHeight: "70vh",
               }}
             >

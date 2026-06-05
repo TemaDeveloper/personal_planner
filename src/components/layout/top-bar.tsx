@@ -50,7 +50,7 @@ export function TopBar() {
 
   return (
     <>
-      <header className="flex items-center justify-between h-13 px-4 md:px-8 border-b border-[var(--border-subtle)] bg-[var(--background)]/80 backdrop-blur-lg sticky top-0 z-30">
+      <header className="flex items-center justify-between h-13 px-4 md:px-8 border-b border-[var(--border-subtle)] bg-[var(--background)] sticky top-0 z-30">
         {/* Left: hamburger (mobile) + title */}
         <div className="flex items-center gap-2">
           <button
