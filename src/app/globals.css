@@ -102,6 +102,7 @@
   --accent-color: #C0613C;
   --accent-dim: #A24E2E;
   --accent-glow: rgba(192, 97, 60, 0.09);
+  --accent-text: #A24E2E; /* AA-safe accent for small text/links */
 
   /* Semantic (muted, data-only) */
   --good: #5E8C6A;  --good-wash: rgba(94, 140, 106, 0.15);
@@ -172,6 +173,7 @@
   --accent-color: #D2724A;
   --accent-dim: #E08358;
   --accent-glow: rgba(210, 114, 74, 0.13);
+  --accent-text: #D2724A; /* on dark, accent already clears AA for text */
 
   --good: #7BA888;  --good-wash: rgba(123, 168, 136, 0.16);
   --warn: #D8B057;  --warn-wash: rgba(216, 176, 87, 0.16);
