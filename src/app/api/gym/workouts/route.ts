@@ -4,8 +4,9 @@ import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import GymAttendance from "@/lib/models/gym-attendance";
 import User from "@/lib/models/user";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay } from "date-fns";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { createWorkoutSchema } from "@/lib/validations";
+import { toUtcMidnight } from "@/lib/gym-date";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -69,7 +70,9 @@ export async function POST(req: NextRequest) {
   }
   const { date } = parsed.data;
 
-  const d = startOfDay(new Date(date));
+  // Normalize to UTC midnight of the calendar date so attendance is
+  // timezone-independent (see src/lib/gym-date.ts).
+  const d = toUtcMidnight(date);
 
   const existing = await GymAttendance.findOne({ userId, date: d });
 

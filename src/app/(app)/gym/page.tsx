@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { StatBlock } from "@/components/ui/stat-block";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTransition } from "@/components/ui/page-transition";
+import { attendanceDateKey } from "@/lib/gym-date";
 
 interface AttendanceRecord {
   _id: string;
@@ -37,7 +38,7 @@ export default function GymPage() {
     let cancelled = false;
     const ms = startOfMonth(addMonths(new Date(), monthOffset));
     const me = endOfMonth(ms);
-    fetch(`/api/gym/workouts?weekOf=${ms.toISOString()}&monthEnd=${me.toISOString()}`)
+    fetch(`/api/gym/workouts?weekOf=${format(ms, "yyyy-MM-dd")}&monthEnd=${format(me, "yyyy-MM-dd")}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
@@ -48,7 +49,7 @@ export default function GymPage() {
     return () => { cancelled = true; };
   }, [monthOffset]);
 
-  const attendedDates = new Set(attendance.map((a) => format(new Date(a.date), "yyyy-MM-dd")));
+  const attendedDates = new Set(attendance.map((a) => attendanceDateKey(a.date)));
 
   const isAttended = (date: Date) => attendedDates.has(format(date, "yyyy-MM-dd"));
 
@@ -57,29 +58,32 @@ export default function GymPage() {
     if (toggling) return;
     setToggling(key);
 
-    const dateStr = startOfDay(dayDate).toISOString();
+    // `key` is the calendar day (yyyy-MM-dd) shown in the grid. We send it as-is
+    // and store the optimistic record at UTC midnight so reads round-trip without
+    // a timezone shift (see src/lib/gym-date.ts).
+    const tempDate = `${key}T00:00:00.000Z`;
     const wasAttended = isAttended(dayDate);
 
     // Optimistic update
     if (wasAttended) {
       setAttendance((prev) =>
-        prev.filter((a) => format(new Date(a.date), "yyyy-MM-dd") !== key)
+        prev.filter((a) => attendanceDateKey(a.date) !== key)
       );
     } else {
-      setAttendance((prev) => [...prev, { _id: "temp", date: dateStr }]);
+      setAttendance((prev) => [...prev, { _id: "temp", date: tempDate }]);
     }
 
     try {
       const res = await fetch("/api/gym/workouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: dateStr }),
+        body: JSON.stringify({ date: key }),
       });
       if (!res.ok) {
         if (wasAttended) {
-          setAttendance((prev) => [...prev, { _id: "temp", date: dateStr }]);
+          setAttendance((prev) => [...prev, { _id: "temp", date: tempDate }]);
         } else {
-          setAttendance((prev) => prev.filter((a) => format(new Date(a.date), "yyyy-MM-dd") !== key));
+          setAttendance((prev) => prev.filter((a) => attendanceDateKey(a.date) !== key));
         }
         toast.error("Failed to update");
       }
