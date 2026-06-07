@@ -205,13 +205,38 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
     setLoading(true);
     resetFeedback();
 
-    // Deterministic board shortcut — no LLM needed, no dashboard branch
+    // Board intent in Update mode — route by section type
     if (detectBoardIntent(trimmed)) {
-      try {
-        await createBoardFromPrompt(trimmed);
-      } catch {
-        setError("Something went wrong. Please check your connection and try again.");
-      } finally {
+      if (sectionKey.startsWith("custom:")) {
+        // Convert the existing custom section into a board in place via PATCH
+        const slug = sectionKey.slice("custom:".length);
+        const { fields } = buildBoardConfig(trimmed);
+        try {
+          const res = await fetch(`/api/sections/templates/${slug}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ viewType: "board", layoutHtml: "", fields }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            setError(data.error ?? "Could not convert section to a board. Please try again.");
+            setLoading(false);
+            return;
+          }
+          toast.success("Section converted to a board");
+          router.refresh();
+          router.push("/sections/" + slug);
+          onClose();
+        } catch {
+          setError("Something went wrong. Please check your connection and try again.");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Dashboard or a built-in section — cannot create a board here
+        setError(
+          "A board can't be added to the dashboard or a built-in section. Switch to Create mode to make a new board — it'll be its own section and also appears on your dashboard.",
+        );
         setLoading(false);
       }
       return;
