@@ -3,11 +3,44 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useSections } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
+
+// ---------------------------------------------------------------------------
+// Board-intent detection helpers
+// ---------------------------------------------------------------------------
+
+function detectBoardIntent(text: string): boolean {
+  const t = text.toLowerCase();
+  if (/\b(kanban|swimlane|task board|board)\b/.test(t)) return true;
+  if (t.includes("to do") && t.includes("done")) return true;
+  if (t.includes("in progress") && (t.includes("column") || t.includes("done"))) return true;
+  return false;
+}
+
+function parseBoardColumns(_prompt: string): string[] {
+  // Default columns; only override if the prompt clearly lists them.
+  return ["To Do", "In Progress", "Done"];
+}
+
+function buildBoardConfig(prompt: string) {
+  return {
+    name: "Tasks",
+    icon: "KanbanSquare",
+    description: "Kanban board",
+    viewType: "board" as const,
+    layoutHtml: "",
+    fields: [
+      { key: "title", label: "Task", type: "text" as const, required: true },
+      { key: "status", label: "Status", type: "select" as const, options: parseBoardColumns(prompt) },
+      { key: "priority", label: "Priority", type: "select" as const, options: ["Low", "Medium", "High"] },
+    ],
+  };
+}
 
 interface AiStudioProps {
   open: boolean;
@@ -46,6 +79,29 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // Deterministic board creation — bypasses LLM entirely
+  async function createBoardFromPrompt(userPrompt: string) {
+    const config = buildBoardConfig(userPrompt);
+
+    const res = await fetch("/api/sections/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Could not create board. Please try again.");
+      return;
+    }
+
+    toast.success("Board created");
+    router.refresh();
+    router.push("/sections/" + data.template.slug);
+    onClose();
+  }
+
   function resetFeedback() {
     setError(null);
     setSuccess(false);
@@ -67,6 +123,18 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
 
     setLoading(true);
     resetFeedback();
+
+    // Deterministic board shortcut — no LLM needed
+    if (detectBoardIntent(trimmed)) {
+      try {
+        await createBoardFromPrompt(trimmed);
+      } catch {
+        setError("Something went wrong. Please check your connection and try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       // Step 1: generate config from prompt
@@ -136,6 +204,18 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
 
     setLoading(true);
     resetFeedback();
+
+    // Deterministic board shortcut — no LLM needed, no dashboard branch
+    if (detectBoardIntent(trimmed)) {
+      try {
+        await createBoardFromPrompt(trimmed);
+      } catch {
+        setError("Something went wrong. Please check your connection and try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       const res = await fetch("/api/ai/update", {
