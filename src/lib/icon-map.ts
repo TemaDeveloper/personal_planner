@@ -28,6 +28,7 @@ import {
   Globe,
   Zap,
   Calendar,
+  KanbanSquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -61,4 +62,5 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   Globe,
   Zap,
   Calendar,
+  KanbanSquare,
 };
