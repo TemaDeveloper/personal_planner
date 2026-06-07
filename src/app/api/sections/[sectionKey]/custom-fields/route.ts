@@ -66,8 +66,14 @@ export async function POST(
     return NextResponse.json({ error: "sectionKey is required" }, { status: 400 });
   }
 
-  const body = await req.json();
-  const { fieldKey, value, dateKey: bodyDateKey } = body as {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { fieldKey, value, dateKey: bodyDateKey } = (body ?? {}) as {
     fieldKey?: string;
     value?: unknown;
     dateKey?: string;
@@ -75,6 +81,10 @@ export async function POST(
 
   if (!fieldKey) {
     return NextResponse.json({ error: "fieldKey is required" }, { status: 400 });
+  }
+
+  if (bodyDateKey !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(bodyDateKey)) {
+    return NextResponse.json({ error: "Invalid dateKey" }, { status: 400 });
   }
 
   const dateKey = bodyDateKey ?? attendanceDateKey(new Date());

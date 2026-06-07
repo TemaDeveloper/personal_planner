@@ -202,6 +202,9 @@ async function resolveCustomField(
       const latest = sorted[0].value;
       return { value: String(latest) };
     }
+
+    default:
+      return { value: "—" };
   }
 }
 

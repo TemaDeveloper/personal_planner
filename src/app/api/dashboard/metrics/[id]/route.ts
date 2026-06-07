@@ -1,5 +1,6 @@
 // src/app/api/dashboard/metrics/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
@@ -18,6 +19,10 @@ export async function DELETE(
   await connectDB();
 
   const { id } = await params;
+
+  if (!Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   // Scoped to userId — prevents deleting another user's metrics
   const result = await DashboardMetric.deleteOne({ _id: id, userId });
