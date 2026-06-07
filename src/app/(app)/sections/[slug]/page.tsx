@@ -29,7 +29,7 @@ interface Template {
   slug: string;
   icon: string;
   description: string;
-  viewType?: "weekly-cards" | "table" | "grid";
+  viewType?: "weekly-cards" | "table" | "grid" | "board";
   layoutHtml?: string;
   fields: FieldDef[];
 }

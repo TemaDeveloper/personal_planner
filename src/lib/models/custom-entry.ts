@@ -5,6 +5,7 @@ export interface ICustomEntry extends Document {
   templateId: mongoose.Types.ObjectId;
   date: Date;
   data: Record<string, unknown>;
+  order: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +16,7 @@ const CustomEntrySchema = new Schema<ICustomEntry>(
     templateId: { type: Schema.Types.ObjectId, ref: "SectionTemplate", required: true },
     date: { type: Date, required: true },
     data: { type: Schema.Types.Mixed, default: {} },
+    order: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

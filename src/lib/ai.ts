@@ -92,7 +92,7 @@ const PlannerConfigSchema = z.object({
     name: z.string(),
     icon: z.string(),
     description: z.string(),
-    viewType: z.enum(["weekly-cards", "table", "grid"]).default("weekly-cards"),
+    viewType: z.enum(["weekly-cards", "table", "grid", "board"]).default("weekly-cards"),
     fields: z.array(z.object({
       key: z.string(),
       label: z.string(),
