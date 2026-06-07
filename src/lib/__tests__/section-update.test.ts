@@ -36,3 +36,18 @@ describe("validateExtraFields", () => {
     expect(() => validateExtraFields([{ key: "", label: "X", type: "text" }])).toThrow(/key/i);
   });
 });
+
+import { BUILTIN_METRIC_REGISTRY, registryForSections } from "@/lib/dashboard-metric-registry";
+
+describe("dashboard metric registry", () => {
+  it("has known built-in metrics with stable keys", () => {
+    const keys = BUILTIN_METRIC_REGISTRY.map((m) => m.key);
+    expect(keys).toContain("work.weekEarnings");
+    expect(keys).toContain("gym.daysThisWeek");
+  });
+  it("filters to enabled sections only", () => {
+    const r = registryForSections(["gym"]);
+    expect(r.every((m) => m.sectionKey === "gym")).toBe(true);
+    expect(r.length).toBeGreaterThan(0);
+  });
+});
