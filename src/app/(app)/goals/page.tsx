@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 interface Milestone {
   title: string;
@@ -392,6 +393,7 @@ export default function GoalsPage() {
           setShowForm(false);
         }}
       />
+      <SectionCustomFields sectionKey="goals" />
     </PageTransition>
   );
 }

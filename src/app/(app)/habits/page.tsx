@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ProgressPie } from "@/components/ui/progress-pie";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 import { StatBlock } from "@/components/ui/stat-block";
 import { addMonths, format, getDaysInMonth } from "date-fns";
 
@@ -296,6 +297,7 @@ export default function HabitsPage() {
         }}
         message="This will permanently remove this habit and all its tracking data."
       />
+      <SectionCustomFields sectionKey="habits" />
     </PageTransition>
   );
 }

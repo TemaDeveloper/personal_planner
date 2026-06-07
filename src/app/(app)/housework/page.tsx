@@ -25,6 +25,7 @@ import {
 import { format, addDays } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 interface ChecklistItem {
   _id: string | null;
@@ -437,6 +438,7 @@ export default function HouseworkPage() {
           setShowAddForm(false);
         }}
       />
+      <SectionCustomFields sectionKey="housework" />
     </PageTransition>
   );
 }

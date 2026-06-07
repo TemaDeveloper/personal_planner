@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Trash2, NotebookPen, Download } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -247,6 +248,7 @@ export default function JournalPage() {
         message="This will permanently delete this journal entry."
         loading={deleting}
       />
+      <SectionCustomFields sectionKey="journal" />
     </PageTransition>
   );
 }

@@ -19,6 +19,7 @@ import {
   endOfMonth,
 } from "date-fns";
 import { TrendingUp, TrendingDown, DollarSign, Receipt, Download, Fuel } from "lucide-react";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 export default async function FinancesPage() {
   const session = await auth();
@@ -304,6 +305,7 @@ export default async function FinancesPage() {
           )}
         </div>
       </div>
+      <SectionCustomFields sectionKey="finances" />
     </div>
   );
 }

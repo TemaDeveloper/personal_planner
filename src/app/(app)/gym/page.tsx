@@ -15,6 +15,7 @@ import { StatBlock } from "@/components/ui/stat-block";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTransition } from "@/components/ui/page-transition";
 import { attendanceDateKey } from "@/lib/gym-date";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 interface AttendanceRecord {
   _id: string;
@@ -297,6 +298,7 @@ export default function GymPage() {
           </div>
         </div>
       </div>
+      <SectionCustomFields sectionKey="gym" />
     </PageTransition>
   );
 }

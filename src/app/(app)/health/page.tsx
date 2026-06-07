@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Droplets, Moon, Weight, Smile, Heart, Download } from "lucide-react";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 interface HealthLog {
   _id: string;
@@ -295,6 +296,7 @@ export default function HealthPage() {
           </div>
         )}
       </Card>
+      <SectionCustomFields sectionKey="health" />
     </PageTransition>
   );
 }
