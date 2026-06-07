@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { useSections } from "@/components/providers/sections-provider";
+import { SECTION_META } from "@/lib/constants";
 
 interface AiStudioProps {
   open: boolean;
@@ -18,17 +21,44 @@ const SUGGESTIONS = [
   "Travel budget",
 ];
 
+const MODE_SEGMENTS = [
+  { value: "create" as const, label: "Create" },
+  { value: "update" as const, label: "Update" },
+];
+
+type Mode = "create" | "update";
+
 export function AiStudio({ open, onClose }: AiStudioProps) {
   const router = useRouter();
+  const { enabledSections, customSections } = useSections();
+
+  const [mode, setMode] = useState<Mode>("create");
+
+  // Create mode state
   const [prompt, setPrompt] = useState("");
+
+  // Update mode state
+  const [sectionKey, setSectionKey] = useState<string>("dashboard");
+  const [updatePrompt, setUpdatePrompt] = useState("");
+
+  // Shared state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  function applyChip(chip: string) {
-    setPrompt(chip);
+  function resetFeedback() {
     setError(null);
     setSuccess(false);
+  }
+
+  function handleModeChange(next: Mode) {
+    setMode(next);
+    resetFeedback();
+  }
+
+  function applyChip(chip: string) {
+    setPrompt(chip);
+    resetFeedback();
   }
 
   async function handleGenerate() {
@@ -36,8 +66,7 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
     if (!trimmed) return;
 
     setLoading(true);
-    setError(null);
-    setSuccess(false);
+    resetFeedback();
 
     try {
       // Step 1: generate config from prompt
@@ -99,51 +128,159 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
     }
   }
 
+  async function handleUpdate() {
+    const trimmed = updatePrompt.trim();
+    if (!trimmed || !sectionKey) return;
+
+    setLoading(true);
+    resetFeedback();
+
+    try {
+      const res = await fetch("/api/ai/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sectionKey, prompt: trimmed }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Update failed. Please try again.");
+        return;
+      }
+
+      setSuccess(true);
+      setUpdatePrompt("");
+
+      router.refresh();
+
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 1200);
+    } catch {
+      setError("Something went wrong. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Build section options for the update picker
+  const sectionOptions: { value: string; label: string }[] = [
+    { value: "dashboard", label: "Dashboard" },
+    ...enabledSections.map((id) => ({
+      value: id,
+      label: SECTION_META[id].label,
+    })),
+    ...customSections.map((cs) => ({
+      value: `custom:${cs.slug}`,
+      label: cs.name,
+    })),
+  ];
+
   return (
     <Modal open={open} onClose={onClose} title="AI Studio" maxWidth="max-w-md">
       <div className="flex flex-col gap-4">
-        {/* Description */}
-        <p className="text-sm text-[var(--text-muted)]">
-          Describe a section or change and the AI will generate it for you.
-        </p>
+        {/* Mode toggle */}
+        <SegmentedControl
+          segments={MODE_SEGMENTS}
+          value={mode}
+          onChange={handleModeChange}
+          layoutId="ai-studio-mode"
+          className="w-full"
+        />
 
-        {/* Textarea */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="ai-prompt"
-            className="stat-label"
-          >
-            Describe a section or change
-          </label>
-          <textarea
-            id="ai-prompt"
-            value={prompt}
-            onChange={(e) => {
-              setPrompt(e.target.value);
-              setError(null);
-              setSuccess(false);
-            }}
-            placeholder="e.g. A daily water intake tracker with a goal of 8 glasses"
-            rows={4}
-            className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] resize-none transition-all"
-            disabled={loading}
-          />
-        </div>
+        {mode === "create" ? (
+          <>
+            {/* Description */}
+            <p className="text-sm text-[var(--text-muted)]">
+              Describe a section or change and the AI will generate it for you.
+            </p>
 
-        {/* Suggestion chips */}
-        <div className="flex flex-wrap gap-2">
-          {SUGGESTIONS.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => applyChip(chip)}
-              disabled={loading}
-              className="inline-flex items-center h-7 px-3 rounded-full text-xs font-medium border border-[var(--border-subtle)] bg-[var(--surface-1)] text-[var(--text-muted)] hover:border-[var(--accent-color)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40 disabled:pointer-events-none"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
+            {/* Textarea */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="ai-prompt" className="stat-label">
+                Describe a section or change
+              </label>
+              <textarea
+                id="ai-prompt"
+                value={prompt}
+                onChange={(e) => {
+                  setPrompt(e.target.value);
+                  resetFeedback();
+                }}
+                placeholder="e.g. A daily water intake tracker with a goal of 8 glasses"
+                rows={4}
+                className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] resize-none transition-all"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Suggestion chips */}
+            <div className="flex flex-wrap gap-2">
+              {SUGGESTIONS.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => applyChip(chip)}
+                  disabled={loading}
+                  className="inline-flex items-center h-7 px-3 rounded-full text-xs font-medium border border-[var(--border-subtle)] bg-[var(--surface-1)] text-[var(--text-muted)] hover:border-[var(--accent-color)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Description */}
+            <p className="text-sm text-[var(--text-muted)]">
+              Pick a section and describe what you want to change.
+            </p>
+
+            {/* Section picker */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="ai-section-key" className="stat-label">
+                Section
+              </label>
+              <select
+                id="ai-section-key"
+                value={sectionKey}
+                onChange={(e) => {
+                  setSectionKey(e.target.value);
+                  resetFeedback();
+                }}
+                disabled={loading}
+                className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] transition-all disabled:opacity-40"
+              >
+                {sectionOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Update prompt */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="ai-update-prompt" className="stat-label">
+                What to change
+              </label>
+              <textarea
+                id="ai-update-prompt"
+                value={updatePrompt}
+                onChange={(e) => {
+                  setUpdatePrompt(e.target.value);
+                  resetFeedback();
+                }}
+                placeholder={`"add a temperature field" · "track tips per shift" · "add my average sleep to the dashboard"`}
+                rows={4}
+                className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-1)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] resize-none transition-all"
+                disabled={loading}
+              />
+            </div>
+          </>
+        )}
 
         {/* Error / success feedback */}
         {error && (
@@ -153,21 +290,36 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
         )}
         {success && (
           <p className="text-xs text-[var(--good)] bg-[var(--good-wash)] rounded-md px-3 py-2">
-            Section created! It will appear in your sidebar shortly.
+            {mode === "create"
+              ? "Section created! It will appear in your sidebar shortly."
+              : "Section updated!"}
           </p>
         )}
 
-        {/* Generate button */}
-        <Button
-          variant="primary"
-          size="md"
-          onClick={handleGenerate}
-          disabled={loading || !prompt.trim()}
-          className="w-full"
-        >
-          <Sparkles size={15} />
-          {loading ? "Generating…" : "Generate"}
-        </Button>
+        {/* Action button */}
+        {mode === "create" ? (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleGenerate}
+            disabled={loading || !prompt.trim()}
+            className="w-full"
+          >
+            <Sparkles size={15} />
+            {loading ? "Generating…" : "Generate"}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleUpdate}
+            disabled={loading || !updatePrompt.trim()}
+            className="w-full"
+          >
+            <Sparkles size={15} />
+            {loading ? "Updating…" : "Update"}
+          </Button>
+        )}
       </div>
     </Modal>
   );
