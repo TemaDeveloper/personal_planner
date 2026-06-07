@@ -25,6 +25,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExportModal } from "@/components/data/export-modal";
 import { ShareModal, type ShareEntry } from "@/components/data/share-modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Subject {
   name: string;
@@ -59,7 +60,7 @@ const COLOR_MODE_SEGMENTS = [
 export default function SettingsPage() {
   const router = useRouter();
   const { preferences, updatePreferences } = useTheme();
-  const { enabledSections, customSections, updateSections } = useSections();
+  const { enabledSections, customSections, updateSections, updateCustomSections } = useSections();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -96,6 +97,8 @@ export default function SettingsPage() {
   const [shares, setShares] = useState<ShareEntry[]>([]);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [confirmDeleteSlug, setConfirmDeleteSlug] = useState<string | null>(null);
+  const [deletingSection, setDeletingSection] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/preferences")
@@ -352,6 +355,17 @@ export default function SettingsPage() {
                   >
                     <Pencil size={14} />
                     Edit Layout
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmDeleteSlug(cs.slug);
+                    }}
+                  >
+                    <Trash2 size={14} />
                   </Button>
                 </Card>
               );
@@ -882,6 +896,35 @@ export default function SettingsPage() {
           onSave={() => setEditingLayout(null)}
         />
       )}
+
+      {/* Delete custom section confirm dialog */}
+      <ConfirmDialog
+        open={!!confirmDeleteSlug}
+        onClose={() => setConfirmDeleteSlug(null)}
+        title="Delete section?"
+        message="This permanently deletes the section and all its entries. This action cannot be undone."
+        confirmLabel="Delete"
+        loading={deletingSection}
+        onConfirm={async () => {
+          if (!confirmDeleteSlug) return;
+          setDeletingSection(true);
+          try {
+            const res = await fetch(`/api/sections/templates/${confirmDeleteSlug}`, { method: "DELETE" });
+            if (res.ok) {
+              toast.success("Section deleted");
+              updateCustomSections(customSections.filter((c) => c.slug !== confirmDeleteSlug));
+              setConfirmDeleteSlug(null);
+              router.refresh();
+            } else {
+              toast.error("Failed to delete section");
+            }
+          } catch {
+            toast.error("Failed to delete section");
+          } finally {
+            setDeletingSection(false);
+          }
+        }}
+      />
     </div>
   );
 }
