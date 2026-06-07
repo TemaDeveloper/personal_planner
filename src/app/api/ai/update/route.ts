@@ -57,9 +57,32 @@ export async function POST(req: NextRequest) {
       const registry: RegistryEntry[] = registryForSections(enabled).map((m) => ({ key: m.key, label: m.label, sectionKey: m.sectionKey }));
       const current = await DashboardMetric.find({ userId }).sort({ order: 1 }).lean();
       const update = await generateDashboardMetricUpdate(registry, current, prompt);
-      await DashboardMetric.deleteMany({ userId });
+
+      // Fix 1: enforce registry membership (server-side)
+      const allowed = new Set<string>();
+      for (const m of registryForSections(enabled)) {
+        allowed.add(`${m.sectionKey}|${m.fieldKey}`);
+      }
+      const customizations = await SectionCustomization.find({ userId }).lean();
+      for (const doc of customizations) {
+        for (const field of (doc.extraFields ?? [])) {
+          allowed.add(`${doc.sectionKey}|${field.key}`);
+        }
+      }
+      const invalid = update.metrics.filter((m) => !allowed.has(`${m.sectionKey}|${m.fieldKey}`));
+      if (invalid.length) {
+        return NextResponse.json(
+          { error: `No matching metric for: ${invalid.map((m) => m.label).join(", ")}. Add that field to the section first.` },
+          { status: 422 }
+        );
+      }
+
+      // Fix 2: insert before delete to avoid data-loss window
       const docs = update.metrics.map((m, i) => ({ ...m, userId, order: i }));
       const saved = docs.length ? await DashboardMetric.insertMany(docs) : [];
+      if (current.length) {
+        await DashboardMetric.deleteMany({ _id: { $in: current.map((c) => c._id) } });
+      }
       return NextResponse.json({ kind: "dashboard", metrics: saved });
     }
 
