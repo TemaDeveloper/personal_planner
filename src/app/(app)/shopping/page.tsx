@@ -12,6 +12,7 @@ import { StatBlock } from "@/components/ui/stat-block";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 import {
   Plus,
   Trash2,
@@ -399,6 +400,7 @@ export default function ShoppingPage() {
         message="This will permanently delete this shopping list and all its items."
         loading={deleting}
       />
+      <SectionCustomFields sectionKey="shopping" />
     </PageTransition>
   );
 }

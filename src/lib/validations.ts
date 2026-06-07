@@ -199,3 +199,44 @@ export const statusCategoryQuery = z.object({
   status: z.string().max(50).optional(),
   category: z.string().max(50).optional(),
 });
+
+// -- AI Section Update --
+export const fieldDefSchema = z.object({
+  key: z.string().min(1).max(40).regex(/^[a-z0-9_]+$/i, "key must be alphanumeric/underscore"),
+  label: z.string().min(1).max(60),
+  type: z.enum(["boolean", "number", "text", "select", "date"]),
+  options: z.array(z.string().max(40)).max(20).optional(),
+  required: z.boolean().optional(),
+  formula: z.string().max(200).optional(),
+});
+
+export const aiUpdateRequestSchema = z.object({
+  sectionKey: z.string().min(1).max(80),
+  prompt: z.string().min(3, "Describe the change").max(2000),
+});
+
+export const extraFieldsUpdateSchema = z.object({
+  extraFields: z.array(fieldDefSchema).max(20),
+});
+
+export const dashboardMetricSchema = z.object({
+  label: z.string().min(1).max(40),
+  sectionKey: z.string().min(1).max(80),
+  fieldKey: z.string().min(1).max(60),
+  sourceKind: z.enum(["builtin", "custom-field"]),
+  aggregation: z.enum(["sum", "avg", "latest", "count"]),
+  period: z.enum(["week", "month"]).default("week"),
+});
+
+export const dashboardMetricsUpdateSchema = z.object({
+  metrics: z.array(dashboardMetricSchema).max(12),
+});
+
+export const singleSectionUpdateSchema = z.object({
+  name: z.string().min(1).max(50),
+  icon: z.string().max(40).default("Star"),
+  description: z.string().max(200).default(""),
+  viewType: z.enum(["weekly-cards", "table", "grid"]).default("weekly-cards"),
+  fields: z.array(fieldDefSchema).max(30),
+  layoutHtml: z.string().min(1),
+});

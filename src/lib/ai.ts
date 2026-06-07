@@ -333,7 +333,7 @@ export async function callAI(
   }
 }
 
-function extractJSON(text: string): string {
+export function extractJSON(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenced) return fenced[1].trim();
 
@@ -430,6 +430,13 @@ export async function generateWithDefaultAI(prompt: string): Promise<PlannerConf
     throw new Error("MISTRAL_API_KEY not configured");
   }
   return generatePlannerConfig(prompt, "mistral", apiKey);
+}
+
+/** Free-form single-shot completion using the default (Mistral) provider — returns raw text. */
+export async function rawCompletion(prompt: string): Promise<string> {
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) throw new Error("MISTRAL_API_KEY not configured");
+  return callAI("mistral", apiKey, "You are a precise JSON-only assistant for a personal planner. Reply with JSON only.", prompt);
 }
 
 function slugify(name: string): string {

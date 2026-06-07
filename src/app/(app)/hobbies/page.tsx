@@ -14,6 +14,7 @@ import { StatBlock } from "@/components/ui/stat-block";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 import {
   Plus,
   Trash2,
@@ -620,6 +621,7 @@ export default function HobbiesPage() {
         confirmLabel="Remove"
         loading={deleting}
       />
+      <SectionCustomFields sectionKey="hobbies" />
     </PageTransition>
   );
 }

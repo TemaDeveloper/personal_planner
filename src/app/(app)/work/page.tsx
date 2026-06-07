@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { Briefcase, ArrowRight, Download } from "lucide-react";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 export default async function WorkPage() {
   const session = await auth();
@@ -87,6 +88,7 @@ export default async function WorkPage() {
           ))}
         </div>
       )}
+      <SectionCustomFields sectionKey="work" />
     </div>
   );
 }

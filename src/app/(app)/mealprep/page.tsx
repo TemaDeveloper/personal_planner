@@ -18,6 +18,7 @@ import {
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 interface Meal {
   type: "breakfast" | "lunch" | "dinner" | "snack";
@@ -200,6 +201,7 @@ export default function MealPrepPage() {
           />
         )}
       </Modal>
+      <SectionCustomFields sectionKey="mealprep" />
     </PageTransition>
   );
 }

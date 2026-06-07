@@ -23,6 +23,7 @@ import { ACADEMIC_ITEM_TYPES } from "@/lib/constants";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 interface StudySession {
   _id: string;
@@ -181,6 +182,7 @@ export default function StudyPage() {
           subjects={subjects}
         />
       )}
+      <SectionCustomFields sectionKey="study" />
     </PageTransition>
   );
 }

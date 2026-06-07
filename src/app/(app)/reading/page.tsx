@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, Trash2, BookOpen, Star, Download } from "lucide-react";
 import { PageTransition } from "@/components/ui/page-transition";
+import { SectionCustomFields } from "@/components/sections/custom-fields";
 
 interface Book {
   _id: string;
@@ -289,6 +290,7 @@ export default function ReadingPage() {
         confirmLabel="Remove"
         loading={deleting}
       />
+      <SectionCustomFields sectionKey="reading" />
     </PageTransition>
   );
 }
