@@ -17,6 +17,7 @@ import { startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth 
 import { PageHeader } from "@/components/layout/page-header";
 import { DashboardCards } from "@/components/dashboard/dashboard-cards";
 import { DashboardCalendar } from "@/components/dashboard/dashboard-calendar";
+import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics";
 import { DEFAULT_ENABLED_SECTIONS, type SectionId } from "@/lib/constants";
 
 export default async function DashboardPage() {
@@ -131,6 +132,7 @@ export default async function DashboardPage() {
         enabledSections={enabledSections}
         weekStart={(user.preferences?.weekStart as "monday" | "sunday") || "monday"}
       />
+      <DashboardMetrics />
       <DashboardCards
         workSummaries={workSummaries}
         gymDaysThisWeek={gymDaysThisWeek}
