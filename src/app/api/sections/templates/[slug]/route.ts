@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { resolveUserId } from "@/lib/session";
 import SectionTemplate from "@/lib/models/section-template";
+import User from "@/lib/models/user";
+import CustomEntry from "@/lib/models/custom-entry";
 import { fieldDefSchema } from "@/lib/validations";
 import { z } from "zod";
 
@@ -56,6 +58,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found or not owned by you" }, { status: 404 });
   }
 
+  await User.findByIdAndUpdate(userId, { $pull: { customSections: { templateId: deleted._id } } });
+  await CustomEntry.deleteMany({ userId, templateId: deleted._id });
+
   return NextResponse.json({ success: true });
 }
 
@@ -63,7 +68,7 @@ const patchTemplateSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   icon: z.string().max(40).optional(),
   description: z.string().max(200).optional(),
-  viewType: z.enum(["weekly-cards", "table", "grid"]).optional(),
+  viewType: z.enum(["weekly-cards", "table", "grid", "board"]).optional(),
   fields: z.array(fieldDefSchema).optional(),
   layoutHtml: z.string().optional(),
 });
