@@ -27,24 +27,34 @@ export async function GET(
 
   const { searchParams } = new URL(req.url);
   const weekOf = searchParams.get("weekOf");
+  const all = searchParams.get("all") === "1";
 
-  let start: Date, end: Date;
-  if (weekOf) {
-    const d = new Date(weekOf);
-    start = startOfWeek(d, { weekStartsOn: 1 });
-    end = endOfWeek(d, { weekStartsOn: 1 });
+  let entries;
+  if (all) {
+    entries = await CustomEntry.find({
+      userId,
+      templateId: template._id,
+    })
+      .sort({ order: 1, createdAt: -1 })
+      .lean();
   } else {
-    start = startOfWeek(new Date(), { weekStartsOn: 1 });
-    end = endOfWeek(new Date(), { weekStartsOn: 1 });
+    let start: Date, end: Date;
+    if (weekOf) {
+      const d = new Date(weekOf);
+      start = startOfWeek(d, { weekStartsOn: 1 });
+      end = endOfWeek(d, { weekStartsOn: 1 });
+    } else {
+      start = startOfWeek(new Date(), { weekStartsOn: 1 });
+      end = endOfWeek(new Date(), { weekStartsOn: 1 });
+    }
+    entries = await CustomEntry.find({
+      userId,
+      templateId: template._id,
+      date: { $gte: start, $lte: end },
+    })
+      .sort({ date: -1 })
+      .lean();
   }
-
-  const entries = await CustomEntry.find({
-    userId,
-    templateId: template._id,
-    date: { $gte: start, $lte: end },
-  })
-    .sort({ date: -1 })
-    .lean();
 
   return NextResponse.json({ template, entries });
 }

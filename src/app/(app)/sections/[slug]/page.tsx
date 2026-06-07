@@ -13,6 +13,7 @@ import { TableView } from "@/components/sections/table-view";
 import { Plus, Trash2, ChevronLeft, ChevronRight, Check, Download } from "lucide-react";
 import { ICON_MAP } from "@/lib/icon-map";
 import { RenderedLayout } from "@/components/sections/rendered-layout";
+import { BoardView } from "@/components/sections/board-view";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 
 interface FieldDef {
@@ -29,7 +30,7 @@ interface Template {
   slug: string;
   icon: string;
   description: string;
-  viewType?: "weekly-cards" | "table" | "grid";
+  viewType?: "weekly-cards" | "table" | "grid" | "board";
   layoutHtml?: string;
   fields: FieldDef[];
 }
@@ -96,6 +97,28 @@ export default function CustomSectionPage() {
     return (
       <div className="animate-slide-up">
         <PageHeader title="Section not found" />
+      </div>
+    );
+  }
+
+  // Board view — self-contained, no week navigation
+  if (template.viewType === "board") {
+    return (
+      <div className="animate-slide-up">
+        <PageHeader
+          title={template.name}
+          description={template.description}
+          action={
+            <button
+              onClick={() => { window.location.href = `/api/export/custom:${slug}`; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+          }
+        />
+        <BoardView slug={slug} template={template} />
       </div>
     );
   }

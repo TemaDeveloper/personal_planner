@@ -1,0 +1,395 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Plus, X, Check } from "lucide-react";
+
+// ---- Types ----------------------------------------------------------------
+
+interface FieldDef {
+  key: string;
+  label: string;
+  type: "boolean" | "number" | "text" | "select" | "date";
+  options?: string[];
+  formula?: string;
+}
+
+interface Template {
+  _id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  description: string;
+  viewType?: string;
+  fields: FieldDef[];
+}
+
+interface Entry {
+  _id: string;
+  date: string;
+  order: number;
+  data: Record<string, unknown>;
+}
+
+interface BoardViewProps {
+  slug: string;
+  template: Template;
+}
+
+// ---- Helpers --------------------------------------------------------------
+
+function findStatusField(fields: FieldDef[]): FieldDef | null {
+  return (
+    fields.find((f) => f.type === "select" && f.key === "status") ??
+    fields.find((f) => f.type === "select") ??
+    null
+  );
+}
+
+function findTitleField(fields: FieldDef[]): FieldDef | null {
+  return fields.find((f) => f.type === "text") ?? null;
+}
+
+function findPriorityField(fields: FieldDef[]): FieldDef | null {
+  return fields.find((f) => f.type === "select" && f.key === "priority") ?? null;
+}
+
+function priorityClass(value: string): string {
+  const v = value.toLowerCase();
+  if (v === "high") return "priority-high";
+  if (v === "medium") return "priority-medium";
+  if (v === "low") return "priority-low";
+  return "priority-default";
+}
+
+// ---- SortableCard ---------------------------------------------------------
+
+interface CardProps {
+  entry: Entry;
+  titleKey: string;
+  priorityField: FieldDef | null;
+  onDelete: (id: string) => void;
+}
+
+function SortableCard({ entry, titleKey, priorityField, onDelete }: CardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: entry._id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const title = String(entry.data[titleKey] ?? "Untitled");
+  const priority = priorityField ? String(entry.data[priorityField.key] ?? "") : "";
+
+  return (
+    <div ref={setNodeRef} style={style} className="board-card group">
+      <div className="board-card-drag-handle" {...attributes} {...listeners}>
+        <span className="board-card-title">{title}</span>
+      </div>
+      {priority && (
+        <span className={`board-priority-badge ${priorityClass(priority)}`}>
+          {priority}
+        </span>
+      )}
+      <button
+        onClick={() => onDelete(entry._id)}
+        className="board-card-delete"
+        aria-label="Delete entry"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
+
+// ---- InlineAddForm --------------------------------------------------------
+
+interface InlineAddFormProps {
+  column: string;
+  priorityField: FieldDef | null;
+  onCancel: () => void;
+  onConfirm: (title: string, priority: string) => void;
+}
+
+function InlineAddForm({ column: _column, priorityField, onCancel, onConfirm }: InlineAddFormProps) {
+  const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState("");
+
+  return (
+    <div className="board-inline-form">
+      <input
+        autoFocus
+        className="board-inline-input"
+        placeholder="Task title..."
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && title.trim()) onConfirm(title.trim(), priority);
+          if (e.key === "Escape") onCancel();
+        }}
+      />
+      {priorityField && priorityField.options && (
+        <select
+          className="board-inline-select"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+        >
+          <option value="">Priority...</option>
+          {priorityField.options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      )}
+      <div className="board-inline-actions">
+        <button
+          onClick={() => {
+            if (title.trim()) onConfirm(title.trim(), priority);
+          }}
+          className="board-inline-confirm"
+          aria-label="Confirm add"
+          disabled={!title.trim()}
+        >
+          <Check size={14} />
+        </button>
+        <button onClick={onCancel} className="board-inline-cancel" aria-label="Cancel add">
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---- BoardView (main) -----------------------------------------------------
+
+export function BoardView({ slug, template }: BoardViewProps) {
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addingInColumn, setAddingInColumn] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  // Derive board shape from template
+  const statusField = findStatusField(template.fields);
+  const titleField = findTitleField(template.fields);
+  const priorityField = findPriorityField(template.fields);
+
+  const statusKey = statusField?.key ?? null;
+  const titleKey = titleField?.key ?? "title";
+  const columns: string[] = statusField?.options ?? [];
+
+  // Fetch all entries (no week filter)
+  const loadEntries = useCallback(() => {
+    fetch(`/api/sections/${slug}/entries?all=1`)
+      .then((r) => r.json())
+      .then((d) => {
+        setEntries(d.entries || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [slug]);
+
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
+
+  // Group entries by column
+  function entriesForColumn(col: string): Entry[] {
+    return entries
+      .filter((e) => {
+        const val = statusKey ? String(e.data[statusKey] ?? "") : "";
+        return val === col || (col === columns[0] && !columns.includes(val));
+      })
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  // DnD handler
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !statusKey) return;
+
+    const activeEntry = entries.find((e) => e._id === active.id);
+    const overEntry = entries.find((e) => e._id === over.id);
+    if (!activeEntry) return;
+
+    const sourceCol = String(activeEntry.data[statusKey] ?? columns[0]);
+    const targetCol = overEntry ? String(overEntry.data[statusKey] ?? columns[0]) : sourceCol;
+
+    if (sourceCol !== targetCol) {
+      // Cross-column move: optimistically update status
+      const snapshot = entries;
+      setEntries((prev) =>
+        prev.map((e) =>
+          e._id === active.id ? { ...e, data: { ...e.data, [statusKey]: targetCol } } : e
+        )
+      );
+      try {
+        const res = await fetch(`/api/sections/${slug}/entries/${active.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: { [statusKey]: targetCol } }),
+        });
+        if (!res.ok) throw new Error("patch failed");
+      } catch {
+        setEntries(snapshot);
+        toast.error("Failed to move card");
+      }
+    } else {
+      // Same column reorder
+      const colEntries = entriesForColumn(sourceCol);
+      const oldIndex = colEntries.findIndex((e) => e._id === active.id);
+      const newIndex = colEntries.findIndex((e) => e._id === over.id);
+      if (oldIndex === newIndex) return;
+
+      const reordered = arrayMove(colEntries, oldIndex, newIndex);
+      const snapshot = entries;
+
+      setEntries((prev) => {
+        const others = prev.filter(
+          (e) => String(e.data[statusKey] ?? "") !== sourceCol
+        );
+        return [...others, ...reordered.map((e, i) => ({ ...e, order: i }))];
+      });
+
+      const movedEntry = reordered[newIndex];
+      try {
+        const res = await fetch(`/api/sections/${slug}/entries/${movedEntry._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order: newIndex }),
+        });
+        if (!res.ok) throw new Error("order patch failed");
+      } catch {
+        setEntries(snapshot);
+        toast.error("Failed to reorder card");
+      }
+    }
+  }
+
+  // Add card
+  async function handleAdd(column: string, title: string, priority: string) {
+    setAddingInColumn(null);
+    const data: Record<string, unknown> = {};
+    if (statusKey) data[statusKey] = column;
+    data[titleKey] = title;
+    if (priorityField && priority) data[priorityField.key] = priority;
+
+    try {
+      const res = await fetch(`/api/sections/${slug}/entries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: new Date().toISOString().split("T")[0], data }),
+      });
+      if (!res.ok) throw new Error("post failed");
+      const { entry } = await res.json();
+      setEntries((prev) => [...prev, { ...entry, order: entry.order ?? prev.length }]);
+    } catch {
+      toast.error("Failed to add card");
+    }
+  }
+
+  // Delete card
+  async function handleDelete(id: string) {
+    const snapshot = entries;
+    setEntries((prev) => prev.filter((e) => e._id !== id));
+    try {
+      const res = await fetch(`/api/sections/${slug}/entries/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+    } catch {
+      setEntries(snapshot);
+      toast.error("Failed to delete card");
+    }
+  }
+
+  // Guard: no status field
+  if (!statusField) {
+    return (
+      <div className="board-no-status-msg">
+        This board needs a &apos;status&apos; select field with the column names.
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="board-loading stat-label">Loading board…</div>;
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <div className="board-columns-wrapper">
+        {columns.map((col) => {
+          const colEntries = entriesForColumn(col);
+          return (
+            <div key={col} className="board-column">
+              {/* Column header */}
+              <div className="board-column-header">
+                <span className="board-column-title">{col}</span>
+                <span className="board-column-count num">{colEntries.length}</span>
+              </div>
+
+              {/* Cards */}
+              <SortableContext
+                items={colEntries.map((e) => e._id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="board-cards-list">
+                  {colEntries.map((entry) => (
+                    <SortableCard
+                      key={entry._id}
+                      entry={entry}
+                      titleKey={titleKey}
+                      priorityField={priorityField}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+
+              {/* Inline add form or button */}
+              {addingInColumn === col ? (
+                <InlineAddForm
+                  column={col}
+                  priorityField={priorityField}
+                  onCancel={() => setAddingInColumn(null)}
+                  onConfirm={(title, priority) => handleAdd(col, title, priority)}
+                />
+              ) : (
+                <button
+                  onClick={() => setAddingInColumn(col)}
+                  className="board-add-btn"
+                  aria-label={`Add card to ${col}`}
+                >
+                  <Plus size={14} />
+                  Add
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </DndContext>
+  );
+}

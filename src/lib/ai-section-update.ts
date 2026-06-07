@@ -29,15 +29,24 @@ export async function generateBuiltinFieldUpdate(sectionLabel: string, current: 
   return parseExtraFieldsResponse(raw);
 }
 
-export interface RegistryEntry { key: string; label: string; sectionKey: string }
+export interface RegistryEntry {
+  key: string;
+  label: string;
+  sectionKey: string;
+  fieldKey: string;
+  aggregation: "sum" | "avg" | "latest" | "count";
+  period: "week" | "month";
+}
 
 export function buildDashboardMetricPrompt(registry: RegistryEntry[], current: unknown[], userPrompt: string): string {
   return [
     `You manage the metric cards on a personal-planner dashboard.`,
-    `Available metrics (choose by key): ${JSON.stringify(registry)}.`,
+    `Available metrics: ${JSON.stringify(registry)}.`,
+    `Each available metric has: key, label, sectionKey, fieldKey, aggregation, period.`,
     `Current metric cards: ${JSON.stringify(current)}.`,
     `User request: "${userPrompt}".`,
-    `Return the COMPLETE updated list as JSON: { "metrics": [{ "label", "sectionKey", "fieldKey", "sourceKind": "builtin"|"custom-field", "aggregation": "sum"|"avg"|"latest"|"count", "period": "week"|"month" }] }. Only use fieldKeys that exist in the available metrics. Return ONLY JSON.`,
+    `Return the COMPLETE updated list as JSON: { "metrics": [{ "label", "sectionKey", "fieldKey", "sourceKind": "builtin", "aggregation", "period" }] }.`,
+    `IMPORTANT: For each metric you add, copy the sectionKey, fieldKey, aggregation, and period EXACTLY as they appear in the available metrics list above. Set sourceKind to "builtin" for all registry metrics. Only use sectionKey+fieldKey combinations that exist in the available metrics. Return ONLY JSON.`,
   ].join("\n");
 }
 
@@ -55,7 +64,9 @@ export function buildCustomSectionPrompt(currentConfig: unknown, userPrompt: str
     `You update a single custom section of a personal planner (it is pure data: fields + an HTML layout template).`,
     `Current section config: ${JSON.stringify(currentConfig)}.`,
     `Change requested: "${userPrompt}".`,
-    `Return the COMPLETE updated single-section config as JSON with keys: name, icon, description, viewType (weekly-cards|table|grid), fields (FieldDef[]), layoutHtml. Keep existing fields/layout unless the request changes them. ${FIELD_RULES}`,
+    `Return the COMPLETE updated single-section config as JSON with keys: name, icon, description, viewType (weekly-cards|table|grid|board), fields (FieldDef[]), layoutHtml. Keep existing fields/layout unless the request changes them.`,
+    `BOARD VIEWTYPE: If the user asks for a Kanban board, columns, "to do / in progress / done", task board, or workflow with swimlane columns — set viewType to "board", set layoutHtml to "" (empty string, the board UI renders automatically), and ensure fields include: (1) select field key "status" with options matching the requested columns (default ["To Do","In Progress","Done"]), (2) select field key "priority" with options ["Low","Medium","High"], (3) text field key "title" for the task name.`,
+    FIELD_RULES,
   ].join("\n");
 }
 

@@ -83,7 +83,9 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
         return;
       }
 
-      const config = genData.config;
+      // The generate endpoint returns a full PlannerConfig; the first custom section is what we save.
+      const rawConfig = genData.config;
+      const config = rawConfig?.customSections?.[0] ?? rawConfig;
       if (!config || !config.name) {
         setError("The AI returned an unexpected response. Please rephrase and try again.");
         return;

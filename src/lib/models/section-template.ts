@@ -15,7 +15,7 @@ export interface ISectionTemplate extends Document {
   icon: string;
   description: string;
   fields: IFieldDefinition[];
-  viewType: "weekly-cards" | "table" | "grid";
+  viewType: "weekly-cards" | "table" | "grid" | "board";
   layoutHtml: string;
   isBuiltIn: boolean;
   createdBy: mongoose.Types.ObjectId | null;
@@ -54,7 +54,7 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
     fields: { type: [FieldDefinitionSchema], default: [] },
     viewType: {
       type: String,
-      enum: ["weekly-cards", "table", "grid"],
+      enum: ["weekly-cards", "table", "grid", "board"],
       default: "weekly-cards",
     },
     layoutHtml: { type: String, default: "" },
