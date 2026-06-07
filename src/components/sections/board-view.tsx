@@ -9,7 +9,8 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
-  closestCenter,
+  closestCorners,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -117,6 +118,17 @@ function SortableCard({ entry, titleKey, priorityField, onDelete }: CardProps) {
       >
         <X size={12} />
       </button>
+    </div>
+  );
+}
+
+// ---- DroppableColumn ------------------------------------------------------
+
+function DroppableColumn({ col, children }: { col: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `col:${col}` });
+  return (
+    <div ref={setNodeRef} className={`board-column${isOver ? " board-column-over" : ""}`}>
+      {children}
     </div>
   );
 }
@@ -229,14 +241,26 @@ export function BoardView({ slug, template }: BoardViewProps) {
   // DnD handler
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id || !statusKey) return;
+    if (!over || !statusKey) return;
 
     const activeEntry = entries.find((e) => e._id === active.id);
-    const overEntry = entries.find((e) => e._id === over.id);
     if (!activeEntry) return;
 
+    const overId = String(over.id);
+    let targetCol: string | null = null;
+
+    if (overId.startsWith("col:")) {
+      // Dropped onto a DroppableColumn — extract column name
+      targetCol = overId.slice(4);
+    } else {
+      // Dropped onto a card — resolve that card's column
+      const overEntry = entries.find((e) => e._id === over.id);
+      targetCol = overEntry ? String(overEntry.data[statusKey] ?? columns[0]) : null;
+    }
+
+    if (!targetCol) return;
+
     const sourceCol = String(activeEntry.data[statusKey] ?? columns[0]);
-    const targetCol = overEntry ? String(overEntry.data[statusKey] ?? columns[0]) : sourceCol;
 
     if (sourceCol !== targetCol) {
       // Cross-column move: optimistically update status
@@ -257,12 +281,12 @@ export function BoardView({ slug, template }: BoardViewProps) {
         setEntries(snapshot);
         toast.error("Failed to move card");
       }
-    } else {
-      // Same column reorder
+    } else if (overId !== `col:${sourceCol}` && active.id !== over.id) {
+      // Same-column reorder over a card (not dropping on column droppable, not same card)
       const colEntries = entriesForColumn(sourceCol);
       const oldIndex = colEntries.findIndex((e) => e._id === active.id);
       const newIndex = colEntries.findIndex((e) => e._id === over.id);
-      if (oldIndex === newIndex) return;
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
 
       const reordered = arrayMove(colEntries, oldIndex, newIndex);
       const snapshot = entries;
@@ -338,12 +362,12 @@ export function BoardView({ slug, template }: BoardViewProps) {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
       <div className="board-columns-wrapper">
         {columns.map((col) => {
           const colEntries = entriesForColumn(col);
           return (
-            <div key={col} className="board-column">
+            <DroppableColumn key={col} col={col}>
               {/* Column header */}
               <div className="board-column-header">
                 <span className="board-column-title">{col}</span>
@@ -386,7 +410,7 @@ export function BoardView({ slug, template }: BoardViewProps) {
                   Add
                 </button>
               )}
-            </div>
+            </DroppableColumn>
           );
         })}
       </div>

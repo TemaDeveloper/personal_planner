@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { DashboardCards } from "@/components/dashboard/dashboard-cards";
 import { DashboardCalendar } from "@/components/dashboard/dashboard-calendar";
 import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics";
+import { DashboardBoards } from "@/components/dashboard/dashboard-boards";
 import { DEFAULT_ENABLED_SECTIONS, type SectionId } from "@/lib/constants";
 
 export default async function DashboardPage() {
@@ -150,6 +151,7 @@ export default async function DashboardPage() {
         enabledSections={enabledSections}
         currency={currency}
       />
+      <DashboardBoards />
     </div>
   );
 }

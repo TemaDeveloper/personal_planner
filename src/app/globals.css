@@ -376,6 +376,12 @@
   gap: 0.5rem;
 }
 
+.board-column-over {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+  background: var(--accent-wash, color-mix(in srgb, var(--accent-color) 8%, transparent));
+}
+
 .board-column-header {
   display: flex;
   align-items: center;
@@ -584,4 +590,19 @@
 
 .board-loading {
   padding: 1rem 0;
+}
+
+/* ---- Dashboard Boards section ---- */
+.dashboard-boards-section {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-board-item h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
 }
