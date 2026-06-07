@@ -100,7 +100,7 @@ const PlannerConfigSchema = z.object({
       options: z.array(z.string()).optional(),
       formula: z.string().optional(),
     })),
-    layoutHtml: z.string().min(1),
+    layoutHtml: z.string().default(""),
   })).optional(),
 });
 
@@ -163,6 +163,7 @@ Each custom section needs:
   * "table" — for item-based tracking (reselling, inventory, transactions, purchases). Shows entries as rows in a spreadsheet table. USE THIS for anything where each entry is a distinct item/transaction.
   * "grid" — for daily yes/no tracking (habits, attendance, daily check-ins). Shows a monthly calendar grid.
   * "weekly-cards" — for daily logs with mixed field types. Shows one card per day in a week view.
+  * "board" — USE THIS when the user asks for a Kanban board, columns, "to do / in progress / done", task board, or any workflow with swimlane columns. REQUIRED fields for board: (1) a "select" field with key "status" whose options are the requested columns (default ["To Do","In Progress","Done"]), (2) a "select" field with key "priority" whose options are ["Low","Medium","High"], (3) a "text" field with key "title" for the task name. You may add extra fields (due date, notes, assignee) as needed. For board sections, set layoutHtml to "" (empty string) — the board UI renders its own columns automatically.
 - fields: 3-8 fields. Think about what data points matter for this activity.
   * For reselling/trading: ALWAYS include purchasePrice, salePrice, and a profit field with formula
   * For computed fields, add "formula" property: e.g. "formula": "salePrice - purchasePrice"

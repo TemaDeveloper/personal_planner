@@ -238,5 +238,5 @@ export const singleSectionUpdateSchema = z.object({
   description: z.string().max(200).default(""),
   viewType: z.enum(["weekly-cards", "table", "grid", "board"]).default("weekly-cards"),
   fields: z.array(fieldDefSchema).max(30),
-  layoutHtml: z.string().min(1),
+  layoutHtml: z.string().default(""),
 });

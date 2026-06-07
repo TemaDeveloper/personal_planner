@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (resolved.kind === "dashboard") {
       const user = await User.findById(userId).select("enabledSections").lean();
       const enabled = (user?.enabledSections as string[] | undefined) ?? [];
-      const registry: RegistryEntry[] = registryForSections(enabled).map((m) => ({ key: m.key, label: m.label, sectionKey: m.sectionKey }));
+      const registry: RegistryEntry[] = registryForSections(enabled).map((m) => ({ key: m.key, label: m.label, sectionKey: m.sectionKey, fieldKey: m.fieldKey, aggregation: m.aggregation, period: m.period }));
       const current = await DashboardMetric.find({ userId }).sort({ order: 1 }).lean();
       const update = await generateDashboardMetricUpdate(registry, current, prompt);
 
