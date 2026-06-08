@@ -9,13 +9,20 @@ export interface IFieldDefinition {
   formula?: string;
 }
 
+export interface ICalendarCategory {
+  key: string;
+  label: string;
+  color: string;
+}
+
 export interface ISectionTemplate extends Document {
   name: string;
   slug: string;
   icon: string;
   description: string;
   fields: IFieldDefinition[];
-  viewType: "weekly-cards" | "table" | "grid" | "board";
+  viewType: "weekly-cards" | "table" | "grid" | "board" | "calendar";
+  calendarCategories?: ICalendarCategory[];
   layoutHtml: string;
   isBuiltIn: boolean;
   createdBy: mongoose.Types.ObjectId | null;
@@ -45,6 +52,15 @@ const FieldDefinitionSchema = new Schema<IFieldDefinition>(
   { _id: false }
 );
 
+const CalendarCategorySchema = new Schema<ICalendarCategory>(
+  {
+    key: { type: String, required: true },
+    label: { type: String, required: true },
+    color: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 const SectionTemplateSchema = new Schema<ISectionTemplate>(
   {
     name: { type: String, required: true, maxlength: 50 },
@@ -54,9 +70,10 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
     fields: { type: [FieldDefinitionSchema], default: [] },
     viewType: {
       type: String,
-      enum: ["weekly-cards", "table", "grid", "board"],
+      enum: ["weekly-cards", "table", "grid", "board", "calendar"],
       default: "weekly-cards",
     },
+    calendarCategories: { type: [CalendarCategorySchema], default: undefined },
     layoutHtml: { type: String, default: "" },
     isBuiltIn: { type: Boolean, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },

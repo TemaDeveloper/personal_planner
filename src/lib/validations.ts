@@ -236,7 +236,64 @@ export const singleSectionUpdateSchema = z.object({
   name: z.string().min(1).max(50),
   icon: z.string().max(40).default("Star"),
   description: z.string().max(200).default(""),
-  viewType: z.enum(["weekly-cards", "table", "grid", "board"]).default("weekly-cards"),
+  viewType: z.enum(["weekly-cards", "table", "grid", "board", "calendar"]).default("weekly-cards"),
   fields: z.array(fieldDefSchema).max(30),
   layoutHtml: z.string().default(""),
 });
+
+// -- Calendar --
+export const calendarCategorySchema = z.object({
+  key: z.string().min(1).max(40).regex(/^[a-z0-9_]+$/i, "key must be alphanumeric/underscore"),
+  label: z.string().min(1).max(40),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "color must be a hex value"),
+});
+
+export const calendarCategoriesUpdateSchema = z.object({
+  calendarCategories: z.array(calendarCategorySchema).min(1).max(20),
+});
+
+export const calendarEventSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  start: z.string().min(1, "Start is required"),
+  end: z.string().min(1, "End is required"),
+  allDay: z.boolean().optional(),
+  categoryKey: z.string().min(1, "Category is required").max(40),
+});
+
+export type CalendarEventInput = z.infer<typeof calendarEventSchema>;
+
+type ValidatedEvent = {
+  title: string;
+  start: Date;
+  end: Date;
+  allDay: boolean;
+  categoryKey: string;
+};
+
+/** Business-rule validation beyond shape: dates parse, end > start (timed), known category. */
+export function validateCalendarEvent(
+  input: unknown,
+  categories: { key: string }[]
+): { ok: true; value: ValidatedEvent } | { ok: false; error: string } {
+  const parsed = calendarEventSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid event" };
+  }
+  const { title, start, end, categoryKey } = parsed.data;
+  const allDay = parsed.data.allDay ?? false;
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return { ok: false, error: "Invalid date" };
+  }
+  if (!allDay && endDate.getTime() <= startDate.getTime()) {
+    return { ok: false, error: "End must be after start" };
+  }
+  if (allDay && endDate.getTime() < startDate.getTime()) {
+    return { ok: false, error: "End must not be before start" };
+  }
+  if (!categories.some((c) => c.key === categoryKey)) {
+    return { ok: false, error: "Unknown category" };
+  }
+  return { ok: true, value: { title, start: startDate, end: endDate, allDay, categoryKey } };
+}
