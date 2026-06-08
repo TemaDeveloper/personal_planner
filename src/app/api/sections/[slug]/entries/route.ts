@@ -5,7 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import SectionTemplate from "@/lib/models/section-template";
 import CustomEntry from "@/lib/models/custom-entry";
 import { startOfWeek, endOfWeek, startOfDay } from "date-fns";
-import { createCustomEntrySchema } from "@/lib/validations";
+import { createCustomEntrySchema, validateCalendarEvent } from "@/lib/validations";
 
 export async function GET(
   req: NextRequest,
@@ -28,9 +28,26 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const weekOf = searchParams.get("weekOf");
   const all = searchParams.get("all") === "1";
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
 
   let entries;
-  if (all) {
+  if (from && to) {
+    // Calendar range: entries whose [start,end] overlap [from,to], or whose
+    // date falls in range (for entries lacking explicit start/end).
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    entries = await CustomEntry.find({
+      userId,
+      templateId: template._id,
+      $or: [
+        { start: { $lte: toDate }, end: { $gte: fromDate } },
+        { start: { $exists: false }, date: { $gte: fromDate, $lte: toDate } },
+      ],
+    })
+      .sort({ start: 1, date: 1 })
+      .lean();
+  } else if (all) {
     entries = await CustomEntry.find({
       userId,
       templateId: template._id,
@@ -78,6 +95,27 @@ export async function POST(
   }
 
   const body = await req.json();
+
+  if (template.viewType === "calendar") {
+    const result = validateCalendarEvent(body, template.calendarCategories ?? []);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    const { title, start, end, allDay, categoryKey } = result.value;
+    const entry = await CustomEntry.create({
+      userId,
+      templateId: template._id,
+      date: startOfDay(start),
+      data: {},
+      title,
+      start,
+      end,
+      allDay,
+      categoryKey,
+    });
+    return NextResponse.json({ entry }, { status: 201 });
+  }
+
   const parsed = createCustomEntrySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
