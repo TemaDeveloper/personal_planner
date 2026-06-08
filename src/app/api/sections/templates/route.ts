@@ -5,6 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import SectionTemplate from "@/lib/models/section-template";
 import User from "@/lib/models/user";
 import { SECTIONS } from "@/lib/constants";
+import { DEFAULT_CATEGORIES } from "@/lib/calendar";
 
 function slugify(name: string): string {
   return name
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const body = await req.json();
-  const { name, icon, description, fields, viewType, layoutHtml } = body;
+  const { name, icon, description, fields, viewType, layoutHtml, calendarCategories: bodyCategories } = body;
 
   if (!name || typeof name !== "string" || name.trim().length < 1) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -68,6 +69,13 @@ export async function POST(req: NextRequest) {
     slug = `${baseSlug}-${counter}`;
   }
 
+  const calendarCategories =
+    viewType === "calendar"
+      ? Array.isArray(bodyCategories) && bodyCategories.length
+        ? bodyCategories
+        : DEFAULT_CATEGORIES
+      : undefined;
+
   const template = await SectionTemplate.create({
     name: name.trim(),
     slug,
@@ -76,6 +84,7 @@ export async function POST(req: NextRequest) {
     fields: fields || [],
     viewType: viewType || "weekly-cards",
     layoutHtml: layoutHtml || "",
+    calendarCategories,
     isBuiltIn: false,
     createdBy: userId,
     usageCount: 1,

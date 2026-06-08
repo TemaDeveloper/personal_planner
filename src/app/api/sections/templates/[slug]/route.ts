@@ -5,7 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import SectionTemplate from "@/lib/models/section-template";
 import User from "@/lib/models/user";
 import CustomEntry from "@/lib/models/custom-entry";
-import { fieldDefSchema } from "@/lib/validations";
+import { fieldDefSchema, calendarCategoriesUpdateSchema } from "@/lib/validations";
 import { z } from "zod";
 
 export async function GET(
@@ -68,7 +68,7 @@ const patchTemplateSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   icon: z.string().max(40).optional(),
   description: z.string().max(200).optional(),
-  viewType: z.enum(["weekly-cards", "table", "grid", "board"]).optional(),
+  viewType: z.enum(["weekly-cards", "table", "grid", "board", "calendar"]).optional(),
   fields: z.array(fieldDefSchema).optional(),
   layoutHtml: z.string().optional(),
 });
@@ -81,16 +81,32 @@ export async function PATCH(
   const userId = await resolveUserId(session);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const parsed = patchTemplateSchema.safeParse(await req.json());
+  const body = await req.json();
+  const parsed = patchTemplateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
+  }
+
+  const update: Record<string, unknown> = { ...parsed.data };
+
+  if (body?.calendarCategories !== undefined) {
+    const parsedCategories = calendarCategoriesUpdateSchema.safeParse({
+      calendarCategories: body.calendarCategories,
+    });
+    if (!parsedCategories.success) {
+      return NextResponse.json(
+        { error: parsedCategories.error.issues[0]?.message ?? "Invalid input" },
+        { status: 400 }
+      );
+    }
+    update.calendarCategories = parsedCategories.data.calendarCategories;
   }
 
   await connectDB();
   const { slug } = await params;
   const template = await SectionTemplate.findOneAndUpdate(
     { slug, createdBy: userId },
-    { $set: parsed.data },
+    { $set: update },
     { new: true }
   ).lean();
 
