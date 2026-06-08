@@ -14,7 +14,9 @@ import { Plus, Trash2, ChevronLeft, ChevronRight, Check, Download } from "lucide
 import { ICON_MAP } from "@/lib/icon-map";
 import { RenderedLayout } from "@/components/sections/rendered-layout";
 import { BoardView } from "@/components/sections/board-view";
+import { CalendarView } from "@/components/calendar/calendar-view";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
+import type { CalendarCategory } from "@/lib/calendar";
 
 interface FieldDef {
   key: string;
@@ -30,9 +32,10 @@ interface Template {
   slug: string;
   icon: string;
   description: string;
-  viewType?: "weekly-cards" | "table" | "grid" | "board";
+  viewType?: "weekly-cards" | "table" | "grid" | "board" | "calendar";
   layoutHtml?: string;
   fields: FieldDef[];
+  calendarCategories?: CalendarCategory[];
 }
 
 interface Entry {
@@ -119,6 +122,15 @@ export default function CustomSectionPage() {
           }
         />
         <BoardView slug={slug} template={template} />
+      </div>
+    );
+  }
+
+  // Calendar view — self-contained, has its own header/navigation
+  if (template.viewType === "calendar") {
+    return (
+      <div className="animate-slide-up">
+        <CalendarView slug={template.slug} categories={template.calendarCategories} />
       </div>
     );
   }

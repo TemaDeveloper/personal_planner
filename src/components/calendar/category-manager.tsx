@@ -22,7 +22,13 @@ export function CategoryManager({
     setList((l) => l.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
   const remove = (i: number) => setList((l) => (l.length > 1 ? l.filter((_, idx) => idx !== i) : l));
   const add = () =>
-    setList((l) => [...l, { key: `cat_${l.length + 1}`, label: "New", color: CALENDAR_PALETTE[l.length % CALENDAR_PALETTE.length] }]);
+    setList((l) => {
+      const used = new Set(l.map((c) => c.key));
+      let n = l.length + 1;
+      let key = `cat_${n}`;
+      while (used.has(key)) key = `cat_${++n}`;
+      return [...l, { key, label: "New", color: CALENDAR_PALETTE[l.length % CALENDAR_PALETTE.length] }];
+    });
 
   return (
     <Modal open={open} onClose={onClose} title="Categories">
