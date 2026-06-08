@@ -1,6 +1,6 @@
 "use client";
 
-import { DayColumn, HourGutter } from "./time-grid";
+import { AllDayStrip, DayColumn, HourGutter } from "./time-grid";
 import type { CalEvent } from "./month-view";
 import type { CalendarCategory } from "@/lib/calendar";
 
@@ -18,9 +18,12 @@ export function DayView({
   onSelectEvent: (id: string) => void;
 }) {
   return (
-    <div className="overflow-auto max-h-[70vh] flex">
-      <HourGutter />
-      <DayColumn date={date} events={events} categories={categories} onSelectSlot={onSelectSlot} onSelectEvent={onSelectEvent} />
+    <div className="overflow-auto max-h-[70vh]">
+      <AllDayStrip days={[date]} events={events} categories={categories} onSelectEvent={onSelectEvent} />
+      <div className="flex">
+        <HourGutter />
+        <DayColumn date={date} events={events} categories={categories} onSelectSlot={onSelectSlot} onSelectEvent={onSelectEvent} />
+      </div>
     </div>
   );
 }

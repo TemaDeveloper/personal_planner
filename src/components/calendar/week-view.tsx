@@ -1,7 +1,7 @@
 "use client";
 
 import { startOfWeek, addDays, format, isSameDay } from "date-fns";
-import { DayColumn, HourGutter } from "./time-grid";
+import { AllDayStrip, DayColumn, HourGutter } from "./time-grid";
 import type { CalEvent } from "./month-view";
 import type { CalendarCategory } from "@/lib/calendar";
 
@@ -32,6 +32,7 @@ export function WeekView({
           </div>
         ))}
       </div>
+      <AllDayStrip days={days} events={events} categories={categories} onSelectEvent={onSelectEvent} />
       <div className="flex">
         <HourGutter />
         {days.map((d) => (
