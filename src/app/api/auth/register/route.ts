@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/lib/models/user";
 import { registerSchema } from "@/lib/validations";
+import { ensureUserCalendar } from "@/lib/calendar-section";
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,6 +35,14 @@ export async function POST(req: NextRequest) {
       password: hashedPassword,
       provider: "credentials",
     });
+
+    // Provision the default calendar section for the new user. Never fail
+    // registration if this step errors — it is backfilled on first app load.
+    try {
+      await ensureUserCalendar(user._id);
+    } catch (err) {
+      console.error("Calendar provisioning failed for new user:", err);
+    }
 
     return NextResponse.json(
       { id: user._id.toString(), email: user.email },

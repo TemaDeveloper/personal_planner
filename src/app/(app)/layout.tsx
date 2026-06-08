@@ -7,6 +7,7 @@ import SectionTemplate from "@/lib/models/section-template";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { SectionsProvider, type CustomSectionNav } from "@/components/providers/sections-provider";
+import { ensureUserCalendar } from "@/lib/calendar-section";
 import { DEFAULT_ENABLED_SECTIONS } from "@/lib/constants";
 import type { SectionId } from "@/lib/constants";
 
@@ -31,6 +32,10 @@ export default async function AppLayout({
 
   const enabledSections = (user?.enabledSections as SectionId[] | undefined) ?? [...DEFAULT_ENABLED_SECTIONS];
 
+  // Every user gets a default calendar section (idempotent; also backfills
+  // existing users on first load after this ships).
+  const calendarTemplate = await ensureUserCalendar(userId);
+
   // Load custom section templates
   let customSections: CustomSectionNav[] = [];
   const userCustom = (user?.customSections || []) as { templateId: { toString(): string }; enabled: boolean }[];
@@ -46,6 +51,22 @@ export default async function AppLayout({
       icon: t.icon,
       enabled: true,
     }));
+  }
+
+  // On the first load after provisioning, `user` was read before the calendar was
+  // linked, so inject it into the nav. Only inject when the user has no existing
+  // link for it (so a later explicit disable is respected).
+  if (
+    calendarTemplate &&
+    !userCustom.some((cs) => cs.templateId?.toString() === calendarTemplate._id.toString())
+  ) {
+    customSections.push({
+      templateId: String(calendarTemplate._id),
+      slug: calendarTemplate.slug,
+      name: calendarTemplate.name,
+      icon: calendarTemplate.icon,
+      enabled: true,
+    });
   }
 
   return (
