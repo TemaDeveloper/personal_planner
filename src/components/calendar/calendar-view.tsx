@@ -45,6 +45,9 @@ export function CalendarView({ slug, categories: initialCategories }: { slug: st
     );
   }, [slug, range.start, range.end]);
 
+  // fetchEvents only updates state after an awaited fetch (not synchronously),
+  // so this is a normal data-fetch effect, not a cascading-render hazard.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   const label = useMemo(() => {
