@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  CalendarDays,
   Settings,
   Download,
   LogOut,
@@ -54,9 +55,14 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
     [enabledSections]
   );
 
+  const calendarSection = useMemo(
+    () => customSections.find((cs) => cs.enabled && cs.slug.startsWith("calendar-")),
+    [customSections]
+  );
+
   const customItems = useMemo(() =>
     customSections
-      .filter((cs) => cs.enabled)
+      .filter((cs) => cs.enabled && !cs.slug.startsWith("calendar-"))
       .map((cs) => ({
         href: `/sections/${cs.slug}`,
         icon: ICON_MAP[cs.icon] || ICON_MAP.Star,
@@ -108,7 +114,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
               {/* Nav items */}
               <div className="px-3 pb-2 overflow-y-auto" style={{ maxHeight: "calc(70vh - 100px)" }}>
-                {/* Today — pinned */}
+                {/* Today + Calendar — pinned */}
                 <MenuLink
                   href="/dashboard"
                   icon={LayoutDashboard}
@@ -116,6 +122,15 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   active={isActive("/dashboard")}
                   onClick={onClose}
                 />
+                {calendarSection && (
+                  <MenuLink
+                    href={`/sections/${calendarSection.slug}`}
+                    icon={CalendarDays}
+                    label="Calendar"
+                    active={isActive(`/sections/${calendarSection.slug}`)}
+                    onClick={onClose}
+                  />
+                )}
 
                 {/* Life-area groups */}
                 {lifeAreaGroups.map((group) => (

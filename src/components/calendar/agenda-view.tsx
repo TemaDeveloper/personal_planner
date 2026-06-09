@@ -40,7 +40,9 @@ export function AgendaView({
       {groups.map(([day, list]) => (
         <div key={day} className="py-3">
           <div className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-            {format(new Date(day), "EEEE, MMM d")}
+            {/* Derive the header from the event's own Date (local), not from the
+                "yyyy-MM-dd" key, which new Date() would parse as UTC and shift a day. */}
+            {format(new Date(list[0].start), "EEEE, MMM d")}
           </div>
           {list.map((ev) => (
             <EventChip

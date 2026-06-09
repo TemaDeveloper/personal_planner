@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
+  CalendarDays,
   Settings,
   Download,
   LogOut,
@@ -53,10 +54,16 @@ export function AppSidebar() {
     [enabledSections]
   );
 
-  // Custom (AI) sections
+  // The default calendar section is pinned directly under "Today" (not in Custom).
+  const calendarSection = useMemo(
+    () => customSections.find((cs) => cs.enabled && cs.slug.startsWith("calendar-")),
+    [customSections]
+  );
+
+  // Custom (AI) sections — everything except the pinned calendar.
   const customItems = useMemo(() =>
     customSections
-      .filter((cs) => cs.enabled)
+      .filter((cs) => cs.enabled && !cs.slug.startsWith("calendar-"))
       .map((cs) => ({
         href: `/sections/${cs.slug}`,
         icon: ICON_MAP[cs.icon] || ICON_MAP.Star,
@@ -79,14 +86,22 @@ export function AppSidebar() {
 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3">
-        {/* Today — pinned at top */}
-        <div className="mb-4">
+        {/* Today + Calendar — pinned at top */}
+        <div className="mb-4 space-y-0.5">
           <NavItem
             href="/dashboard"
             icon={LayoutDashboard}
             label="Today"
             active={isActive("/dashboard")}
           />
+          {calendarSection && (
+            <NavItem
+              href={`/sections/${calendarSection.slug}`}
+              icon={CalendarDays}
+              label="Calendar"
+              active={isActive(`/sections/${calendarSection.slug}`)}
+            />
+          )}
         </div>
 
         {/* Life-area groups */}
