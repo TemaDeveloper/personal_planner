@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import { TimeGrid } from "../time-grid";
 
 afterEach(cleanup);
@@ -104,6 +104,19 @@ describe("TimeGrid", () => {
     fireEvent.touchMove(window, { touches: [{ clientX: 100, clientY: 260 }] });
     vi.advanceTimersByTime(500);
     expect(onCreate).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("moves the now-line over time without a page refresh", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 1, 9, 0, 0)); // 9:00 on Mon (a rendered day)
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={vi.fn()} onMove={vi.fn()} onResize={vi.fn()} onSelect={vi.fn()} />);
+    const top1 = (container.querySelector("[data-nowline]") as HTMLElement).style.top;
+    vi.setSystemTime(new Date(2026, 5, 1, 11, 30, 0)); // 11:30
+    act(() => { vi.advanceTimersByTime(31000); }); // tick the clock
+    const top2 = (container.querySelector("[data-nowline]") as HTMLElement).style.top;
+    expect(top1).not.toBe(top2);
     vi.useRealTimers();
   });
 

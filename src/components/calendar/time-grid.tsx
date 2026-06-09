@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { startOfDay, isSameDay } from "date-fns";
 import { layoutDayEvents } from "@/lib/event-layout";
 import { categoryColor, type CalendarCategory } from "@/lib/calendar";
@@ -44,6 +44,13 @@ export function TimeGrid({
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 7 * HOUR_HEIGHT;
+  }, []);
+
+  // Tick the clock so the "now" line moves live instead of freezing until refresh.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(id);
   }, []);
 
   const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
@@ -252,7 +259,6 @@ export function TimeGrid({
             { dayStart: startOfDay(day), hourHeight: HOUR_HEIGHT, minHeight: 16 }
           );
           const byId = new Map(dayEvents.map((e) => [e.id, e]));
-          const now = new Date();
           const showNow = isSameDay(day, now);
           return (
             <div key={day.toISOString()} ref={(el) => { colRefs.current[di] = el; }} data-weekend={isWeekend(day)}
@@ -263,7 +269,7 @@ export function TimeGrid({
               <div className="absolute inset-y-0 left-0 w-px" style={{ background: "var(--border-subtle)" }} />
               {HOURS.map((h) => <div key={h} style={{ height: HOUR_HEIGHT, borderTop: h === 0 ? "none" : "1px solid var(--border-subtle)" }} />)}
               {showNow && (
-                <div className="absolute left-0 right-0 pointer-events-none z-[4]"
+                <div data-nowline className="absolute left-0 right-0 pointer-events-none z-[4]"
                   style={{ top: (now.getHours() + now.getMinutes() / 60) * HOUR_HEIGHT, borderTop: "2px solid var(--accent-color)" }}>
                   <span className="absolute -left-1 -top-[5px] w-2 h-2 rounded-full" style={{ background: "var(--accent-color)" }} />
                 </div>
