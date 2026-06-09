@@ -1,29 +1,21 @@
 "use client";
 
-import { AllDayStrip, DayColumn, HourGutter } from "./time-grid";
+import { TimeGrid } from "./time-grid";
+import { AllDayStrip } from "./all-day-strip";
 import type { CalEvent } from "./month-view";
 import type { CalendarCategory } from "@/lib/calendar";
 
-export function DayView({
-  date,
-  events,
-  categories,
-  onSelectSlot,
-  onSelectEvent,
-}: {
-  date: Date;
-  events: CalEvent[];
-  categories: CalendarCategory[];
-  onSelectSlot: (date: Date, hour: number) => void;
-  onSelectEvent: (id: string) => void;
+export function DayView({ date, events, categories, onCreate, onMove, onResize, onSelect }: {
+  date: Date; events: CalEvent[]; categories: CalendarCategory[];
+  onCreate: (d: { day: Date; startH: number; endH: number }) => void;
+  onMove: (id: string, day: Date, startH: number, endH: number) => void;
+  onResize: (id: string, endH: number) => void;
+  onSelect: (id: string) => void;
 }) {
   return (
-    <div className="overflow-auto max-h-[70vh]">
-      <AllDayStrip days={[date]} events={events} categories={categories} onSelectEvent={onSelectEvent} />
-      <div className="flex">
-        <HourGutter />
-        <DayColumn date={date} events={events} categories={categories} onSelectSlot={onSelectSlot} onSelectEvent={onSelectEvent} />
-      </div>
+    <div>
+      <AllDayStrip days={[date]} events={events} categories={categories} onSelectEvent={onSelect} />
+      <TimeGrid days={[date]} events={events} categories={categories} onCreate={onCreate} onMove={onMove} onResize={onResize} onSelect={onSelect} />
     </div>
   );
 }

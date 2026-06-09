@@ -1,45 +1,35 @@
 "use client";
 
 import { startOfWeek, addDays, format, isSameDay } from "date-fns";
-import { AllDayStrip, DayColumn, HourGutter } from "./time-grid";
+import { TimeGrid } from "./time-grid";
+import { AllDayStrip } from "./all-day-strip";
 import type { CalEvent } from "./month-view";
 import type { CalendarCategory } from "@/lib/calendar";
 
-export function WeekView({
-  date,
-  events,
-  categories,
-  onSelectSlot,
-  onSelectEvent,
-}: {
-  date: Date;
-  events: CalEvent[];
-  categories: CalendarCategory[];
-  onSelectSlot: (date: Date, hour: number) => void;
-  onSelectEvent: (id: string) => void;
+export function WeekView({ date, events, categories, onCreate, onMove, onResize, onSelect }: {
+  date: Date; events: CalEvent[]; categories: CalendarCategory[];
+  onCreate: (d: { day: Date; startH: number; endH: number }) => void;
+  onMove: (id: string, day: Date, startH: number, endH: number) => void;
+  onResize: (id: string, endH: number) => void;
+  onSelect: (id: string) => void;
 }) {
   const weekStart = startOfWeek(date, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
+  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
   return (
-    <div className="overflow-auto max-h-[70vh]">
-      <div className="flex sticky top-0 z-10" style={{ background: "var(--surface-1)" }}>
-        <div className="w-12 shrink-0" />
+    <div>
+      <div className="grid [scrollbar-gutter:stable] overflow-y-scroll" style={{ gridTemplateColumns: "56px repeat(7,1fr)" }}>
+        <div />
         {days.map((d) => (
-          <div key={d.toISOString()} className="flex-1 text-center text-xs py-1"
-            style={{ color: isSameDay(d, new Date()) ? "var(--accent-color)" : "var(--text-muted)" }}>
-            {format(d, "EEE d")}
+          <div key={d.toISOString()} className="text-center pb-2" data-weekend={isWeekend(d)} style={{ background: isWeekend(d) ? "rgba(63,107,140,.045)" : undefined }}>
+            <div className="text-[11px] uppercase tracking-wide" style={{ color: isWeekend(d) ? "#3F6B8C" : "var(--text-muted)" }}>{format(d, "EEE")}</div>
+            <div className="text-[18px] font-medium mt-1 w-[34px] h-[34px] leading-[34px] rounded-full inline-block"
+              style={isSameDay(d, new Date()) ? { background: "var(--accent-color)", color: "#fff" } : { color: "var(--text-primary)" }}>{format(d, "d")}</div>
           </div>
         ))}
       </div>
-      <AllDayStrip days={days} events={events} categories={categories} onSelectEvent={onSelectEvent} />
-      <div className="flex">
-        <HourGutter />
-        {days.map((d) => (
-          <DayColumn key={d.toISOString()} date={d} events={events} categories={categories}
-            onSelectSlot={onSelectSlot} onSelectEvent={onSelectEvent} />
-        ))}
-      </div>
+      <AllDayStrip days={days} events={events} categories={categories} onSelectEvent={onSelect} />
+      <TimeGrid days={days} events={events} categories={categories} onCreate={onCreate} onMove={onMove} onResize={onResize} onSelect={onSelect} />
     </div>
   );
 }
