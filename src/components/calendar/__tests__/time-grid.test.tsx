@@ -6,7 +6,7 @@ afterEach(cleanup);
 
 const categories = [{ key: "work", label: "Work", color: "#3F6B8C" }];
 const events = [
-  { id: "1", title: "Focus", start: "2026-06-01T09:00:00", end: "2026-06-01T10:00:00", allDay: false, categoryKey: "work" },
+  { id: "1", title: "Focus", start: "2026-06-01T09:00:00", end: "2026-06-01T10:00:00", allDay: false, categoryKey: "work", description: "" },
 ];
 
 describe("DayView", () => {

@@ -12,6 +12,7 @@ export type CalEvent = {
   end: string;
   allDay: boolean;
   categoryKey: string;
+  description: string;
 };
 
 const MAX_CHIPS = 3;

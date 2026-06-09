@@ -14,7 +14,7 @@ describe("AgendaView", () => {
 
   it("lists event titles when present", () => {
     const events = [
-      { id: "1", title: "Review", start: "2026-06-02T14:00:00.000Z", end: "2026-06-02T15:00:00.000Z", allDay: false, categoryKey: "work" },
+      { id: "1", title: "Review", start: "2026-06-02T14:00:00.000Z", end: "2026-06-02T15:00:00.000Z", allDay: false, categoryKey: "work", description: "" },
     ];
     render(<AgendaView events={events} categories={categories} onSelectEvent={vi.fn()} />);
     expect(screen.getByText("Review")).toBeInTheDocument();

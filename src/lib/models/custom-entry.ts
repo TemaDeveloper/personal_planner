@@ -12,6 +12,7 @@ export interface ICustomEntry extends Document {
   end?: Date;
   allDay?: boolean;
   categoryKey?: string;
+  description?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +29,7 @@ const CustomEntrySchema = new Schema<ICustomEntry>(
     end: { type: Date },
     allDay: { type: Boolean },
     categoryKey: { type: String },
+    description: { type: String },
   },
   { timestamps: true }
 );

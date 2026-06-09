@@ -6,7 +6,7 @@ afterEach(cleanup);
 
 const categories = [{ key: "work", label: "Work", color: "#3F6B8C" }];
 const events = [
-  { id: "1", title: "Standup", start: "2026-06-01T09:00:00.000Z", end: "2026-06-01T09:30:00.000Z", allDay: false, categoryKey: "work" },
+  { id: "1", title: "Standup", start: "2026-06-01T09:00:00.000Z", end: "2026-06-01T09:30:00.000Z", allDay: false, categoryKey: "work", description: "" },
 ];
 
 describe("MonthView", () => {

@@ -258,6 +258,7 @@ export const calendarEventSchema = z.object({
   end: z.string().min(1, "End is required"),
   allDay: z.boolean().optional(),
   categoryKey: z.string().min(1, "Category is required").max(40),
+  description: z.string().max(2000).optional(),
 });
 
 export type CalendarEventInput = z.infer<typeof calendarEventSchema>;
@@ -268,6 +269,7 @@ type ValidatedEvent = {
   end: Date;
   allDay: boolean;
   categoryKey: string;
+  description: string;
 };
 
 /** Business-rule validation beyond shape: dates parse, end > start (timed), known category. */
@@ -281,6 +283,7 @@ export function validateCalendarEvent(
   }
   const { title, start, end, categoryKey } = parsed.data;
   const allDay = parsed.data.allDay ?? false;
+  const description = parsed.data.description ?? "";
   const startDate = new Date(start);
   const endDate = new Date(end);
   if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
@@ -295,5 +298,5 @@ export function validateCalendarEvent(
   if (!categories.some((c) => c.key === categoryKey)) {
     return { ok: false, error: "Unknown category" };
   }
-  return { ok: true, value: { title, start: startDate, end: endDate, allDay, categoryKey } };
+  return { ok: true, value: { title, start: startDate, end: endDate, allDay, categoryKey, description } };
 }

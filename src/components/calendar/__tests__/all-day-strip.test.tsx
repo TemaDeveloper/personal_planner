@@ -13,6 +13,7 @@ const allDayEvent = {
   end: "2026-06-01T23:59:59",
   allDay: true,
   categoryKey: "work",
+  description: "",
 };
 
 describe("all-day strip", () => {

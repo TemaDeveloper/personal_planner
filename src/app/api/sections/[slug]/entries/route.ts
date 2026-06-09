@@ -101,7 +101,7 @@ export async function POST(
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
-    const { title, start, end, allDay, categoryKey } = result.value;
+    const { title, start, end, allDay, categoryKey, description } = result.value;
     const entry = await CustomEntry.create({
       userId,
       templateId: template._id,
@@ -112,6 +112,7 @@ export async function POST(
       end,
       allDay,
       categoryKey,
+      description,
     });
     return NextResponse.json({ entry }, { status: 201 });
   }

@@ -63,10 +63,10 @@ export async function PATCH(
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
-    const { title, start, end, allDay, categoryKey } = result.value;
+    const { title, start, end, allDay, categoryKey, description } = result.value;
     const updated = await CustomEntry.findOneAndUpdate(
       { _id: id, userId },
-      { title, start, end, allDay, categoryKey, date: startOfDay(start) },
+      { title, start, end, allDay, categoryKey, description, date: startOfDay(start) },
       { new: true }
     ).lean();
     if (!updated) {
