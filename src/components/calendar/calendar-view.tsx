@@ -97,6 +97,27 @@ export function CalendarView({ slug, categories: initialCategories }: { slug: st
     if (!res.ok) { setCategories(prev); const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Failed to add category"); }
   };
 
+  // Show the in-progress event live in the grid: a placeholder block while creating,
+  // or the live-edited version while editing an existing event.
+  const renderedEvents = useMemo<CalEvent[]>(() => {
+    if (!draft) return events;
+    const ds = new Date(draft.start);
+    const de = new Date(draft.end);
+    if (Number.isNaN(ds.getTime()) || Number.isNaN(de.getTime())) return events;
+    const draftEvent: CalEvent = {
+      id: draft.id ?? "__draft__",
+      title: draft.title,
+      start: ds.toISOString(),
+      end: de.toISOString(),
+      allDay: draft.allDay,
+      categoryKey: draft.categoryKey,
+      description: draft.description,
+    };
+    return draft.id
+      ? events.map((e) => (e.id === draft.id ? draftEvent : e))
+      : [...events, draftEvent];
+  }, [events, draft]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="px-4 md:px-6 pt-4 shrink-0">
@@ -105,10 +126,10 @@ export function CalendarView({ slug, categories: initialCategories }: { slug: st
 
       <div className="relative overflow-hidden flex-1 min-h-0">
         <div className="h-full transition-[margin] duration-[260ms] motion-reduce:transition-none" style={{ marginRight: draft ? 336 : 0 }}>
-          {view === "month" && <div className="h-full overflow-y-auto px-4 md:px-6 pb-6"><MonthView month={cursor} events={events} categories={categories} onSelectDay={(d) => { setCursor(d); setView("day"); }} onSelectEvent={openEdit} /></div>}
-          {view === "week" && <div className="h-full px-2 md:px-4 pb-2"><WeekView date={cursor} events={events} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}
-          {view === "day" && <div className="h-full px-2 md:px-4 pb-2"><DayView date={cursor} events={events} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}
-          {view === "agenda" && <div className="h-full overflow-y-auto px-4 md:px-6 pb-6"><AgendaView events={events} categories={categories} onSelectEvent={openEdit} /></div>}
+          {view === "month" && <div className="h-full overflow-y-auto px-4 md:px-6 pb-6"><MonthView month={cursor} events={renderedEvents} categories={categories} onSelectDay={(d) => { setCursor(d); setView("day"); }} onSelectEvent={openEdit} /></div>}
+          {view === "week" && <div className="h-full px-2 md:px-4 pb-2"><WeekView date={cursor} events={renderedEvents} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}
+          {view === "day" && <div className="h-full px-2 md:px-4 pb-2"><DayView date={cursor} events={renderedEvents} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}
+          {view === "agenda" && <div className="h-full overflow-y-auto px-4 md:px-6 pb-6"><AgendaView events={renderedEvents} categories={categories} onSelectEvent={openEdit} /></div>}
         </div>
 
         {draft && (
