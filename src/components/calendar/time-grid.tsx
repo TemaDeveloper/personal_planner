@@ -12,7 +12,7 @@ const NEUTRAL = "#9b918a";
 
 type DragState =
   | { kind: "create"; dayIdx: number; startH: number; sh: number; eh: number; el: HTMLDivElement; startClientY: number; moved: boolean }
-  | { kind: "move"; ev: CalEvent; dayIdx: number; grabOffH: number; dur: number; sh: number; moved: boolean; el: HTMLDivElement; origEl: HTMLElement; color: string }
+  | { kind: "move"; ev: CalEvent; dayIdx: number; grabOffH: number; dur: number; sh: number; moved: boolean; el: HTMLDivElement; origEl: HTMLElement; color: string; startClientX: number; startClientY: number }
   | { kind: "resize"; ev: CalEvent; sh: number; eh: number };
 
 export function TimeGrid({
@@ -122,6 +122,7 @@ export function TimeGrid({
           kind: "move", ev, dayIdx, grabOffH: (e.clientY - rect.top) / HOUR_HEIGHT,
           dur: eh - sh, sh, moved: false,
           el: document.createElement("div"), origEl: evEl, color: categoryColor(categories, ev.categoryKey),
+          startClientX: e.clientX, startClientY: e.clientY,
         };
       }
       e.preventDefault();
@@ -149,6 +150,9 @@ export function TimeGrid({
         d.eh = clampRange(d.sh, offsetHour(e.clientY, dayIdx < 0 ? 0 : dayIdx)).end;
         onResizePreview(d);
       } else if (d.kind === "move") {
+        // Ignore sub-threshold jitter so a click stays a click (opens the editor),
+        // not a near-zero move that swallows the select.
+        if (!d.moved && Math.hypot(e.clientX - d.startClientX, e.clientY - d.startClientY) <= 4) return;
         if (!d.moved) { d.moved = true; d.origEl.style.opacity = "0.35"; }
         const ci = colAt(e.clientX);
         if (ci != null) d.dayIdx = ci;

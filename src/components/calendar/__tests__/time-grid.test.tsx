@@ -48,6 +48,19 @@ describe("TimeGrid", () => {
     expect(onMove).not.toHaveBeenCalled();
   });
 
+  it("a tiny jitter on an event still selects it (does not become a move)", () => {
+    const onMove = vi.fn();
+    const onSelect = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={vi.fn()} onMove={onMove} onResize={vi.fn()} onSelect={onSelect} />);
+    const evEl = container.querySelector('[data-event-id="1"]') as HTMLElement;
+    fireEvent.mouseDown(evEl, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(window, { clientX: 102, clientY: 103 }); // ~3.6px — under threshold
+    fireEvent.mouseUp(window);
+    expect(onSelect).toHaveBeenCalledWith("1");
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
   it("a plain click on empty grid does NOT create an event", () => {
     const onCreate = vi.fn();
     const { container } = render(<TimeGrid days={days} events={events} categories={categories}
