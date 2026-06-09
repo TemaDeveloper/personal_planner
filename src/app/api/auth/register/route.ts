@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/lib/models/user";
 import { registerSchema } from "@/lib/validations";
 import { ensureUserCalendar } from "@/lib/calendar-section";
+import { DEFAULT_ENABLED_SECTIONS } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     // Provision the default calendar section for the new user. Never fail
     // registration if this step errors — it is backfilled on first app load.
     try {
-      await ensureUserCalendar(user._id);
+      await ensureUserCalendar(user._id, [...DEFAULT_ENABLED_SECTIONS]);
     } catch (err) {
       console.error("Calendar provisioning failed for new user:", err);
     }

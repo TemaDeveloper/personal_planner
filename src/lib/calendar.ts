@@ -1,4 +1,5 @@
 import { startOfWeek, startOfDay, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { SECTION_META, type SectionId } from "@/lib/constants";
 
 export type CalendarCategory = {
   key: string;
@@ -23,6 +24,28 @@ export const DEFAULT_CATEGORIES: CalendarCategory[] = [
   { key: "work", label: "Work", color: "#3F6B8C" },
   { key: "health", label: "Health", color: "#5E8C6A" },
 ];
+
+/** Color (hex from the palette) for each built-in planner section. */
+export const SECTION_CATEGORY_COLOR: Record<SectionId, string> = {
+  work: "#C0613C", gym: "#3F6B8C", finances: "#7A5C7E", habits: "#5E8C6A",
+  study: "#3F8C86", hobbies: "#C99A3B", housework: "#5C5552", health: "#5E8C6A",
+  goals: "#C99A3B", reading: "#3F8C86", journal: "#7A5C7E", shopping: "#C0524A",
+  mealprep: "#C0524A",
+};
+
+/** Build calendar categories from the user's enabled planner sections (Gym, Hobbies, …). */
+export function categoriesFromSections(enabledSections: SectionId[]): CalendarCategory[] {
+  const cats = enabledSections
+    .filter((id) => SECTION_META[id])
+    .map((id) => ({ key: id, label: SECTION_META[id].label, color: SECTION_CATEGORY_COLOR[id] ?? "#5C5552" }));
+  return cats.length ? cats : DEFAULT_CATEGORIES;
+}
+
+/** True when a category list is still the untouched seeded defaults (safe to re-seed). */
+export function isDefaultCategories(cats: { key: string }[] | undefined | null): boolean {
+  if (!cats || cats.length !== DEFAULT_CATEGORIES.length) return false;
+  return cats.every((c, i) => c.key === DEFAULT_CATEGORIES[i].key);
+}
 
 const NEUTRAL_FALLBACK = "#5C5552";
 

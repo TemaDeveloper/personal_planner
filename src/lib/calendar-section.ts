@@ -2,7 +2,8 @@ import type { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import SectionTemplate from "@/lib/models/section-template";
 import User from "@/lib/models/user";
-import { DEFAULT_CATEGORIES } from "@/lib/calendar";
+import { DEFAULT_CATEGORIES, categoriesFromSections, isDefaultCategories } from "@/lib/calendar";
+import type { SectionId } from "@/lib/constants";
 
 /** Stable, per-user slug for the default calendar section. */
 export function calendarSlugFor(userId: string | Types.ObjectId): string {
@@ -25,14 +26,18 @@ type LeanTemplate = {
  * Returns the template (or null if it could not be resolved).
  */
 export async function ensureUserCalendar(
-  userId: string | Types.ObjectId
+  userId: string | Types.ObjectId,
+  enabledSections?: SectionId[]
 ): Promise<LeanTemplate | null> {
   await connectDB();
   const slug = calendarSlugFor(userId);
+  // Categories mirror the user's enabled planner sections (Gym, Hobbies, …).
+  const seedCategories = enabledSections?.length ? categoriesFromSections(enabledSections) : DEFAULT_CATEGORIES;
+  const sel = "_id slug name icon calendarCategories";
 
-  let template = (await SectionTemplate.findOne({ slug })
-    .select("_id slug name icon")
-    .lean()) as LeanTemplate | null;
+  let template = (await SectionTemplate.findOne({ slug }).select(sel).lean()) as
+    | (LeanTemplate & { calendarCategories?: { key: string }[] })
+    | null;
 
   if (!template) {
     try {
@@ -43,7 +48,7 @@ export async function ensureUserCalendar(
         description: "Your events and schedule",
         fields: [],
         viewType: "calendar",
-        calendarCategories: DEFAULT_CATEGORIES,
+        calendarCategories: seedCategories,
         layoutHtml: "",
         isBuiltIn: false,
         createdBy: userId,
@@ -54,13 +59,15 @@ export async function ensureUserCalendar(
     } catch (err: unknown) {
       // Concurrent request already created it — re-read.
       if (err && typeof err === "object" && (err as { code?: number }).code === 11000) {
-        template = (await SectionTemplate.findOne({ slug })
-          .select("_id slug name icon")
-          .lean()) as LeanTemplate | null;
+        template = (await SectionTemplate.findOne({ slug }).select(sel).lean()) as typeof template;
       } else {
         throw err;
       }
     }
+  } else if (enabledSections?.length && isDefaultCategories(template.calendarCategories)) {
+    // Migrate an existing calendar that still has the untouched defaults to
+    // section-based categories (won't clobber a user who customized them).
+    await SectionTemplate.updateOne({ slug }, { $set: { calendarCategories: seedCategories } });
   }
 
   if (!template) return null;

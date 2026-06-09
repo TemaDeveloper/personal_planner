@@ -34,8 +34,9 @@ export default async function AppLayout({
   const enabledSections = (user?.enabledSections as SectionId[] | undefined) ?? [...DEFAULT_ENABLED_SECTIONS];
 
   // Every user gets a default calendar section (idempotent; also backfills
-  // existing users on first load after this ships).
-  const calendarTemplate = await ensureUserCalendar(userId);
+  // existing users on first load after this ships). Categories mirror the
+  // user's enabled planner sections.
+  const calendarTemplate = await ensureUserCalendar(userId, enabledSections);
 
   // Load custom section templates
   let customSections: CustomSectionNav[] = [];
