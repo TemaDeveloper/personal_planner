@@ -47,7 +47,12 @@ export async function POST(req: NextRequest) {
     label: label ?? "",
   });
 
-  const url = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/shared/${token}`;
+  // Build the share link from the request's own origin so it's correct on any
+  // domain (e.g. lifora.space), honouring proxy headers, then fall back to env.
+  const fwdHost = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  const fwdProto = req.headers.get("x-forwarded-proto") ?? "https";
+  const origin = fwdHost ? `${fwdProto}://${fwdHost}` : (process.env.NEXTAUTH_URL || "http://localhost:3000");
+  const url = `${origin}/shared/${token}`;
 
   if (inviteeEmail) {
     const owner = await User.findById(userId).lean();
