@@ -153,7 +153,7 @@ export default function OnboardingPage() {
       if (!res.ok) { toast.error(data.error || "Generation failed"); setGenerating(false); return; }
 
       applyAIConfig(data.config);
-      toast.success("Planner generated!");
+      toast.success("Your plan is ready!");
       setStep(2); // Go to review step
     } catch {
       toast.error("Network error. Please try again.");
@@ -198,7 +198,7 @@ export default function OnboardingPage() {
     if (res.ok) {
       document.documentElement.setAttribute("data-theme", accentTheme);
       document.documentElement.setAttribute("data-font", fontStyle);
-      toast.success("Welcome to MyPlanner!");
+      toast.success("Welcome to Lifora!");
       router.push("/dashboard");
     } else {
       toast.error("Something went wrong");
@@ -210,7 +210,7 @@ export default function OnboardingPage() {
   const steps = [
     // Step 0: Welcome
     {
-      title: "Welcome to MyPlanner",
+      title: "Welcome to Lifora",
       content: (
         <div className="space-y-8">
           <p className="text-sm text-center max-w-md mx-auto" style={{ color: "var(--text-muted)" }}>

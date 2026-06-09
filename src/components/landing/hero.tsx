@@ -49,7 +49,7 @@ export function Hero() {
             style={{ color: "var(--accent-text)" }}
           >
             <Sparkles size={12} />
-            AI-Powered Planner
+            AI-Powered Life Planner
           </span>
         </motion.div>
 

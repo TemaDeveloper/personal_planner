@@ -1,4 +1,5 @@
 import { GitFork } from "lucide-react";
+import { LiforaLogo } from "@/components/brand/lifora-logo";
 
 export function Footer() {
   return (
@@ -8,14 +9,9 @@ export function Footer() {
     >
       <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-3">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-extrabold"
-            style={{ background: "var(--accent-color)", color: "var(--primary-foreground)" }}
-          >
-            P
-          </div>
+          <LiforaLogo size={26} />
           <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-            Planner
+            Lifora
           </span>
         </div>
 

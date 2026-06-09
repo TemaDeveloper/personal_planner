@@ -43,8 +43,8 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Planner",
-  description: "Your AI-powered personal planner — track anything, your way",
+  title: "Lifora",
+  description: "Lifora — your AI-powered life planner. Track anything, your way.",
 };
 
 // Inline script to prevent FOUC — runs before React hydration

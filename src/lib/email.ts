@@ -17,7 +17,7 @@ export async function sendShareInvite(
 
   try {
     await resend.emails.send({
-      from: "Planner <noreply@resend.dev>",
+      from: "Lifora <noreply@resend.dev>",
       to: inviteeEmail,
       subject: `${ownerName} shared their ${sectionName} with you`,
       html: `

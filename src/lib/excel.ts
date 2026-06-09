@@ -73,7 +73,7 @@ export async function generateExcel(
   options?: ExcelOptions
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Personal Planner";
+  workbook.creator = "Lifora";
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet(sheetName, {

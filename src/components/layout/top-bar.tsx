@@ -45,7 +45,7 @@ function getPageTitle(
     return slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Section";
   }
 
-  return "Planner";
+  return "Lifora";
 }
 
 export function TopBar() {

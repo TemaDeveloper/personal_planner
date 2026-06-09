@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/ui/form-input";
+import { LiforaLogo } from "@/components/brand/lifora-logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,16 +43,7 @@ export default function LoginPage() {
   return (
     <div>
       <div className="text-center mb-8">
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-5 text-base font-bold"
-          style={{
-            background: "var(--surface-raised)",
-            border: "1px solid var(--border-default)",
-            color: "var(--accent-color)",
-          }}
-        >
-          P
-        </div>
+        <LiforaLogo size={44} className="mx-auto mb-5 block" />
         <h1 className="text-2xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
           Welcome back
         </h1>

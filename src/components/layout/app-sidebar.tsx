@@ -16,6 +16,7 @@ import { useSections } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
 import type { SectionId } from "@/lib/constants";
 import { ICON_MAP } from "@/lib/icon-map";
+import { LiforaLogo } from "@/components/brand/lifora-logo";
 
 const BOTTOM_ITEMS = [
   { href: "/settings", icon: Settings, label: "Settings" },
@@ -76,11 +77,9 @@ export function AppSidebar() {
     <aside className="hidden md:flex flex-col flex-shrink-0 w-60 sticky top-0 h-screen border-r border-[var(--sidebar-border)] bg-[var(--sidebar)]">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 h-14 border-b border-[var(--sidebar-border)]">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-extrabold bg-[var(--accent-color)] text-primary-foreground">
-          P
-        </div>
+        <LiforaLogo size={26} className="flex-shrink-0" />
         <span className="font-semibold text-sm text-[var(--text-primary)]">
-          Planner
+          Lifora
         </span>
       </div>
 
