@@ -82,8 +82,28 @@ export function CalendarView({ slug, categories: initialCategories }: { slug: st
     });
     if (!res.ok) { setEvents(prev); toast.error("Failed to move event"); }
   };
-  const onMove = (id: string, day: Date, startH: number, endH: number) => patchTimes(id, hourToDate(day, startH).toISOString(), hourToDate(day, endH).toISOString());
+  const isDraftId = (id: string) => !!draft && (id === "__draft__" || id === draft.id);
+
+  const onMove = (id: string, day: Date, startH: number, endH: number) => {
+    const startISO = hourToDate(day, startH).toISOString();
+    const endISO = hourToDate(day, endH).toISOString();
+    if (draft && isDraftId(id)) {
+      // Dragging the in-progress event: move the draft so the placeholder follows.
+      setDraft({ ...draft, start: toLocalInput(new Date(startISO)), end: toLocalInput(new Date(endISO)) });
+      if (draft.id) patchTimes(draft.id, startISO, endISO); // also persist when editing a saved event
+      return;
+    }
+    patchTimes(id, startISO, endISO);
+  };
   const onResize = (id: string, endH: number) => {
+    if (draft && isDraftId(id)) {
+      const day = startOfDay(new Date(draft.start));
+      const startISO = new Date(draft.start).toISOString();
+      const endISO = hourToDate(day, endH).toISOString();
+      setDraft({ ...draft, end: toLocalInput(new Date(endISO)) });
+      if (draft.id) patchTimes(draft.id, startISO, endISO);
+      return;
+    }
     const ev = events.find((e) => e.id === id); if (!ev) return;
     const day = new Date(ev.start);
     patchTimes(id, new Date(ev.start).toISOString(), hourToDate(day, endH).toISOString());

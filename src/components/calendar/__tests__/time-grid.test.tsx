@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { TimeGrid } from "../time-grid";
 
 afterEach(cleanup);
@@ -21,5 +21,30 @@ describe("TimeGrid", () => {
     const { container } = render(<TimeGrid days={days} events={events} categories={categories}
       onCreate={vi.fn()} onMove={vi.fn()} onResize={vi.fn()} onSelect={vi.fn()} />);
     expect(container.querySelectorAll('[data-weekend="true"]').length).toBe(1); // Saturday
+  });
+
+  it("dragging an existing event fires onMove (not onSelect)", () => {
+    const onMove = vi.fn();
+    const onSelect = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={vi.fn()} onMove={onMove} onResize={vi.fn()} onSelect={onSelect} />);
+    const evEl = container.querySelector('[data-event-id="1"]') as HTMLElement;
+    fireEvent.mouseDown(evEl, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(window, { clientX: 100, clientY: 160 });
+    fireEvent.mouseUp(window);
+    expect(onMove).toHaveBeenCalledTimes(1);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("clicking an existing event (no move) fires onSelect", () => {
+    const onMove = vi.fn();
+    const onSelect = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={vi.fn()} onMove={onMove} onResize={vi.fn()} onSelect={onSelect} />);
+    const evEl = container.querySelector('[data-event-id="1"]') as HTMLElement;
+    fireEvent.mouseDown(evEl, { clientX: 100, clientY: 100 });
+    fireEvent.mouseUp(window);
+    expect(onSelect).toHaveBeenCalledWith("1");
+    expect(onMove).not.toHaveBeenCalled();
   });
 });
