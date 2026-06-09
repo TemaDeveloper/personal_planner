@@ -11,7 +11,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const NEUTRAL = "#9b918a";
 
 type DragState =
-  | { kind: "create"; dayIdx: number; startH: number; sh: number; eh: number; el: HTMLDivElement }
+  | { kind: "create"; dayIdx: number; startH: number; sh: number; eh: number; el: HTMLDivElement; startClientY: number; moved: boolean }
   | { kind: "move"; ev: CalEvent; dayIdx: number; grabOffH: number; dur: number; sh: number; moved: boolean; el: HTMLDivElement; origEl: HTMLElement; color: string }
   | { kind: "resize"; ev: CalEvent; sh: number; eh: number };
 
@@ -130,7 +130,7 @@ export function TimeGrid({
     const startH = offsetHour(e.clientY, dayIdx);
     const el = document.createElement("div");
     colRefs.current[dayIdx]?.appendChild(el);
-    drag.current = { kind: "create", dayIdx, startH, sh: startH, eh: startH + 0.5, el };
+    drag.current = { kind: "create", dayIdx, startH, sh: startH, eh: startH + 0.5, el, startClientY: e.clientY, moved: false };
     paintPreview();
     e.preventDefault();
   };
@@ -140,6 +140,7 @@ export function TimeGrid({
       const d = drag.current;
       if (!d) return;
       if (d.kind === "create") {
+        if (Math.abs(e.clientY - d.startClientY) > 4) d.moved = true;
         const cur = offsetHour(e.clientY, d.dayIdx);
         d.sh = Math.min(d.startH, cur); d.eh = Math.max(d.startH + 0.5, cur);
         paintPreview();
@@ -162,8 +163,11 @@ export function TimeGrid({
       if (!d) return;
       if (d.kind === "create") {
         d.el.remove();
-        const r = clampRange(fine(d.sh), fine(d.eh));
-        onCreate({ day: days[d.dayIdx], startH: r.start, endH: r.end });
+        // Only create on an intentional drag — a plain click must not spawn an event.
+        if (d.moved) {
+          const r = clampRange(fine(d.sh), fine(d.eh));
+          onCreate({ day: days[d.dayIdx], startH: r.start, endH: r.end });
+        }
       } else if (d.kind === "move") {
         d.el.remove();
         d.origEl.style.opacity = "";

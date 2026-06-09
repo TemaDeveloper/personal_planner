@@ -47,4 +47,25 @@ describe("TimeGrid", () => {
     expect(onSelect).toHaveBeenCalledWith("1");
     expect(onMove).not.toHaveBeenCalled();
   });
+
+  it("a plain click on empty grid does NOT create an event", () => {
+    const onCreate = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={onCreate} onMove={vi.fn()} onResize={vi.fn()} onSelect={vi.fn()} />);
+    const col = container.querySelector('[data-weekend="false"]') as HTMLElement;
+    fireEvent.mouseDown(col, { clientX: 100, clientY: 100 });
+    fireEvent.mouseUp(window);
+    expect(onCreate).not.toHaveBeenCalled();
+  });
+
+  it("dragging on empty grid DOES create an event", () => {
+    const onCreate = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={onCreate} onMove={vi.fn()} onResize={vi.fn()} onSelect={vi.fn()} />);
+    const col = container.querySelector('[data-weekend="false"]') as HTMLElement;
+    fireEvent.mouseDown(col, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(window, { clientX: 100, clientY: 180 });
+    fireEvent.mouseUp(window);
+    expect(onCreate).toHaveBeenCalledTimes(1);
+  });
 });
