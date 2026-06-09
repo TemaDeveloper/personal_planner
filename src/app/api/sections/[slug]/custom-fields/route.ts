@@ -8,7 +8,7 @@ import { attendanceDateKey } from "@/lib/gym-date";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ sectionKey: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   const session = await auth();
   const userId = await resolveUserId(session);
@@ -18,7 +18,7 @@ export async function GET(
 
   await connectDB();
 
-  const { sectionKey } = await params;
+  const { slug: sectionKey } = await params;
   const dateKey = attendanceDateKey(new Date());
 
   const customization = await SectionCustomization.findOne({
@@ -50,7 +50,7 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ sectionKey: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   const session = await auth();
   const userId = await resolveUserId(session);
@@ -60,7 +60,7 @@ export async function POST(
 
   await connectDB();
 
-  const { sectionKey } = await params;
+  const { slug: sectionKey } = await params;
 
   if (!sectionKey) {
     return NextResponse.json({ error: "sectionKey is required" }, { status: 400 });
