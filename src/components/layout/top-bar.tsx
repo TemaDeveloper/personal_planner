@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Sun, Moon, Monitor, Menu, Sparkles, Plus } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useSections } from "@/components/providers/sections-provider";
+import type { CustomSectionNav } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
 import type { ColorMode } from "@/lib/constants";
 import { MobileMenu } from "./mobile-menu";
@@ -20,7 +21,11 @@ const MODE_ICONS = {
 
 const MODES: ColorMode[] = ["system", "light", "dark"];
 
-function getPageTitle(pathname: string, enabledSections: string[]): string {
+function getPageTitle(
+  pathname: string,
+  enabledSections: string[],
+  customSections: CustomSectionNav[],
+): string {
   if (pathname === "/dashboard") return "Dashboard";
   if (pathname === "/settings") return "Settings";
   if (pathname === "/export") return "Export";
@@ -33,6 +38,10 @@ function getPageTitle(pathname: string, enabledSections: string[]): string {
 
   if (pathname.startsWith("/sections/")) {
     const slug = pathname.split("/").pop();
+    // Prefer the section's display name (e.g. "Calendar") over the raw slug,
+    // which for calendar sections is `calendar-<userId>`.
+    const cs = customSections.find((c) => c.slug === slug);
+    if (cs) return cs.name;
     return slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Section";
   }
 
@@ -42,8 +51,8 @@ function getPageTitle(pathname: string, enabledSections: string[]): string {
 export function TopBar() {
   const pathname = usePathname();
   const { preferences, updatePreferences } = useTheme();
-  const { enabledSections } = useSections();
-  const title = getPageTitle(pathname, enabledSections as string[]);
+  const { enabledSections, customSections } = useSections();
+  const title = getPageTitle(pathname, enabledSections as string[], customSections);
   const [menuOpen, setMenuOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
 

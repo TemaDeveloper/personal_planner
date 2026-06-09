@@ -66,11 +66,12 @@ export function MonthView({
           const key = format(d, "yyyy-MM-dd");
           const list = byDay.get(key) ?? [];
           const today = isSameDay(d, new Date());
+          const weekend = d.getDay() === 0 || d.getDay() === 6;
           return (
             <div
               key={key}
               className="min-h-24 p-1.5 cursor-pointer"
-              style={{ background: "var(--surface-1)", opacity: isSameMonth(d, month) ? 1 : 0.45 }}
+              style={{ background: weekend ? "rgba(63,107,140,.045)" : "var(--surface-1)", opacity: isSameMonth(d, month) ? 1 : 0.45 }}
               onClick={() => onSelectDay(d)}
             >
               <div
