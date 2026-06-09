@@ -54,4 +54,16 @@ describe("EventInspector", () => {
     fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
     expect(onAddCategory).toHaveBeenCalledWith(expect.objectContaining({ label: "Travel" }));
   });
+
+  it("editing the start time input emits onChange with the new value", () => {
+    const { onChange } = setup();
+    fireEvent.change(screen.getByLabelText(/^start/i), { target: { value: "2026-06-01T11:30" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ start: "2026-06-01T11:30" }));
+  });
+
+  it("all-day toggle disables the time inputs", () => {
+    setup({ draft: { title: "X", start: "2026-06-01T09:00", end: "2026-06-01T10:00", allDay: true, categoryKey: "work", description: "" } });
+    expect((screen.getByLabelText(/^start/i) as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText(/^end/i) as HTMLInputElement).disabled).toBe(true);
+  });
 });

@@ -40,16 +40,8 @@ export function EventInspector({
 
   const set = <K extends keyof EventDraft>(k: K, v: EventDraft[K]) => onChange({ ...draft, [k]: v });
 
-  const fmtStart = (s: string) => {
-    const d = new Date(s);
-    if (Number.isNaN(d.getTime())) return s;
-    return d.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  };
-  const fmtEnd = (s: string) => {
-    const d = new Date(s);
-    if (Number.isNaN(d.getTime())) return s;
-    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  };
+  const dateInput = "w-full rounded-lg px-2.5 py-2 text-[13px] outline-none disabled:opacity-50";
+  const dateInputStyle = { background: "var(--surface-raised)", border: "1px solid var(--border-default)", color: "var(--text-primary)" } as const;
 
   const submit = () => {
     if (!draft.title.trim()) { setError("Title is required"); return; }
@@ -93,7 +85,24 @@ export function EventInspector({
             value={draft.title} onChange={(e) => set("title", e.target.value)} />
         </div>
 
-        <div className="text-[13px]" style={{ color: "var(--text-muted)" }}>{fmtStart(draft.start)} – {fmtEnd(draft.end)}</div>
+        <div className="flex flex-col gap-3">
+          <label className="flex items-center gap-2 text-[13px]" style={{ color: "var(--text-primary)" }}>
+            <input type="checkbox" checked={draft.allDay} onChange={(e) => set("allDay", e.target.checked)} />
+            All day
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="ins-start" className="block text-[11px] tracking-wide uppercase mb-1.5" style={{ color: "var(--text-muted)" }}>Start</label>
+              <input id="ins-start" type="datetime-local" disabled={draft.allDay} className={dateInput} style={dateInputStyle}
+                value={draft.start} onChange={(e) => set("start", e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="ins-end" className="block text-[11px] tracking-wide uppercase mb-1.5" style={{ color: "var(--text-muted)" }}>End</label>
+              <input id="ins-end" type="datetime-local" disabled={draft.allDay} className={dateInput} style={dateInputStyle}
+                value={draft.end} onChange={(e) => set("end", e.target.value)} />
+            </div>
+          </div>
+        </div>
 
         <div>
           <div className="text-[11px] tracking-wide uppercase mb-2" style={{ color: "var(--text-muted)" }}>Category</div>
