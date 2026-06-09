@@ -13,8 +13,10 @@ export function DayView({ date, events, categories, onCreate, onMove, onResize, 
   onSelect: (id: string) => void;
 }) {
   return (
-    <div>
-      <AllDayStrip days={[date]} events={events} categories={categories} onSelectEvent={onSelect} />
+    <div className="h-full flex flex-col">
+      <div className="shrink-0">
+        <AllDayStrip days={[date]} events={events} categories={categories} onSelectEvent={onSelect} />
+      </div>
       <TimeGrid days={[date]} events={events} categories={categories} onCreate={onCreate} onMove={onMove} onResize={onResize} onSelect={onSelect} />
     </div>
   );

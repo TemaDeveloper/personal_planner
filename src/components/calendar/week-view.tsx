@@ -17,8 +17,8 @@ export function WeekView({ date, events, categories, onCreate, onMove, onResize,
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
   return (
-    <div>
-      <div className="grid [scrollbar-gutter:stable] overflow-y-scroll" style={{ gridTemplateColumns: "56px repeat(7,1fr)" }}>
+    <div className="h-full flex flex-col">
+      <div className="grid [scrollbar-gutter:stable] overflow-y-scroll shrink-0" style={{ gridTemplateColumns: "56px repeat(7,1fr)" }}>
         <div />
         {days.map((d) => (
           <div key={d.toISOString()} className="text-center pb-2" data-weekend={isWeekend(d)} style={{ background: isWeekend(d) ? "rgba(63,107,140,.045)" : undefined }}>
@@ -28,7 +28,9 @@ export function WeekView({ date, events, categories, onCreate, onMove, onResize,
           </div>
         ))}
       </div>
-      <AllDayStrip days={days} events={events} categories={categories} onSelectEvent={onSelect} />
+      <div className="shrink-0">
+        <AllDayStrip days={days} events={events} categories={categories} onSelectEvent={onSelect} />
+      </div>
       <TimeGrid days={days} events={events} categories={categories} onCreate={onCreate} onMove={onMove} onResize={onResize} onSelect={onSelect} />
     </div>
   );

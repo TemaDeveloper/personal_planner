@@ -129,7 +129,7 @@ export default function CustomSectionPage() {
   // Calendar view — self-contained, has its own header/navigation
   if (template.viewType === "calendar") {
     return (
-      <div className="animate-slide-up">
+      <div className="h-full">
         <CalendarView slug={template.slug} categories={template.calendarCategories} />
       </div>
     );

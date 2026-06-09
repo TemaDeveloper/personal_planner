@@ -98,15 +98,17 @@ export function CalendarView({ slug, categories: initialCategories }: { slug: st
   };
 
   return (
-    <div className="relative">
-      <CalendarHeader monthLabel={monthLabel} yearLabel={yearLabel} view={view} onView={setView} onPrev={() => step(-1)} onNext={() => step(1)} />
+    <div className="h-full flex flex-col">
+      <div className="px-4 md:px-6 pt-4 shrink-0">
+        <CalendarHeader monthLabel={monthLabel} yearLabel={yearLabel} view={view} onView={setView} onPrev={() => step(-1)} onNext={() => step(1)} />
+      </div>
 
-      <div className="relative overflow-hidden">
-        <div className="transition-[margin] duration-[260ms] motion-reduce:transition-none" style={{ marginRight: draft ? 336 : 0 }}>
-          {view === "month" && <MonthView month={cursor} events={events} categories={categories} onSelectDay={(d) => { setCursor(d); setView("day"); }} onSelectEvent={openEdit} />}
-          {view === "week" && <WeekView date={cursor} events={events} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} />}
-          {view === "day" && <DayView date={cursor} events={events} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} />}
-          {view === "agenda" && <AgendaView events={events} categories={categories} onSelectEvent={openEdit} />}
+      <div className="relative overflow-hidden flex-1 min-h-0">
+        <div className="h-full transition-[margin] duration-[260ms] motion-reduce:transition-none" style={{ marginRight: draft ? 336 : 0 }}>
+          {view === "month" && <div className="h-full overflow-y-auto px-4 md:px-6 pb-6"><MonthView month={cursor} events={events} categories={categories} onSelectDay={(d) => { setCursor(d); setView("day"); }} onSelectEvent={openEdit} /></div>}
+          {view === "week" && <div className="h-full px-2 md:px-4 pb-2"><WeekView date={cursor} events={events} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}
+          {view === "day" && <div className="h-full px-2 md:px-4 pb-2"><DayView date={cursor} events={events} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}
+          {view === "agenda" && <div className="h-full overflow-y-auto px-4 md:px-6 pb-6"><AgendaView events={events} categories={categories} onSelectEvent={openEdit} /></div>}
         </div>
 
         {draft && (

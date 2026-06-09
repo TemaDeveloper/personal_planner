@@ -181,7 +181,7 @@ export function TimeGrid({
   }, [events, days, onCreate, onMove, onResize, onSelect]);
 
   return (
-    <div ref={scrollRef} className="overflow-y-scroll [scrollbar-gutter:stable]" style={{ maxHeight: "64vh" }}>
+    <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-scroll [scrollbar-gutter:stable]">
       <div className="grid relative" style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}>
         <div>
           {HOURS.map((h) => (
