@@ -2,24 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Sun, Moon, Monitor, Menu, Sparkles, Plus } from "lucide-react";
-import { useTheme } from "@/components/providers/theme-provider";
+import { Menu, Sparkles } from "lucide-react";
 import { useSections } from "@/components/providers/sections-provider";
 import type { CustomSectionNav } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
-import type { ColorMode } from "@/lib/constants";
 import { MobileMenu } from "./mobile-menu";
 import { BottomNav } from "./bottom-nav";
 import { Button } from "@/components/ui/button";
 import { AiStudio } from "@/components/ai/ai-studio";
-
-const MODE_ICONS = {
-  system: Monitor,
-  light: Sun,
-  dark: Moon,
-} as const;
-
-const MODES: ColorMode[] = ["system", "light", "dark"];
 
 function getPageTitle(
   pathname: string,
@@ -50,7 +40,6 @@ function getPageTitle(
 
 export function TopBar() {
   const pathname = usePathname();
-  const { preferences, updatePreferences } = useTheme();
   const { enabledSections, customSections } = useSections();
   const title = getPageTitle(pathname, enabledSections as string[], customSections);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -78,9 +67,8 @@ export function TopBar() {
           </h1>
         </div>
 
-        {/* Right: AI button + Add button + color mode toggle */}
+        {/* Right: AI Studio trigger */}
         <div className="flex items-center gap-2">
-          {/* AI Studio trigger */}
           <Button
             variant="ghost"
             size="sm"
@@ -95,34 +83,6 @@ export function TopBar() {
             <Sparkles size={14} />
             <span className="hidden sm:inline font-medium">AI</span>
           </Button>
-
-          {/* Primary add button */}
-          <Button variant="primary" size="sm" className="gap-1.5 min-w-[44px]" aria-label="Add new">
-            <Plus size={14} />
-            <span className="hidden sm:inline">Add</span>
-          </Button>
-
-          {/* Color mode toggle */}
-          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-subtle)]">
-            {MODES.map((mode) => {
-              const Icon = MODE_ICONS[mode];
-              const isActive = preferences.colorMode === mode;
-              return (
-                <button
-                  key={mode}
-                  onClick={() => updatePreferences({ colorMode: mode })}
-                  className="relative flex items-center justify-center w-7 h-7 rounded-md transition-all duration-150"
-                  style={{
-                    background: isActive ? "var(--surface-2)" : undefined,
-                    color: isActive ? "var(--text-primary)" : "var(--text-muted)",
-                  }}
-                  title={mode.charAt(0).toUpperCase() + mode.slice(1)}
-                >
-                  <Icon size={14} />
-                </button>
-              );
-            })}
-          </div>
         </div>
       </header>
 
