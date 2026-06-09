@@ -9,6 +9,8 @@ import type { CalEvent } from "./month-view";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const NEUTRAL = "#9b918a";
+const LONG_PRESS_MS = 420;
+const TOUCH_CANCEL_PX = 10;
 
 type DragState =
   | { kind: "create"; dayIdx: number; startH: number; sh: number; eh: number; el: HTMLDivElement; startClientY: number; moved: boolean }
@@ -35,6 +37,10 @@ export function TimeGrid({
   const scrollRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
   const drag = useRef<DragState | null>(null);
+  // Touch: long-press an empty slot to create; tap an event to edit.
+  const touch = useRef<{ dayIdx: number; x: number; y: number; evId: string | null; moved: boolean; fired: boolean } | null>(null);
+  const lpTimer = useRef(0);
+  const clearLP = () => { if (lpTimer.current) { clearTimeout(lpTimer.current); lpTimer.current = 0; } };
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 7 * HOUR_HEIGHT;
@@ -136,6 +142,27 @@ export function TimeGrid({
     e.preventDefault();
   };
 
+  const onTouchStart = (e: React.TouchEvent, dayIdx: number) => {
+    const t = e.touches[0];
+    if (!t) return;
+    const target = e.target as HTMLElement;
+    const evEl = target.closest<HTMLElement>("[data-event-id]");
+    touch.current = { dayIdx, x: t.clientX, y: t.clientY, evId: evEl?.dataset.eventId ?? null, moved: false, fired: false };
+    clearLP();
+    if (!evEl) {
+      // empty area: hold to create
+      lpTimer.current = window.setTimeout(() => {
+        const tt = touch.current;
+        if (!tt || tt.moved) return;
+        tt.fired = true;
+        const startH = offsetHour(tt.y, dayIdx);
+        const r = clampRange(fine(startH), fine(startH + 1));
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+        onCreate({ day: days[dayIdx], startH: r.start, endH: r.end });
+      }, LONG_PRESS_MS);
+    }
+  };
+
   useEffect(() => {
     const move = (e: MouseEvent) => {
       const d = drag.current;
@@ -182,9 +209,29 @@ export function TimeGrid({
       }
       drag.current = null;
     };
+    const tmove = (e: TouchEvent) => {
+      const tt = touch.current; const t = e.touches[0];
+      if (!tt || !t) return;
+      if (Math.hypot(t.clientX - tt.x, t.clientY - tt.y) > TOUCH_CANCEL_PX) { tt.moved = true; clearLP(); }
+    };
+    const tend = () => {
+      const tt = touch.current;
+      clearLP();
+      if (tt && !tt.fired && !tt.moved && tt.evId) onSelect(tt.evId);
+      touch.current = null;
+    };
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseup", up);
-    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+    window.addEventListener("touchmove", tmove, { passive: true });
+    window.addEventListener("touchend", tend);
+    window.addEventListener("touchcancel", tend);
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      window.removeEventListener("touchmove", tmove);
+      window.removeEventListener("touchend", tend);
+      window.removeEventListener("touchcancel", tend);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, days, onCreate, onMove, onResize, onSelect]);
 
@@ -210,7 +257,8 @@ export function TimeGrid({
           return (
             <div key={day.toISOString()} ref={(el) => { colRefs.current[di] = el; }} data-weekend={isWeekend(day)}
               onMouseDown={(e) => onMouseDown(e, di)}
-              className="relative cursor-crosshair"
+              onTouchStart={(e) => onTouchStart(e, di)}
+              className="relative cursor-crosshair select-none [-webkit-touch-callout:none]"
               style={{ background: isWeekend(day) ? "rgba(63,107,140,.045)" : undefined }}>
               <div className="absolute inset-y-0 left-0 w-px" style={{ background: "var(--border-subtle)" }} />
               {HOURS.map((h) => <div key={h} style={{ height: HOUR_HEIGHT, borderTop: h === 0 ? "none" : "1px solid var(--border-subtle)" }} />)}

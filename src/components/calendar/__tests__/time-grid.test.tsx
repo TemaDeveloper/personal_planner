@@ -81,4 +81,39 @@ describe("TimeGrid", () => {
     fireEvent.mouseUp(window);
     expect(onCreate).toHaveBeenCalledTimes(1);
   });
+
+  it("long-pressing an empty slot on touch creates an event", () => {
+    vi.useFakeTimers();
+    const onCreate = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={onCreate} onMove={vi.fn()} onResize={vi.fn()} onSelect={vi.fn()} />);
+    const col = container.querySelector('[data-weekend="false"]') as HTMLElement;
+    fireEvent.touchStart(col, { touches: [{ clientX: 100, clientY: 200 }] });
+    vi.advanceTimersByTime(500);
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("a touch scroll (move) cancels the long-press create", () => {
+    vi.useFakeTimers();
+    const onCreate = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={onCreate} onMove={vi.fn()} onResize={vi.fn()} onSelect={vi.fn()} />);
+    const col = container.querySelector('[data-weekend="false"]') as HTMLElement;
+    fireEvent.touchStart(col, { touches: [{ clientX: 100, clientY: 200 }] });
+    fireEvent.touchMove(window, { touches: [{ clientX: 100, clientY: 260 }] });
+    vi.advanceTimersByTime(500);
+    expect(onCreate).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("tapping an event on touch selects it", () => {
+    const onSelect = vi.fn();
+    const { container } = render(<TimeGrid days={days} events={events} categories={categories}
+      onCreate={vi.fn()} onMove={vi.fn()} onResize={vi.fn()} onSelect={onSelect} />);
+    const evEl = container.querySelector('[data-event-id="1"]') as HTMLElement;
+    fireEvent.touchStart(evEl, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchEnd(window);
+    expect(onSelect).toHaveBeenCalledWith("1");
+  });
 });
