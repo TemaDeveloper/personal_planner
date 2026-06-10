@@ -1,9 +1,18 @@
 # Personal Planner
 
-<img width="1828" height="1217" alt="Screenshot 2026-05-17 at 6 40 59 PM" src="https://github.com/user-attachments/assets/7bd308b9-dd60-4434-bad7-ee0c3272a0e9" />
+<img width="100" height="100" alt="lifora-logo" src="https://github.com/user-attachments/assets/aec6bde3-864c-4f3c-a09c-5ffaae5e72a6" />
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lifora">
+  <rect width="100" height="100" rx="22" fill="#F6F3EE"/>
+  <path d="M20 18 H42 V58 H82 V80 H20 Z" fill="#C0613C"/>
+  <path d="M45 55 V25 A30 30 0 0 1 75 55 Z" fill="#C0613C"/>
+  <path d="M45 22 A33 33 0 0 1 78 55" stroke="#9CA39B" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>
 
 
-https://github.com/user-attachments/assets/0df30307-bcf9-4a1c-9974-864836a9f1cc
+
+https://github.com/user-attachments/assets/5aaa328c-3ab1-441e-b843-03af806bc974
+
+
 
 A free, open-source personal planner to track your daily life -- gym, work, habits, finances, study, and more. Self-hostable, no subscription needed.
 
