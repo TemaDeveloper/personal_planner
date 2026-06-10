@@ -1,20 +1,14 @@
-# Personal Planner
+<p align="center">
+  <img width="200" height="200" alt="Lifora logo" src="https://github.com/user-attachments/assets/aec6bde3-864c-4f3c-a09c-5ffaae5e72a6" />
+</p>
 
-<img width="100" height="100" alt="lifora-logo" src="https://github.com/user-attachments/assets/aec6bde3-864c-4f3c-a09c-5ffaae5e72a6" />
-<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lifora">
-  <rect width="100" height="100" rx="22" fill="#F6F3EE"/>
-  <path d="M20 18 H42 V58 H82 V80 H20 Z" fill="#C0613C"/>
-  <path d="M45 55 V25 A30 30 0 0 1 75 55 Z" fill="#C0613C"/>
-  <path d="M45 22 A33 33 0 0 1 78 55" stroke="#9CA39B" stroke-width="3" fill="none" stroke-linecap="round"/>
-</svg>
+<h1 align="center">Lifora</h1>
 
-
+<p align="center">Your AI-powered life planner. Track anything, your way.</p>
 
 https://github.com/user-attachments/assets/5aaa328c-3ab1-441e-b843-03af806bc974
 
-
-
-A free, open-source personal planner to track your daily life -- gym, work, habits, finances, study, and more. Self-hostable, no subscription needed.
+Lifora is a free, open-source personal planner to track your daily life -- gym, work, habits, finances, study, and more. Describe anything you want to track in plain language and AI builds the section for you. Self-hostable, no subscription needed.
 
 [![CI](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml/badge.svg)](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
@@ -154,7 +148,7 @@ RESEND_API_KEY=
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to start using the planner.
+Open [http://localhost:3000](http://localhost:3000) to start using Lifora.
 
 ## Deployment
 
