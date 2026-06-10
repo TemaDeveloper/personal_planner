@@ -10,6 +10,7 @@ https://github.com/user-attachments/assets/5aaa328c-3ab1-441e-b843-03af806bc974
 
 Lifora is a free, open-source personal planner to track your daily life -- gym, work, habits, finances, study, and more. Describe anything you want to track in plain language and AI builds the section for you. Self-hostable, no subscription needed.
 
+[![Release](https://img.shields.io/github/v/release/TemaDeveloper/personal_planner?label=release)](https://github.com/TemaDeveloper/personal_planner/releases/latest)
 [![CI](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml/badge.svg)](https://github.com/TemaDeveloper/personal_planner/actions/workflows/ci.yml)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
