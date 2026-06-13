@@ -15,7 +15,7 @@ describe("ai update validations", () => {
   });
   it("parses an extra-fields update", () => {
     const r = extraFieldsUpdateSchema.parse({ extraFields: [{ key: "temp", label: "Temp", type: "number" }] });
-    expect(r.extraFields[0].key).toBe("temp");
+    expect(r.extraFields?.[0].key).toBe("temp");
   });
   it("parses a dashboard metrics update", () => {
     const r = dashboardMetricsUpdateSchema.parse({

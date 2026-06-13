@@ -215,9 +215,15 @@ export const aiUpdateRequestSchema = z.object({
   prompt: z.string().min(3, "Describe the change").max(2000),
 });
 
-export const extraFieldsUpdateSchema = z.object({
-  extraFields: z.array(fieldDefSchema).max(20),
-});
+export const extraFieldsUpdateSchema = z
+  .object({
+    extraFields: z.array(fieldDefSchema).max(20).optional(),
+    unsupported: z.boolean().optional(),
+    message: z.string().max(300).optional(),
+  })
+  .refine((d) => d.unsupported === true || Array.isArray(d.extraFields), {
+    message: "must include extraFields or set unsupported",
+  });
 
 export const dashboardMetricSchema = z.object({
   label: z.string().min(1).max(40),

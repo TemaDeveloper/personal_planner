@@ -42,7 +42,16 @@ export async function POST(req: NextRequest) {
       const existing = await SectionCustomization.findOne({ userId, sectionKey: resolved.sectionKey }).lean();
       const label = SECTION_META[resolved.sectionKey as SectionId]?.label ?? resolved.sectionKey;
       const update = await generateBuiltinFieldUpdate(label, existing?.extraFields ?? [], prompt);
-      const fields = validateExtraFields(update.extraFields);
+      if (update.unsupported) {
+        return NextResponse.json({
+          kind: "builtin",
+          unsupported: true,
+          message:
+            update.message?.trim() ||
+            `That isn't an AI change for ${label}. Add it directly on the ${label} page or in Settings.`,
+        });
+      }
+      const fields = validateExtraFields(update.extraFields ?? []);
       const saved = await SectionCustomization.findOneAndUpdate(
         { userId, sectionKey: resolved.sectionKey },
         { $set: { extraFields: fields, sourcePrompt: prompt } },

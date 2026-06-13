@@ -256,6 +256,11 @@ export function AiStudio({ open, onClose }: AiStudioProps) {
         return;
       }
 
+      if (data.unsupported) {
+        setError(data.message ?? "That change isn't supported here.");
+        return;
+      }
+
       setSuccess(true);
       setUpdatePrompt("");
 
