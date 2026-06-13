@@ -15,6 +15,7 @@ import { PageTransition } from "@/components/ui/page-transition";
 import { SectionCustomFields } from "@/components/sections/custom-fields";
 import { StatBlock } from "@/components/ui/stat-block";
 import { addMonths, format, getDaysInMonth } from "date-fns";
+import { useToday } from "@/hooks/use-today";
 
 interface HabitGrid {
   _id: string;
@@ -43,8 +44,9 @@ export default function HabitsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const now = useToday();
 
-  const currentMonth = addMonths(new Date(), monthOffset);
+  const currentMonth = addMonths(now, monthOffset);
   const daysInMonth = getDaysInMonth(currentMonth);
   const monthStr = format(currentMonth, "yyyy-MM");
 
@@ -166,7 +168,7 @@ export default function HabitsPage() {
               <div className="flex">
                 <div className="w-36 flex-shrink-0" />
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                  const isToday = format(new Date(), "yyyy-MM-dd") === `${monthStr}-${String(day).padStart(2, "0")}`;
+                  const isToday = format(now, "yyyy-MM-dd") === `${monthStr}-${String(day).padStart(2, "0")}`;
                   return (
                     <div
                       key={day}

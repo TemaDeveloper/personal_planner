@@ -6,10 +6,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Check, ChevronLeft, ChevronRight, Dumbbell, Download } from "lucide-react";
 import {
   startOfMonth, endOfMonth, addMonths, startOfWeek, addDays,
-  format, startOfDay, isSameMonth, isToday, isBefore, isAfter,
+  format, startOfDay, isSameMonth, isSameDay, isBefore, isAfter,
   getDaysInMonth,
 } from "date-fns";
 import { Card } from "@/components/ui/card";
+import { useToday } from "@/hooks/use-today";
 import { Button } from "@/components/ui/button";
 import { StatBlock } from "@/components/ui/stat-block";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,8 +31,9 @@ export default function GymPage() {
   const [targetDays, setTargetDays] = useState(5);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
+  const now = useToday();
 
-  const currentMonth = addMonths(new Date(), monthOffset);
+  const currentMonth = addMonths(now, monthOffset);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
 
@@ -116,8 +118,7 @@ export default function GymPage() {
   const monthlyTarget = targetDays * weeksInMonth;
 
   // Days attended this week (Mon–Sun)
-  const todayDate = new Date();
-  const weekStart = startOfWeek(todayDate, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekDaysAttended = Array.from({ length: 7 }, (_, i) =>
     addDays(weekStart, i)
   ).filter((d) => isAttended(d)).length;
@@ -195,8 +196,8 @@ export default function GymPage() {
                     }
 
                     const attended = isAttended(day);
-                    const today = isToday(day);
-                    const future = isAfter(startOfDay(day), startOfDay(new Date()));
+                    const today = isSameDay(day, now);
+                    const future = isAfter(startOfDay(day), startOfDay(now));
                     const key = format(day, "yyyy-MM-dd");
                     const isDisabled = toggling === key || future;
 

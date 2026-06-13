@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { addDays, format, isSameDay, isSameMonth } from "date-fns";
 import { monthGridRange, categoryColor, type CalendarCategory } from "@/lib/calendar";
+import { useToday } from "@/hooks/use-today";
 import { EventChip } from "./event-chip";
 
 export type CalEvent = {
@@ -30,6 +31,7 @@ export function MonthView({
   onSelectDay: (d: Date) => void;
   onSelectEvent: (id: string) => void;
 }) {
+  const now = useToday();
   const { start, end } = monthGridRange(month);
   const days = useMemo(() => {
     const out: Date[] = [];
@@ -65,7 +67,7 @@ export function MonthView({
         {days.map((d) => {
           const key = format(d, "yyyy-MM-dd");
           const list = byDay.get(key) ?? [];
-          const today = isSameDay(d, new Date());
+          const today = isSameDay(d, now);
           const weekend = d.getDay() === 0 || d.getDay() === 6;
           return (
             <div
