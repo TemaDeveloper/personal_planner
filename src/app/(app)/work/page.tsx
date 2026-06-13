@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { Briefcase, ArrowRight, Download } from "lucide-react";
 import { SectionCustomFields } from "@/components/sections/custom-fields";
+import { AddJobButton } from "@/components/work/add-job-button";
 
 export default async function WorkPage() {
   const session = await auth();
@@ -17,6 +18,7 @@ export default async function WorkPage() {
   await connectDB();
   const user = await User.findById(userId).lean();
   const jobs = user?.workConfig?.jobs?.filter((j: { active: boolean }) => j.active) || [];
+  const jobNames = (user?.workConfig?.jobs ?? []).map((j: { name: string }) => j.name);
 
   return (
     <div className="animate-slide-up">
@@ -24,14 +26,17 @@ export default async function WorkPage() {
         title="Work"
         description="Track hours and earnings across your jobs"
         action={
-          <a
-            href="/api/export/work"
-            download
-            className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)] inline-flex"
-            aria-label="Export to Excel"
-          >
-            <Download size={16} />
-          </a>
+          <div className="flex items-center gap-2">
+            <AddJobButton existingJobNames={jobNames} />
+            <a
+              href="/api/export/work"
+              download
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)] inline-flex"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </a>
+          </div>
         }
       />
 
@@ -40,15 +45,10 @@ export default async function WorkPage() {
           <EmptyState
             icon={Briefcase}
             title="No jobs yet"
-            description="Add a job in Settings to start tracking your hours and earnings."
+            description="Add your first job to start tracking your hours and earnings."
           />
-          <div className="text-center -mt-6 pb-2">
-            <Link
-              href="/settings"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-text)] hover:underline"
-            >
-              Go to Settings <ArrowRight size={13} />
-            </Link>
+          <div className="flex justify-center -mt-6 pb-2">
+            <AddJobButton existingJobNames={[]} />
           </div>
         </Card>
       ) : (

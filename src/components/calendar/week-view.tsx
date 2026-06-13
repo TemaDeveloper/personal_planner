@@ -1,6 +1,7 @@
 "use client";
 
 import { startOfWeek, addDays, format, isSameDay } from "date-fns";
+import { useToday } from "@/hooks/use-today";
 import { TimeGrid } from "./time-grid";
 import { AllDayStrip } from "./all-day-strip";
 import type { CalEvent } from "./month-view";
@@ -13,6 +14,7 @@ export function WeekView({ date, events, categories, onCreate, onMove, onResize,
   onResize: (id: string, endH: number) => void;
   onSelect: (id: string) => void;
 }) {
+  const now = useToday();
   const weekStart = startOfWeek(date, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
@@ -24,7 +26,7 @@ export function WeekView({ date, events, categories, onCreate, onMove, onResize,
           <div key={d.toISOString()} className="text-center pb-2" data-weekend={isWeekend(d)} style={{ background: isWeekend(d) ? "rgba(63,107,140,.045)" : undefined }}>
             <div className="text-[11px] uppercase tracking-wide" style={{ color: isWeekend(d) ? "#3F6B8C" : "var(--text-muted)" }}>{format(d, "EEE")}</div>
             <div className="text-[18px] font-medium mt-1 w-[34px] h-[34px] leading-[34px] rounded-full inline-block"
-              style={isSameDay(d, new Date()) ? { background: "var(--accent-color)", color: "#fff" } : { color: "var(--text-primary)" }}>{format(d, "d")}</div>
+              style={isSameDay(d, now) ? { background: "var(--accent-color)", color: "#fff" } : { color: "var(--text-primary)" }}>{format(d, "d")}</div>
           </div>
         ))}
       </div>

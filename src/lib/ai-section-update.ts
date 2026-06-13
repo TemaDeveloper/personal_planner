@@ -13,10 +13,11 @@ const FIELD_RULES = `Each field: { "key": snake_case unique id, "label": human l
 export function buildBuiltinFieldPrompt(sectionLabel: string, current: FieldDef[], userPrompt: string): string {
   return [
     `You manage EXTRA custom fields added to the "${sectionLabel}" section of a personal planner.`,
-    `You cannot change the section's built-in features — only this list of extra fields.`,
+    `You cannot change the section's built-in features (for example: jobs on Work, subjects on Study, the core trackers) — only this list of extra custom fields.`,
     `Current extra fields: ${JSON.stringify(current)}.`,
     `User request: "${userPrompt}".`,
-    `Return the COMPLETE updated list as JSON: { "extraFields": FieldDef[] }. Keep existing fields unless the request removes/renames them. ${FIELD_RULES}`,
+    `If the request is about adding/removing/editing a BUILT-IN feature rather than an extra custom field, do NOT invent a field. Instead return JSON: { "unsupported": true, "message": "<one short sentence telling the user where to do it>" }. For Work jobs the message must tell them to use the "+ Add job" button on the Work page; for other built-ins, point them to Settings.`,
+    `Otherwise return the COMPLETE updated list as JSON: { "extraFields": FieldDef[] }. Keep existing fields unless the request removes/renames them. ${FIELD_RULES}`,
   ].join("\n");
 }
 

@@ -19,10 +19,15 @@ describe("builtin field update prompt", () => {
 describe("parseExtraFieldsResponse", () => {
   it("extracts and validates fields from a fenced JSON reply", () => {
     const raw = "```json\n{\"extraFields\":[{\"key\":\"temp\",\"label\":\"Temp\",\"type\":\"number\"}]}\n```";
-    expect(parseExtraFieldsResponse(raw).extraFields[0].key).toBe("temp");
+    expect(parseExtraFieldsResponse(raw).extraFields?.[0].key).toBe("temp");
   });
   it("throws on invalid JSON content", () => {
     expect(() => parseExtraFieldsResponse("not json")).toThrow();
+  });
+  it("parses the unsupported form for built-in-feature requests", () => {
+    const r = parseExtraFieldsResponse('{"unsupported":true,"message":"Use the + Add job button."}');
+    expect(r.unsupported).toBe(true);
+    expect(r.message).toMatch(/add job/i);
   });
 });
 
