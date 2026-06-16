@@ -1,5 +1,5 @@
 /** Pixels per hour in the week/day time grid (default zoom level). */
-export const HOUR_HEIGHT = 64;
+export const HOUR_HEIGHT = 80;
 /** Zoom bounds for the time grid (px per hour). */
 export const MIN_HOUR_HEIGHT = 32;
 export const MAX_HOUR_HEIGHT = 160;
