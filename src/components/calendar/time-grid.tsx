@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { startOfDay, isSameDay } from "date-fns";
 import { layoutDayEvents } from "@/lib/event-layout";
 import { categoryColor, type CalendarCategory } from "@/lib/calendar";
-import { HOUR_HEIGHT, rawHourAtOffset, snapHour, clampRange, DRAG_SNAP_MINUTES } from "@/lib/calendar-grid";
+import { rawHourAtOffset, snapHour, clampRange, clampHourHeight, DRAG_SNAP_MINUTES } from "@/lib/calendar-grid";
+import { gridTemplate } from "@/lib/calendar-layout";
+import { useHourHeight } from "@/hooks/use-hour-height";
 import type { CalEvent } from "./month-view";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -36,6 +38,7 @@ export function TimeGrid({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [hourHeight, , zoomBy] = useHourHeight();
   const drag = useRef<DragState | null>(null);
   // Touch: long-press an empty slot to create; tap an event to edit.
   const touch = useRef<{ dayIdx: number; x: number; y: number; evId: string | null; moved: boolean; fired: boolean } | null>(null);
@@ -43,7 +46,8 @@ export function TimeGrid({
   const clearLP = () => { if (lpTimer.current) { clearTimeout(lpTimer.current); lpTimer.current = 0; } };
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 7 * HOUR_HEIGHT;
+    if (scrollRef.current) scrollRef.current.scrollTop = 7 * hourHeight;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Tick the clock so the "now" line moves live instead of freezing until refresh.
@@ -67,7 +71,7 @@ export function TimeGrid({
     const col = colRefs.current[dayIdx];
     if (!col) return 0;
     const rect = col.getBoundingClientRect();
-    return rawHourAtOffset(clientY - rect.top, HOUR_HEIGHT);
+    return rawHourAtOffset(clientY - rect.top, hourHeight);
   };
   // Snap to a fine 5-min step, used only when committing on release.
   const fine = (h: number) => snapHour(h, DRAG_SNAP_MINUTES);
@@ -90,7 +94,7 @@ export function TimeGrid({
     if (!d || d.kind !== "create") return;
     Object.assign(d.el.style, {
       position: "absolute", left: "4px", right: "4px", zIndex: "15",
-      top: `${d.sh * HOUR_HEIGHT}px`, height: `${Math.max((d.eh - d.sh) * HOUR_HEIGHT - 3, 16)}px`,
+      top: `${d.sh * hourHeight}px`, height: `${Math.max((d.eh - d.sh) * hourHeight - 3, 24)}px`,
       borderRadius: "8px", borderLeft: `3px dashed ${NEUTRAL}`,
       background: `color-mix(in srgb, ${NEUTRAL} 14%, transparent)`,
       outline: `1.5px dashed color-mix(in srgb, ${NEUTRAL} 52%, transparent)`,
@@ -101,7 +105,7 @@ export function TimeGrid({
 
   const onResizePreview = (d: Extract<DragState, { kind: "resize" }>) => {
     const el = document.querySelector<HTMLElement>(`[data-event-id="${d.ev.id}"]`);
-    if (el) el.style.height = `${Math.max((d.eh - d.sh) * HOUR_HEIGHT - 3, 16)}px`;
+    if (el) el.style.height = `${Math.max((d.eh - d.sh) * hourHeight - 3, 24)}px`;
   };
 
   // Live "ghost" that follows the cursor while moving an event.
@@ -110,7 +114,7 @@ export function TimeGrid({
     if (col && d.el.parentElement !== col) col.appendChild(d.el);
     Object.assign(d.el.style, {
       position: "absolute", left: "4px", right: "4px", zIndex: "20",
-      top: `${d.sh * HOUR_HEIGHT}px`, height: `${Math.max(d.dur * HOUR_HEIGHT - 3, 16)}px`,
+      top: `${d.sh * hourHeight}px`, height: `${Math.max(d.dur * hourHeight - 3, 24)}px`,
       borderRadius: "8px", borderLeft: `3px solid ${d.color}`,
       background: `color-mix(in srgb, ${d.color} 22%, var(--surface-1))`,
       boxShadow: "0 12px 28px rgba(0,0,0,.22)", font: "inherit", fontSize: "12px", padding: "5px 8px",
@@ -132,7 +136,7 @@ export function TimeGrid({
       } else {
         const rect = evEl.getBoundingClientRect();
         drag.current = {
-          kind: "move", ev, dayIdx, grabOffH: (e.clientY - rect.top) / HOUR_HEIGHT,
+          kind: "move", ev, dayIdx, grabOffH: (e.clientY - rect.top) / hourHeight,
           dur: eh - sh, sh, moved: false,
           el: document.createElement("div"), origEl: evEl, color: categoryColor(categories, ev.categoryKey),
           startClientX: e.clientX, startClientY: e.clientY,
@@ -190,7 +194,7 @@ export function TimeGrid({
         if (!d.moved) { d.moved = true; d.origEl.style.opacity = "0.35"; }
         const ci = colAt(e.clientX);
         if (ci != null) d.dayIdx = ci;
-        let top = offsetHour(e.clientY - d.grabOffH * HOUR_HEIGHT, d.dayIdx);
+        let top = offsetHour(e.clientY - d.grabOffH * hourHeight, d.dayIdx);
         top = Math.min(top, 24 - d.dur);
         d.sh = Math.max(0, top);
         paintMoveGhost(d);
@@ -240,14 +244,65 @@ export function TimeGrid({
       window.removeEventListener("touchcancel", tend);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events, days, onCreate, onMove, onResize, onSelect]);
+  }, [events, days, onCreate, onMove, onResize, onSelect, hourHeight]);
+
+  // Zoom: Ctrl/Cmd + wheel (and trackpad pinch, which emits ctrlKey wheel) and
+  // two-finger touch pinch. Plain wheel / one-finger drag keep scrolling.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    // Keep the content point under `clientY` fixed across a height change.
+    const anchorZoom = (clientY: number, factor: number) => {
+      const rect = el.getBoundingClientRect();
+      const before = hourHeight;
+      const offsetInContent = el.scrollTop + (clientY - rect.top);
+      zoomBy(factor);
+      requestAnimationFrame(() => {
+        const after = clampHourHeight(before * factor);
+        el.scrollTop = offsetInContent * (after / before) - (clientY - rect.top);
+      });
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return; // plain wheel = scroll
+      e.preventDefault();
+      anchorZoom(e.clientY, e.deltaY < 0 ? 1.1 : 1 / 1.1);
+    };
+
+    let pinchDist = 0;
+    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const onTouchStartZoom = (e: TouchEvent) => { if (e.touches.length === 2) pinchDist = dist(e.touches); };
+    const onTouchMoveZoom = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || pinchDist === 0) return;
+      e.preventDefault();
+      const d = dist(e.touches);
+      const factor = d / pinchDist;
+      if (Math.abs(factor - 1) < 0.02) return;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      anchorZoom(midY, factor);
+      pinchDist = d;
+    };
+    const onTouchEndZoom = (e: TouchEvent) => { if (e.touches.length < 2) pinchDist = 0; };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onTouchStartZoom, { passive: true });
+    el.addEventListener("touchmove", onTouchMoveZoom, { passive: false });
+    el.addEventListener("touchend", onTouchEndZoom, { passive: true });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStartZoom);
+      el.removeEventListener("touchmove", onTouchMoveZoom);
+      el.removeEventListener("touchend", onTouchEndZoom);
+    };
+  }, [hourHeight, zoomBy]);
 
   return (
     <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-scroll [scrollbar-gutter:stable]">
-      <div className="grid relative" style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}>
+      <div className="grid relative" style={{ gridTemplateColumns: gridTemplate(days.length) }}>
         <div>
           {HOURS.map((h) => (
-            <div key={h} className="text-[10px] text-right pr-2 -translate-y-[7px]" style={{ height: HOUR_HEIGHT, color: "var(--text-faint, rgba(28,25,23,.34))" }}>
+            <div key={h} className="text-[10px] text-right pr-2 -translate-y-[7px]" style={{ height: hourHeight, color: "var(--text-faint, rgba(28,25,23,.34))" }}>
               {h === 0 ? "" : fmtH(h).replace(":00", "")}
             </div>
           ))}
@@ -256,7 +311,7 @@ export function TimeGrid({
           const dayEvents = events.filter((e) => !e.allDay && isSameDay(new Date(e.start), day));
           const positioned = layoutDayEvents(
             dayEvents.map((e) => { const { sh, eh } = eventHours(e); return { id: e.id, start: hourToDate(day, sh), end: hourToDate(day, eh) }; }),
-            { dayStart: startOfDay(day), hourHeight: HOUR_HEIGHT, minHeight: 16 }
+            { dayStart: startOfDay(day), hourHeight, minHeight: 24 }
           );
           const byId = new Map(dayEvents.map((e) => [e.id, e]));
           const showNow = isSameDay(day, now);
@@ -267,10 +322,14 @@ export function TimeGrid({
               className="relative cursor-crosshair select-none [-webkit-touch-callout:none]"
               style={{ background: isWeekend(day) ? "rgba(63,107,140,.045)" : undefined }}>
               <div className="absolute inset-y-0 left-0 w-px" style={{ background: "var(--border-subtle)" }} />
-              {HOURS.map((h) => <div key={h} style={{ height: HOUR_HEIGHT, borderTop: h === 0 ? "none" : "1px solid var(--border-subtle)" }} />)}
+              {HOURS.map((h) => (
+                <div key={h} style={{ height: hourHeight, borderTop: h === 0 ? "none" : "1px solid var(--border-subtle)", position: "relative" }}>
+                  <div className="pointer-events-none absolute left-0 right-0" style={{ top: hourHeight / 2, borderTop: "1px dashed var(--border-subtle)", opacity: 0.5 }} />
+                </div>
+              ))}
               {showNow && (
                 <div data-nowline className="absolute left-0 right-0 pointer-events-none z-[4]"
-                  style={{ top: (now.getHours() + now.getMinutes() / 60) * HOUR_HEIGHT, borderTop: "2px solid var(--accent-color)" }}>
+                  style={{ top: (now.getHours() + now.getMinutes() / 60) * hourHeight, borderTop: "2px solid var(--accent-color)" }}>
                   <span className="absolute -left-1 -top-[5px] w-2 h-2 rounded-full" style={{ background: "var(--accent-color)" }} />
                 </div>
               )}
@@ -285,7 +344,7 @@ export function TimeGrid({
                       borderLeft: `3px solid ${cc}`, background: `color-mix(in srgb, ${cc} 15%, transparent)`, color: "var(--text-primary)" }}>
                     <div className="font-semibold leading-tight pointer-events-none">{ev.title || "New event"}</div>
                     <div className="text-[11px] pointer-events-none" style={{ color: "var(--text-muted)" }}>{fmtH(sh)} – {fmtH(eh)}</div>
-                    <div data-handle="resize" className="absolute left-0 right-0 bottom-0 h-2 cursor-ns-resize" />
+                    <div data-handle="resize" className="absolute left-0 right-0 bottom-0 h-3 cursor-ns-resize" />
                   </div>
                 );
               })}
