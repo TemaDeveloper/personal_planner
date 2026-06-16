@@ -47,7 +47,7 @@ User-reported issues, in two themes (calendar polish + mobile UX):
 - **Hour height becomes state**, not a constant. Default 64px, clamped to a min/max (≈32–160px), persisted to `localStorage` so it sticks across visits. The constant `HOUR_HEIGHT` stays as the exported default; live height is passed down to the grid.
 - **Interactions:**
   - **Desktop:** `Ctrl`/`Cmd` + wheel zooms; plain wheel keeps scrolling. Trackpad pinch emits `wheel` with `ctrlKey=true`, so it works through the same handler. Call `preventDefault()` only when the modifier is held (listener attached as `{ passive: false }`).
-  - **Touch:** two-finger pinch zooms; one-finger drag still scrolls. Track two active pointers, derive scale from the distance delta.
+  - **Touch:** two-finger pinch zooms; one-finger drag still scrolls. Track two active pointers, derive scale from the distance delta. Active in **both day and week views on mobile** — the pinch handler lives in the shared `TimeGrid`, so it applies anywhere the grid renders.
   - **Anchor:** zoom around the pointer/pinch-midpoint — keep the time under the cursor fixed by adjusting `scrollTop` after the height change.
 - **Testable core:** a pure `clampHourHeight(px)` and a `zoomedHeight(current, factor)` helper (unit-tested); the event-bind glue stays thin.
 
