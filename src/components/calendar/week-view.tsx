@@ -6,6 +6,7 @@ import { TimeGrid } from "./time-grid";
 import { AllDayStrip } from "./all-day-strip";
 import type { CalEvent } from "./month-view";
 import type { CalendarCategory } from "@/lib/calendar";
+import { gridTemplate, GUTTER_CLASS } from "@/lib/calendar-layout";
 
 export function WeekView({ date, events, categories, onCreate, onMove, onResize, onSelect }: {
   date: Date; events: CalEvent[]; categories: CalendarCategory[];
@@ -20,7 +21,7 @@ export function WeekView({ date, events, categories, onCreate, onMove, onResize,
   const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
   return (
     <div className="h-full flex flex-col">
-      <div className="grid [scrollbar-gutter:stable] overflow-y-scroll shrink-0" style={{ gridTemplateColumns: "56px repeat(7,1fr)" }}>
+      <div className={`grid ${GUTTER_CLASS} shrink-0`} style={{ gridTemplateColumns: gridTemplate(7) }}>
         <div />
         {days.map((d) => (
           <div key={d.toISOString()} className="text-center pb-2" data-weekend={isWeekend(d)} style={{ background: isWeekend(d) ? "rgba(63,107,140,.045)" : undefined }}>
