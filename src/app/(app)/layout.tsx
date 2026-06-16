@@ -7,6 +7,7 @@ import SectionTemplate from "@/lib/models/section-template";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { SectionsProvider, type CustomSectionNav } from "@/components/providers/sections-provider";
+import { SidebarProvider } from "@/components/providers/sidebar-provider";
 import { ContentShell } from "@/components/layout/content-shell";
 import { ensureUserCalendar } from "@/lib/calendar-section";
 import { DEFAULT_ENABLED_SECTIONS } from "@/lib/constants";
@@ -73,13 +74,15 @@ export default async function AppLayout({
 
   return (
     <SectionsProvider initialSections={enabledSections} initialCustomSections={customSections}>
-      <div className="h-screen flex overflow-hidden">
-        <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0">
-          <TopBar />
-          <ContentShell>{children}</ContentShell>
-        </main>
-      </div>
+      <SidebarProvider>
+        <div className="h-screen flex overflow-hidden">
+          <AppSidebar />
+          <main className="flex-1 flex flex-col min-w-0">
+            <TopBar />
+            <ContentShell>{children}</ContentShell>
+          </main>
+        </div>
+      </SidebarProvider>
     </SectionsProvider>
   );
 }
