@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Skill files (third-party, not our code)
     ".agents/**",
+    // E2E tests run under Cypress' own tsconfig/globals, linted separately.
+    "cypress/**",
   ]),
 ]);
 

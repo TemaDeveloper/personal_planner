@@ -60,3 +60,7 @@ promo-video/
 .superpowers/
 .agents/
 AGENTS.md
+
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
