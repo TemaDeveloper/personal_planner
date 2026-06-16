@@ -203,7 +203,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                     onClose();
                     signOut({ callbackUrl: "/login" });
                   }}
-                  className="w-full flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--surface-1)] transition-colors"
+                  className="w-full flex items-center gap-3 px-3 h-11 rounded-lg text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--surface-1)] transition-colors"
                 >
                   <LogOut size={18} className="flex-shrink-0" />
                   <span>Sign out</span>
@@ -237,7 +237,7 @@ function MenuLink({
     <Link
       href={href}
       onClick={onClick}
-      className="relative flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors min-w-0"
+      className="relative flex items-center gap-3 px-3 h-11 rounded-lg text-sm font-medium transition-colors min-w-0"
       style={{
         background: active ? "var(--accent-glow)" : undefined,
         color: active ? "var(--accent-color)" : "var(--text-muted)",

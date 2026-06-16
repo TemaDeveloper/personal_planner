@@ -7,7 +7,6 @@ import { useSections } from "@/components/providers/sections-provider";
 import type { CustomSectionNav } from "@/components/providers/sections-provider";
 import { SECTION_META } from "@/lib/constants";
 import { MobileMenu } from "./mobile-menu";
-import { BottomNav } from "./bottom-nav";
 import { Button } from "@/components/ui/button";
 import { AiStudio } from "@/components/ai/ai-studio";
 
@@ -88,9 +87,6 @@ export function TopBar() {
 
       {/* Mobile dropdown menu */}
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-
-      {/* Mobile bottom tab bar */}
-      <BottomNav onMoreClick={() => setMenuOpen(true)} />
 
       {/* AI Studio modal */}
       <AiStudio open={aiOpen} onClose={() => setAiOpen(false)} />
