@@ -11,8 +11,11 @@ import {
   Download,
   LogOut,
   Users,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useSections } from "@/components/providers/sections-provider";
+import { useSidebar } from "@/components/providers/sidebar-provider";
 import { SECTION_META } from "@/lib/constants";
 import type { SectionId } from "@/lib/constants";
 import { ICON_MAP } from "@/lib/icon-map";
@@ -34,6 +37,7 @@ const LIFE_AREA_GROUPS: { label: string; ids: SectionId[] }[] = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { enabledSections, customSections } = useSections();
+  const { collapsed, toggle } = useSidebar();
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -74,17 +78,29 @@ export function AppSidebar() {
   );
 
   return (
-    <aside className="hidden md:flex flex-col flex-shrink-0 w-60 sticky top-0 h-screen border-r border-[var(--sidebar-border)] bg-[var(--sidebar)]">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-5 h-14 border-b border-[var(--sidebar-border)]">
-        <LiforaLogo size={26} className="flex-shrink-0" />
-        <span className="font-semibold text-sm text-[var(--text-primary)]">
-          Lifora
-        </span>
+    <aside className={`hidden md:flex flex-col flex-shrink-0 sticky top-0 h-screen border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] transition-[width] duration-200 ${collapsed ? "w-16" : "w-60"}`}>
+      {/* Logo + collapse toggle */}
+      <div className={`flex items-center h-14 border-b border-[var(--sidebar-border)] ${collapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
+        {!collapsed && (
+          <>
+            <LiforaLogo size={26} className="flex-shrink-0" />
+            <span className="font-semibold text-sm text-[var(--text-primary)] flex-1">
+              Lifora
+            </span>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-1)] transition-colors flex-shrink-0"
+        >
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+        </button>
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className={`flex-1 overflow-y-auto overflow-x-hidden py-4 ${collapsed ? "px-2" : "px-3"}`}>
         {/* Today + Calendar — pinned at top */}
         <div className="mb-4 space-y-0.5">
           <NavItem
@@ -140,7 +156,7 @@ export function AppSidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="px-3 pb-4 pt-2 border-t border-[var(--sidebar-border)] space-y-0.5">
+      <div className={`pb-4 pt-2 border-t border-[var(--sidebar-border)] space-y-0.5 ${collapsed ? "px-2" : "px-3"}`}>
         {BOTTOM_ITEMS.map((item) => (
           <NavItem
             key={item.href}
@@ -152,10 +168,12 @@ export function AppSidebar() {
         ))}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--surface-1)] transition-colors"
+          aria-label="Sign out"
+          title={collapsed ? "Sign out" : undefined}
+          className={`w-full flex items-center h-9 rounded-lg text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--surface-1)] transition-colors ${collapsed ? "justify-center px-0" : "gap-3 px-3"}`}
         >
           <LogOut size={18} className="flex-shrink-0" />
-          <span>Sign out</span>
+          {!collapsed && <span>Sign out</span>}
         </button>
       </div>
     </aside>
@@ -163,11 +181,16 @@ export function AppSidebar() {
 }
 
 function NavGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  const { collapsed } = useSidebar();
   return (
     <div className="mb-4">
-      <p className="stat-label px-3 mb-1" style={{ color: "var(--text-faint)" }}>
-        {label}
-      </p>
+      {collapsed ? (
+        <div className="mx-2 mb-1 border-t border-[var(--sidebar-border)]" />
+      ) : (
+        <p className="stat-label px-3 mb-1" style={{ color: "var(--text-faint)" }}>
+          {label}
+        </p>
+      )}
       <div className="space-y-0.5">
         {children}
       </div>
@@ -186,10 +209,13 @@ function NavItem({
   label: string;
   active: boolean;
 }) {
+  const { collapsed } = useSidebar();
   return (
     <Link
       href={href}
-      className="relative flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium transition-colors min-w-0"
+      title={collapsed ? label : undefined}
+      aria-label={collapsed ? label : undefined}
+      className={`relative flex items-center h-9 rounded-lg text-sm font-medium transition-colors min-w-0 ${collapsed ? "justify-center px-0" : "gap-3 px-3"}`}
       style={{
         background: active ? "var(--accent-glow)" : undefined,
         color: active ? "var(--accent-color)" : "var(--text-muted)",
@@ -201,7 +227,7 @@ function NavItem({
         />
       )}
       <Icon size={18} className="flex-shrink-0" />
-      <span className="truncate">{label}</span>
+      {!collapsed && <span className="truncate">{label}</span>}
     </Link>
   );
 }

@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { HOUR_HEIGHT, MIN_HOUR_HEIGHT, MAX_HOUR_HEIGHT, clampHourHeight, zoomedHeight } from "@/lib/calendar-grid";
 
 describe("hour-height zoom", () => {
-  it("default height is 64", () => {
-    expect(HOUR_HEIGHT).toBe(64);
+  it("default height is 80", () => {
+    expect(HOUR_HEIGHT).toBe(80);
   });
   it("clamps below the minimum", () => {
     expect(clampHourHeight(10)).toBe(MIN_HOUR_HEIGHT);

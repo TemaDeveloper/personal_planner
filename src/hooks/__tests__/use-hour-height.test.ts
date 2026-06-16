@@ -18,9 +18,10 @@ describe("useHourHeight", () => {
   });
   it("zoomBy scales, clamps, and persists", () => {
     const { result } = renderHook(() => useHourHeight());
-    act(() => result.current[2](2)); // zoom in
-    expect(result.current[0]).toBe(128);
-    expect(localStorage.getItem(HOUR_HEIGHT_KEY)).toBe("128");
+    act(() => result.current[1](60)); // known base, independent of default
+    act(() => result.current[2](1.5)); // zoom in → 90
+    expect(result.current[0]).toBe(90);
+    expect(localStorage.getItem(HOUR_HEIGHT_KEY)).toBe("90");
     act(() => result.current[2](100)); // clamps to max
     expect(result.current[0]).toBe(MAX_HOUR_HEIGHT);
   });
