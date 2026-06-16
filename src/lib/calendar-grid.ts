@@ -1,5 +1,18 @@
-/** Pixels per hour in the week/day time grid. */
-export const HOUR_HEIGHT = 48;
+/** Pixels per hour in the week/day time grid (default zoom level). */
+export const HOUR_HEIGHT = 64;
+/** Zoom bounds for the time grid (px per hour). */
+export const MIN_HOUR_HEIGHT = 32;
+export const MAX_HOUR_HEIGHT = 160;
+
+/** Clamp a desired hour-height to the allowed zoom range, rounded to whole px. */
+export function clampHourHeight(px: number): number {
+  return Math.max(MIN_HOUR_HEIGHT, Math.min(MAX_HOUR_HEIGHT, Math.round(px)));
+}
+
+/** Apply a zoom factor (>1 zoom in, <1 zoom out) to a height, clamped. */
+export function zoomedHeight(current: number, factor: number): number {
+  return clampHourHeight(current * factor);
+}
 /** Minutes the grid snaps to. */
 export const SNAP_MINUTES = 30;
 
