@@ -10,12 +10,20 @@ import { WeekView } from "./week-view";
 import { DayView } from "./day-view";
 import { AgendaView } from "./agenda-view";
 import { EventInspector, type EventDraft } from "./event-inspector";
+import { MiniCalendar } from "./mini-calendar";
+import { pickDefaultCalendarView } from "@/lib/default-calendar-view";
 
 const toLocalInput = (d: Date) => format(d, "yyyy-MM-dd'T'HH:mm");
 const hourToDate = (day: Date, h: number) => new Date(startOfDay(day).getTime() + h * 3_600_000);
 
 export function CalendarView({ slug, categories: initialCategories }: { slug: string; categories?: CalendarCategory[] }) {
   const [view, setView] = useState<CalView>("week");
+  // On mount, drop to day view on narrow screens.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+      setView(pickDefaultCalendarView(true)); // eslint-disable-line react-hooks/set-state-in-effect -- one-time viewport-based default
+    }
+  }, []);
   const [cursor, setCursor] = useState(() => new Date());
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [categories, setCategories] = useState<CalendarCategory[]>(initialCategories?.length ? initialCategories : DEFAULT_CATEGORIES);
@@ -145,7 +153,18 @@ export function CalendarView({ slug, categories: initialCategories }: { slug: st
       </div>
 
       <div className="relative overflow-hidden flex-1 min-h-0">
-        <div className="h-full transition-[margin] duration-[260ms] motion-reduce:transition-none" style={{ marginRight: draft ? 336 : 0 }}>
+        {/* Left mini-calendar rail — desktop only, hidden while editing */}
+        <div
+          className={`hidden md:block absolute top-0 left-0 h-full w-[240px] overflow-y-auto border-r px-3 py-3 transition-transform duration-[260ms] motion-reduce:transition-none ${draft ? "-translate-x-full" : "translate-x-0"}`}
+          style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}
+        >
+          <MiniCalendar selected={cursor} onPick={(d) => { setCursor(d); setView("day"); }} />
+        </div>
+
+        {/* Views wrapper. Desktop: left margin for the mini-cal when idle, right
+            margin for the editor when editing. Mobile: full width (editor is a
+            bottom-sheet overlay, not a margin). */}
+        <div className={`h-full transition-[margin] duration-[260ms] motion-reduce:transition-none ${draft ? "md:mr-[336px]" : "md:ml-[240px]"}`}>
           {view === "month" && <div className="h-full overflow-y-auto px-4 md:px-6 pb-6"><MonthView month={cursor} events={renderedEvents} categories={categories} onSelectDay={(d) => { setCursor(d); setView("day"); }} onSelectEvent={openEdit} /></div>}
           {view === "week" && <div className="h-full px-2 md:px-4 pb-2"><WeekView date={cursor} events={renderedEvents} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}
           {view === "day" && <div className="h-full px-2 md:px-4 pb-2"><DayView date={cursor} events={renderedEvents} categories={categories} onCreate={(c) => openCreate(c.day, c.startH, c.endH)} onMove={onMove} onResize={onResize} onSelect={openEdit} /></div>}

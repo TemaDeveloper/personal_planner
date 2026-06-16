@@ -61,15 +61,20 @@ export function EventInspector({
   };
 
   return (
+    <>
+    {/* Mobile tap-to-dismiss scrim */}
+    <button type="button" aria-label="Close editor" onClick={onClose}
+      className="md:hidden fixed inset-0 z-20 bg-[var(--backdrop-overlay)]" />
     <aside
       aria-hidden={!open}
-      className="absolute top-0 right-0 h-full w-[336px] flex flex-col z-20 transition-transform duration-[260ms] motion-reduce:transition-none"
+      className="fixed md:absolute z-30 inset-x-0 bottom-0 md:inset-x-auto md:top-0 md:right-0 md:bottom-0 w-full md:w-[336px] max-h-[85vh] md:max-h-none h-auto md:h-full rounded-t-2xl md:rounded-none flex flex-col"
       style={{
         background: "var(--surface-1)",
-        boxShadow: "-12px 0 30px rgba(0,0,0,.06)",
-        transform: open ? "translateX(0)" : "translateX(100%)",
+        boxShadow: "0 -12px 30px rgba(0,0,0,.12)",
       }}
     >
+      {/* Mobile grab handle */}
+      <div className="md:hidden mx-auto mt-2 mb-1 h-1 w-9 rounded-full" style={{ background: "var(--border-default)" }} />
       <div className="flex items-center justify-between px-[18px] pt-4 pb-2.5">
         <span className="text-[11px] tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
           {draft.id ? "Edit event" : "New event"}
@@ -158,5 +163,6 @@ export function EventInspector({
         <Button variant="primary" size="sm" className="flex-1" onClick={submit}>Save</Button>
       </div>
     </aside>
+    </>
   );
 }
