@@ -321,6 +321,6 @@ export const notesPageUpdateSchema = z
     content: z.array(z.unknown()).max(5000).optional(),
     parentId: z.string().min(1).max(100).nullable().optional(),
     order: z.number().optional(),
-    coverUrl: z.string().url().max(1000).nullable().optional(),
+    coverUrl: z.string().max(1000).nullable().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: "no fields to update" });

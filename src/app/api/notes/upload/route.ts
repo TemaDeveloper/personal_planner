@@ -20,8 +20,10 @@ export async function POST(req: NextRequest) {
   if (file.size > MAX_BYTES) return NextResponse.json({ error: "Image too large (max 10MB)" }, { status: 400 });
 
   const blob = await put(`notes/${userId}/${Date.now()}-${file.name}`, file, {
-    access: "public",
+    access: "private",
     addRandomSuffix: true,
   });
-  return NextResponse.json({ url: blob.url });
+  // Private blobs aren't publicly fetchable; serve them through our authenticated
+  // /api/notes/blob route, which verifies ownership and streams the bytes.
+  return NextResponse.json({ url: `/api/notes/blob?pathname=${encodeURIComponent(blob.pathname)}` });
 }
