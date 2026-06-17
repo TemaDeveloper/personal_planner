@@ -9,6 +9,9 @@ import { PageTree } from "./page-tree";
 const RefreshCtx = createContext<() => void>(() => {});
 export const useNotesRefresh = () => useContext(RefreshCtx);
 
+const PagesCtx = createContext<FlatPage[]>([]);
+export const useNotesPages = () => useContext(PagesCtx);
+
 export function NotesScreen({ children }: { children: React.ReactNode }) {
   const [pages, setPages] = useState<FlatPage[]>([]);
   const [drawer, setDrawer] = useState(false);
@@ -23,6 +26,7 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
 
   return (
     <RefreshCtx.Provider value={load}>
+      <PagesCtx.Provider value={pages}>
       <div className="h-full flex">
         <aside className="hidden md:block w-[240px] shrink-0 border-r overflow-y-auto p-3"
           style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
@@ -47,6 +51,7 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      </PagesCtx.Provider>
     </RefreshCtx.Provider>
   );
 }
