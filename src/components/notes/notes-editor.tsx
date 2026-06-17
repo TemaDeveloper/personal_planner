@@ -41,7 +41,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
 
   const editor = useCreateBlockNote({ initialContent: initial, uploadFile });
 
-  const persist = useRef(async (_content: unknown) => {});
+  const persist = useRef<(content: unknown) => Promise<void>>(async () => {});
   useLayoutEffect(() => {
     persist.current = async (content: unknown) => {
       setStatus("saving");
