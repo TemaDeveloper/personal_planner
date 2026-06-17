@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
  */
 export function ContentShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const fullBleed = !!pathname && pathname.includes("/sections/calendar-");
+  const fullBleed = !!pathname && (pathname.includes("/sections/calendar-") || pathname.startsWith("/notes"));
 
   if (fullBleed) {
     return <div className="flex-1 min-h-0 overflow-hidden">{children}</div>;

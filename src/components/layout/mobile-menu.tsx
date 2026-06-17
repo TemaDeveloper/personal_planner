@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   CalendarDays,
+  NotebookPen,
   Settings,
   Download,
   LogOut,
@@ -131,6 +132,13 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                     onClick={onClose}
                   />
                 )}
+                <MenuLink
+                  href="/notes"
+                  icon={NotebookPen}
+                  label="Notes"
+                  active={isActive("/notes")}
+                  onClick={onClose}
+                />
 
                 {/* Life-area groups */}
                 {lifeAreaGroups.map((group) => (

@@ -1,0 +1,29 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- warm canvas -->
+  <rect width="1280" height="640" fill="#F6F3EE"/>
+
+  <!-- clay accent band sweeping the top-right corner -->
+  <path d="M 1280 540 A 540 540 0 0 1 740 0 L 858 0 A 422 422 0 0 0 1280 422 Z" fill="#C0613C"/>
+  <!-- sage sunrise arc echoing the logo mark -->
+  <path d="M 770 0 A 510 510 0 0 1 1280 510" stroke="#9CA39B" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- logo mark, top-left -->
+  <g transform="translate(80,74) scale(1.0)">
+    <rect width="100" height="100" rx="22" fill="#FBF9F5"/>
+    <path d="M20 18 H42 V58 H82 V80 H20 Z" fill="#C0613C"/>
+    <path d="M45 55 V25 A30 30 0 0 1 75 55 Z" fill="#C0613C"/>
+    <path d="M45 22 A33 33 0 0 1 78 55" stroke="#9CA39B" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="78" y="330" font-family="Avenir Next, Avenir, Arial, sans-serif" font-weight="600" font-size="156" letter-spacing="-3" fill="#2B2622">Lifora</text>
+  <!-- clay underline accent -->
+  <rect x="84" y="356" width="196" height="11" rx="5.5" fill="#C0613C"/>
+
+  <!-- tagline -->
+  <text x="84" y="446" font-family="Avenir Next, Avenir, Arial, sans-serif" font-weight="500" font-size="42" fill="#5C534B">Your AI-powered life planner.</text>
+  <text x="84" y="500" font-family="Avenir Next, Avenir, Arial, sans-serif" font-weight="500" font-size="42" fill="#5C534B">Track anything, your way.</text>
+
+  <!-- footer eyebrow -->
+  <text x="86" y="582" font-family="Avenir Next, Avenir, Arial, sans-serif" font-weight="600" font-size="23" letter-spacing="4" fill="#A1978D">FREE  ·  OPEN-SOURCE  ·  MIT LICENSE</text>
+</svg>

@@ -306,3 +306,22 @@ export function validateCalendarEvent(
   }
   return { ok: true, value: { title, start: startDate, end: endDate, allDay, categoryKey, description } };
 }
+
+// -- Notes (Notion-style pages) --
+const presetKeySchema = z.enum(["blank", "todo", "meeting", "journal", "project"]);
+
+export const notesPageCreateSchema = z.object({
+  parentId: z.string().min(1).max(100).nullable().optional(),
+  title: z.string().max(200).optional(),
+  preset: presetKeySchema.optional(),
+});
+
+export const notesPageUpdateSchema = z
+  .object({
+    title: z.string().max(200).optional(),
+    icon: z.string().max(16).optional(),
+    content: z.array(z.unknown()).max(5000).optional(),
+    parentId: z.string().min(1).max(100).nullable().optional(),
+    order: z.number().optional(),
+  })
+  .refine((d) => Object.keys(d).length > 0, { message: "no fields to update" });
