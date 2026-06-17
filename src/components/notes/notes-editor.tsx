@@ -1,11 +1,27 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useCreateBlockNote } from "@blocknote/react";
+import {
+  useCreateBlockNote,
+  getDefaultReactSlashMenuItems,
+  SuggestionMenuController,
+} from "@blocknote/react";
+import {
+  BlockNoteSchema,
+  defaultBlockSpecs,
+  filterSuggestionItems,
+  insertOrUpdateBlockForSlashMenu,
+} from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
+import { useNotesRefresh } from "@/components/notes/notes-screen";
+import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
+
+const schema = BlockNoteSchema.create({
+  blockSpecs: { ...defaultBlockSpecs, subPage: SubPageBlock() },
+});
 
 /** Reads the app's dark-mode state (Tailwind `dark` class on <html>). */
 function useIsDark(): boolean {
@@ -23,6 +39,7 @@ function useIsDark(): boolean {
 
 export function NotesEditor({ pageId, initialContent }: { pageId: string; initialContent: unknown }) {
   const isDark = useIsDark();
+  const refresh = useNotesRefresh();
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   const uploadFile = async (file: File): Promise<string> => {
@@ -39,7 +56,25 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     return Array.isArray(c) && c.length > 0 ? (c as never) : undefined;
   }, [initialContent]);
 
-  const editor = useCreateBlockNote({ initialContent: initial, uploadFile });
+  const editor = useCreateBlockNote({ schema, initialContent: initial, uploadFile });
+
+  const insertSubPageItem = () => ({
+    title: "Page",
+    subtext: "Create a sub-page",
+    aliases: ["page", "subpage", "child"],
+    group: "Basic",
+    onItemClick: async () => {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentId: pageId, template: "blank" }),
+      });
+      if (!res.ok) return;
+      const { page } = await res.json();
+      insertOrUpdateBlockForSlashMenu(editor, { type: "subPage", props: { pageId: page.id } });
+      refresh();
+    },
+  });
 
   const persist = useRef<(content: unknown) => Promise<void>>(async () => {});
   useLayoutEffect(() => {
@@ -61,7 +96,22 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
       <div className="absolute right-2 -top-6 text-[11px]" style={{ color: "var(--text-faint)" }}>
         {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
       </div>
-      <BlockNoteView editor={editor} theme={isDark ? "dark" : "light"} onChange={() => debouncedSave(editor.document)} />
+      <BlockNoteView
+        editor={editor}
+        theme={isDark ? "dark" : "light"}
+        slashMenu={false}
+        onChange={() => debouncedSave(editor.document)}
+      >
+        <SuggestionMenuController
+          triggerCharacter="/"
+          getItems={async (query) =>
+            filterSuggestionItems(
+              [...getDefaultReactSlashMenuItems(editor), insertSubPageItem()],
+              query
+            )
+          }
+        />
+      </BlockNoteView>
     </div>
   );
 }
