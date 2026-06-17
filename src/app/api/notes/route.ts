@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
-  const { parentId, title } = parsed.data;
+  const { parentId, title, template } = parsed.data;
 
   await connectDB();
   const last = await NotesPage.find({ userId, parentId: parentId ?? null, archived: false })
@@ -47,10 +47,13 @@ export async function POST(req: NextRequest) {
     userId,
     parentId: parentId ?? null,
     title: title || "Untitled",
-    icon: templateIcon("blank"),
-    content: buildTemplate("blank"),
+    icon: templateIcon(template ?? "blank"),
+    content: buildTemplate(template ?? "blank"),
     order,
   });
 
-  return NextResponse.json({ page: { id: String(page._id), parentId: parentId ?? null, title: page.title, icon: page.icon, order } }, { status: 201 });
+  return NextResponse.json(
+    { page: { id: String(page._id), parentId: parentId ?? null, title: page.title, icon: page.icon, order } },
+    { status: 201 }
+  );
 }
