@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   CalendarDays,
+  NotebookPen,
   Settings,
   Download,
   LogOut,
@@ -117,6 +118,12 @@ export function AppSidebar() {
               active={isActive(`/sections/${calendarSection.slug}`)}
             />
           )}
+          <NavItem
+            href="/notes"
+            icon={NotebookPen}
+            label="Notes"
+            active={isActive("/notes")}
+          />
         </div>
 
         {/* Life-area groups */}

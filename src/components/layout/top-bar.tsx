@@ -16,6 +16,7 @@ function getPageTitle(
   customSections: CustomSectionNav[],
 ): string {
   if (pathname === "/dashboard") return "Dashboard";
+  if (pathname === "/notes" || pathname.startsWith("/notes/")) return "Notes";
   if (pathname === "/settings") return "Settings";
   if (pathname === "/export") return "Export";
   if (pathname === "/shared") return "Shared with me";
