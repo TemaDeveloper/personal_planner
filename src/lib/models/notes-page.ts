@@ -5,6 +5,7 @@ export interface INotesPage extends Document {
   parentId: mongoose.Types.ObjectId | null;
   title: string;
   icon: string;
+  coverUrl?: string;
   content: unknown; // BlockNote document JSON (array of blocks)
   order: number;
   archived: boolean;
@@ -18,6 +19,7 @@ const NotesPageSchema = new Schema<INotesPage>(
     parentId: { type: Schema.Types.ObjectId, ref: "NotesPage", default: null },
     title: { type: String, default: "Untitled" },
     icon: { type: String, default: "📄" },
+    coverUrl: { type: String, default: "" },
     content: { type: Schema.Types.Mixed, default: [] },
     order: { type: Number, default: 0 },
     archived: { type: Boolean, default: false },

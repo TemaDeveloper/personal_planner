@@ -308,12 +308,10 @@ export function validateCalendarEvent(
 }
 
 // -- Notes (Notion-style pages) --
-const presetKeySchema = z.enum(["blank", "todo", "meeting", "journal", "project"]);
-
 export const notesPageCreateSchema = z.object({
   parentId: z.string().min(1).max(100).nullable().optional(),
   title: z.string().max(200).optional(),
-  preset: presetKeySchema.optional(),
+  template: z.string().max(60).optional(),
 });
 
 export const notesPageUpdateSchema = z
@@ -323,5 +321,6 @@ export const notesPageUpdateSchema = z
     content: z.array(z.unknown()).max(5000).optional(),
     parentId: z.string().min(1).max(100).nullable().optional(),
     order: z.number().optional(),
+    coverUrl: z.string().url().max(1000).nullable().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: "no fields to update" });
