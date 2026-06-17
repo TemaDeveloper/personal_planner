@@ -4,7 +4,7 @@ import { resolveUserId } from "@/lib/session";
 import { connectDB } from "@/lib/db";
 import NotesPage from "@/lib/models/notes-page";
 import { notesPageCreateSchema } from "@/lib/validations";
-import { buildPreset } from "@/lib/notes/presets";
+import { buildTemplate, templateIcon } from "@/lib/notes/templates";
 
 export async function GET() {
   const userId = await resolveUserId(await auth());
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
-  const { parentId, title, preset } = parsed.data;
+  const { parentId, title } = parsed.data;
 
   await connectDB();
   const last = await NotesPage.find({ userId, parentId: parentId ?? null, archived: false })
@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
     userId,
     parentId: parentId ?? null,
     title: title || "Untitled",
-    content: buildPreset(preset ?? "blank"),
+    icon: templateIcon("blank"),
+    content: buildTemplate("blank"),
     order,
   });
 
