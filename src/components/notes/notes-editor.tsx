@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/core/fonts/inter.css";
@@ -41,16 +41,18 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
 
   const editor = useCreateBlockNote({ initialContent: initial, uploadFile });
 
-  const persist = useRef(async (content: unknown) => {});
-  persist.current = async (content: unknown) => {
-    setStatus("saving");
-    await fetch(`/api/notes/${pageId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    setStatus("saved");
-  };
+  const persist = useRef(async (_content: unknown) => {});
+  useLayoutEffect(() => {
+    persist.current = async (content: unknown) => {
+      setStatus("saving");
+      await fetch(`/api/notes/${pageId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      setStatus("saved");
+    };
+  });
 
   const debouncedSave = useDebouncedSave<unknown>((c) => persist.current(c), 600);
 
