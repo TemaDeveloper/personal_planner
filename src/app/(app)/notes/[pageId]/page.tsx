@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { NotesEditorLoader } from "@/components/notes/notes-editor-loader";
 import { useNotesRefresh } from "@/components/notes/notes-screen";
+import { EmojiPickerButton } from "@/components/notes/emoji-picker-button";
+import { PageCover } from "@/components/notes/page-cover";
 
-type Loaded = { id: string; title: string; icon: string; content: unknown };
+type Loaded = { id: string; title: string; icon: string; content: unknown; coverUrl: string | null };
 
 export default function NotesPageView() {
   const { pageId } = useParams<{ pageId: string }>();
@@ -14,16 +16,16 @@ export default function NotesPageView() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    setPage(null); setNotFound(false); // eslint-disable-line react-hooks/set-state-in-effect -- initial data fetch
+    setPage(null); setNotFound(false); // eslint-disable-line react-hooks/set-state-in-effect -- reset on page switch
     fetch(`/api/notes/${pageId}`).then(async (r) => {
       if (!r.ok) { setNotFound(true); return; }
       setPage((await r.json()).page);
     });
   }, [pageId]);
 
-  const saveMeta = async (patch: { title?: string; icon?: string }) => {
+  const patch = async (body: Record<string, unknown>) => {
     await fetch(`/api/notes/${pageId}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
     refresh();
   };
@@ -32,12 +34,16 @@ export default function NotesPageView() {
   if (!page) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Loading…</div>;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 md:px-10 py-8">
-      <input aria-label="Page icon" defaultValue={page.icon}
-        onBlur={(e) => saveMeta({ icon: e.target.value || "📄" })}
-        className="text-4xl bg-transparent outline-none w-14" maxLength={8} />
+    <div className="max-w-3xl mx-auto px-6 md:px-10 py-6">
+      <PageCover
+        coverUrl={page.coverUrl}
+        onChange={(url) => { setPage({ ...page, coverUrl: url }); patch({ coverUrl: url }); }}
+      />
+      <div className="mt-3">
+        <EmojiPickerButton value={page.icon} onPick={(emoji) => { setPage({ ...page, icon: emoji }); patch({ icon: emoji }); }} />
+      </div>
       <input aria-label="Page title" defaultValue={page.title} placeholder="Untitled"
-        onBlur={(e) => saveMeta({ title: e.target.value })}
+        onBlur={(e) => patch({ title: e.target.value })}
         className="block w-full text-3xl font-bold bg-transparent outline-none mt-2 mb-6"
         style={{ color: "var(--text-primary)" }} />
       <NotesEditorLoader pageId={page.id} initialContent={page.content} />
