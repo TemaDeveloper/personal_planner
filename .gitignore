@@ -64,3 +64,6 @@ AGENTS.md
 cypress/videos/
 cypress/screenshots/
 cypress/downloads/
+
+# Keep the example env (no secrets) tracked
+!.env.example
