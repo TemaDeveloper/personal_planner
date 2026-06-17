@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import type { TreeNode } from "@/lib/notes/types";
 import { orderBetween } from "@/lib/notes/order";
-import { NewPageMenu } from "./new-page-menu";
+import { TemplateGallery } from "./template-gallery";
 
 function subtreeIds(node: TreeNode, acc: Set<string> = new Set()): Set<string> {
   acc.add(node.id);
@@ -24,6 +24,7 @@ function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
 
 export function PageTree({ tree, onChanged }: { tree: TreeNode[]; onChanged: () => void }) {
   const [dropRoot, setDropRoot] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const move = async (draggedId: string, targetId: string | null) => {
     if (draggedId === targetId) return;
@@ -57,7 +58,15 @@ export function PageTree({ tree, onChanged }: { tree: TreeNode[]; onChanged: () 
       <div className="space-y-0.5">
         {tree.map((node) => <TreeRow key={node.id} node={node} depth={0} onChanged={onChanged} onMove={move} />)}
       </div>
-      <div className="mt-2"><NewPageMenu onCreated={onChanged} /></div>
+      <div className="mt-2">
+        <button type="button" onClick={() => setGalleryOpen(true)}
+          className="w-full text-left px-2 py-1.5 rounded-md text-[12px]" style={{ color: "var(--text-muted)" }}>
+          ＋ New page
+        </button>
+      </div>
+      {galleryOpen && (
+        <TemplateGallery onClose={() => setGalleryOpen(false)} onCreated={onChanged} />
+      )}
     </div>
   );
 }

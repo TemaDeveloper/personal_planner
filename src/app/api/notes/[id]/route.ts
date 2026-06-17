@@ -18,6 +18,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       parentId: page.parentId ? String(page.parentId) : null,
       title: page.title,
       icon: page.icon,
+      coverUrl: page.coverUrl ?? null,
       content: page.content,
       order: page.order,
     },
@@ -37,6 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const update: Record<string, unknown> = { ...parsed.data };
   if ("parentId" in parsed.data) update.parentId = parsed.data.parentId ?? null;
+  if ("coverUrl" in parsed.data) update.coverUrl = parsed.data.coverUrl ?? "";
 
   const page = await NotesPage.findOneAndUpdate({ _id: id, userId }, update, { new: true }).lean();
   if (!page) return NextResponse.json({ error: "Not found" }, { status: 404 });
