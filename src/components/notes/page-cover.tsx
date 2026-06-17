@@ -34,8 +34,8 @@ export function PageCover({ coverUrl, onChange }: { coverUrl: string | null; onC
               className="text-[12px] px-2 py-1 rounded-md" style={{ background: "var(--surface-1)", color: "var(--text-primary)" }}>
               {busy ? "Uploading…" : "Change"}
             </button>
-            <button type="button" onClick={() => onChange(null)}
-              className="text-[12px] px-2 py-1 rounded-md" style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}>
+            <button type="button" onClick={() => onChange(null)} disabled={busy}
+              className="text-[12px] px-2 py-1 rounded-md disabled:opacity-50" style={{ background: "var(--surface-1)", color: "var(--text-muted)" }}>
               Remove
             </button>
           </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { toast } from "sonner";
 import { NotesEditorLoader } from "@/components/notes/notes-editor-loader";
 import { useNotesRefresh } from "@/components/notes/notes-screen";
 import { EmojiPickerButton } from "@/components/notes/emoji-picker-button";
@@ -24,9 +25,10 @@ export default function NotesPageView() {
   }, [pageId]);
 
   const patch = async (body: Record<string, unknown>) => {
-    await fetch(`/api/notes/${pageId}`, {
+    const res = await fetch(`/api/notes/${pageId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
+    if (!res.ok) { toast.error("Failed to save changes"); return; }
     refresh();
   };
 
