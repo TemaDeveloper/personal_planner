@@ -9,6 +9,7 @@ export interface INotesPage extends Document {
   content: unknown; // BlockNote document JSON (array of blocks)
   order: number;
   pinned?: boolean;
+  fullWidth?: boolean;
   archived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -24,6 +25,7 @@ const NotesPageSchema = new Schema<INotesPage>(
     content: { type: Schema.Types.Mixed, default: [] },
     order: { type: Number, default: 0 },
     pinned: { type: Boolean, default: false },
+    fullWidth: { type: Boolean, default: true },
     archived: { type: Boolean, default: false },
   },
   { timestamps: true }

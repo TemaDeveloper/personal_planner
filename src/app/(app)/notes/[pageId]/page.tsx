@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { NotesEditorLoader } from "@/components/notes/notes-editor-loader";
 import { useNotesRefresh } from "@/components/notes/notes-screen";
 import { EmojiPickerButton } from "@/components/notes/emoji-picker-button";
 import { PageCover } from "@/components/notes/page-cover";
 import { Breadcrumbs } from "@/components/notes/breadcrumbs";
+import { PageOptionsMenu } from "@/components/notes/page-options-menu";
 
-type Loaded = { id: string; title: string; icon: string; content: unknown; coverUrl: string | null };
+type Loaded = { id: string; title: string; icon: string; content: unknown; coverUrl: string | null; fullWidth: boolean };
 
 export default function NotesPageView() {
   const { pageId } = useParams<{ pageId: string }>();
+  const router = useRouter();
   const refresh = useNotesRefresh();
   const [page, setPage] = useState<Loaded | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -33,12 +35,28 @@ export default function NotesPageView() {
     refresh();
   };
 
+  const remove = async () => {
+    const res = await fetch(`/api/notes/${pageId}`, { method: "DELETE" });
+    if (!res.ok) { toast.error("Failed to delete page"); return; }
+    refresh();
+    router.push("/notes");
+  };
+
   if (notFound) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Page not found.</div>;
   if (!page) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Loading…</div>;
 
+  const widthClass = page.fullWidth ? "w-full px-6 md:px-14 lg:px-20" : "max-w-3xl mx-auto px-6 md:px-10";
+
   return (
-    <div className="notes-page w-full px-6 md:px-14 lg:px-20 py-8">
-      <Breadcrumbs pageId={page.id} />
+    <div className={`notes-page ${widthClass} py-8`}>
+      <div className="flex items-start justify-between gap-2">
+        <Breadcrumbs pageId={page.id} />
+        <PageOptionsMenu
+          fullWidth={page.fullWidth}
+          onToggleFullWidth={() => { const fw = !page.fullWidth; setPage({ ...page, fullWidth: fw }); patch({ fullWidth: fw }); }}
+          onDelete={remove}
+        />
+      </div>
       <PageCover
         coverUrl={page.coverUrl}
         onChange={(url) => { setPage({ ...page, coverUrl: url }); patch({ coverUrl: url }); }}

@@ -323,5 +323,6 @@ export const notesPageUpdateSchema = z
     order: z.number().optional(),
     coverUrl: z.string().max(1000).nullable().optional(),
     pinned: z.boolean().optional(),
+    fullWidth: z.boolean().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: "no fields to update" });

@@ -21,6 +21,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       coverUrl: page.coverUrl ?? null,
       content: page.content,
       order: page.order,
+      fullWidth: page.fullWidth !== false,
     },
   });
 }
