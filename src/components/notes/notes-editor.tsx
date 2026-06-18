@@ -9,6 +9,7 @@ import {
 import {
   BlockNoteSchema,
   defaultBlockSpecs,
+  defaultInlineContentSpecs,
   filterSuggestionItems,
   insertOrUpdateBlockForSlashMenu,
 } from "@blocknote/core";
@@ -25,6 +26,7 @@ import { DividerBlock } from "@/components/notes/blocks/divider-block";
 import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
 import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
 import { EquationBlock } from "@/components/notes/blocks/equation-block";
+import { MentionInline } from "@/components/notes/blocks/mention-inline";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -36,6 +38,10 @@ const schema = withMultiColumn(
       tableOfContents: TableOfContentsBlock(),
       bookmark: BookmarkBlock(),
       equation: EquationBlock(),
+    },
+    inlineContentSpecs: {
+      ...defaultInlineContentSpecs,
+      mention: MentionInline,
     },
   })
 );
@@ -127,7 +133,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
               title: `${p.icon} ${p.title || "Untitled"}`,
               onItemClick: () =>
                 editor.insertInlineContent([
-                  { type: "link", href: `/notes/${p.id}`, content: p.title || "Untitled" },
+                  { type: "mention", props: { pageId: p.id, label: p.title || "Untitled" } },
                   " ",
                 ]),
             }))
