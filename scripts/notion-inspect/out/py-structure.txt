@@ -1,0 +1,149 @@
+URL: https://candle-gosling-511.notion.site/Python-Roadmap-By-Data-With-Baraa-28334b251f12819c924be86a2e85f6eb
+root: notion-page-content
+nodes: 145
+
+<div .notion-selectable.notion-text-block #blk> “Hey, I’m Baraa - a data engi”
+  <div> “Hey, I’m Baraa - a data engi”
+    <span .notion-enable-hover> “Baraa”
+<div .notion-selectable.notion-text-block #blk> “I’ve worked with top compani”
+  <div> “I’ve worked with top compani”
+    <span .notion-enable-hover> “Mercedes-Benz”
+    <span .notion-enable-hover> “data lakehouse projects”
+<div .notion-selectable.notion-text-block #blk> “Explore my full content here”
+  <div> “Explore my full content here”
+    <a .notion-link-token.notion-focusable-token> “▶️ YouTube Channel”
+    <a .notion-link-token.notion-focusable-token> “🎓 Udemy Courses”
+    <a .notion-link-token.notion-focusable-token> “💼 LinkedIn Profile”
+    <a .notion-link-token.notion-focusable-token> “📰 Newsletter”
+<div .notion-selectable.notion-sub_sub_header-block #blk> “🎓 Learning Materials”
+  <h4> “🎓 Learning Materials”
+<div .notion-selectable.notion-bulleted_list-block #blk> “Data with BaraaPython Bootca”
+  <div .notion-list-item-box-left> 
+  <div> “Data with BaraaPython Bootca”
+    <a .notion-link-mention-token.notion-text-mention-token> “Data with BaraaPython Bootca”
+<div .notion-selectable.notion-bulleted_list-block #blk> “📚 Not found”
+  <div .notion-list-item-box-left> 
+  <div> “📚 Not found”
+    <a .notion-page-mention-token.notion-text-mention-token> “Not found”
+      <span .notion-page-mention-token__title> “Not found”
+<div .notion-selectable.notion-bulleted_list-block #blk> “Paid - Python By Datacamp”
+  <div .notion-list-item-box-left> 
+  <div> “Paid - Python By Datacamp”
+    <a .notion-link-token.notion-focusable-token> “Paid - Python By Datacamp”
+<div .notion-selectable.notion-text-block #blk> 
+  <div> 
+<div .notion-selectable.notion-text-block #blk> “Whether you're starting from”
+  <div> “Whether you're starting from”
+<div .notion-selectable.notion-callout-block #blk> “Your ProgressBy ChapterTable”
+  <div .notion-selectable.notion-sub_header-block #blk> “Your Progress”
+    <h3> “Your Progress”
+      <span .notion-enable-hover> “Your”
+      <span .notion-enable-hover> “Progress”
+  <div .notion-selectable.notion-collection_view-block #blk> “By ChapterTable🟢Beginner Le”
+    <div .notion-selectable.notion-collection_view-block #blk> “By ChapterTable”
+      <div .notion-collection-view-tab-button> “By Chapter”
+        <div .notion-collection-view-tab> “By Chapter”
+      <div .notion-collection-view-tab-button> “Table”
+        <div .notion-collection-view-tab> “Table”
+      <div .notion-collection-filter> 
+      <div .notion-collection-sort> 
+    <div .notion-scroller.notion-collection-view-body> “🟢Beginner Level50.00%Introd”
+      <div .notion-gallery-view> “🟢Beginner Level50.00%Introd”
+        <div .notion-selectable.notion-collection_view-block #blk> “🟢Beginner Level50.00%Introd”
+          <div .notion-selectable.notion-collection_view-block #blk> 
+          <div .notion-selectable.notion-page-block #blk> “🟢Beginner Level50.00%Introd”
+            <div .notion-record-icon> “🟢”
+            <div> “Beginner Level”
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+          <div .notion-selectable.notion-page-block #blk> “🟡Intermediate Level0.00%Mod”
+            <div .notion-record-icon> “🟡”
+            <div> “Intermediate Level”
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+          <div .notion-selectable.notion-page-block #blk> “🔴Advanced Level0.00%Calling”
+            <div .notion-record-icon> “🔴”
+            <div> “Advanced Level”
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+            <div .notion-record-icon> 
+<div .notion-selectable.notion-text-block #blk> 
+  <div> 
+<div .notion-selectable.notion-column_list-block #blk> “Course IndexLessons By Chapt”
+  <div .notion-selectable.notion-column-block #blk> “Course IndexLessons By Chapt”
+    <div .notion-selectable.notion-callout-block #blk> “Course IndexLessons By Chapt”
+      <div .notion-selectable.notion-sub_header-block #blk> “Course Index”
+        <h3> “Course Index”
+          <span .notion-enable-hover> “Course”
+          <span .notion-enable-hover> “Index”
+      <div .notion-selectable.notion-collection_view-block #blk> “Lessons By ChapterBoardGalle”
+        <div .notion-selectable.notion-collection_view-block #blk> “Lessons By ChapterBoardGalle”
+          <div .notion-collection-view-tab-button> “Lessons By Chapter”
+            <div .notion-collection-view-tab> “Lessons By Chapter”
+          <div .notion-collection-view-tab-button> “Board”
+            <div .notion-collection-view-tab> “Board”
+          <div .notion-collection-view-tab-button> “Gallery”
+            <div .notion-collection-view-tab> “Gallery”
+          <div .notion-collection-view-tab-button> “Timeline”
+            <div .notion-collection-view-tab> “Timeline”
+          <div .notion-collection-view-tab-button> “Calender”
+            <div .notion-collection-view-tab> “Calender”
+          <div .notion-collection-view-tab-button> “Chart”
+            <div .notion-collection-view-tab> “Chart”
+          <div .notion-collection-view-tab-button> “List”
+            <div .notion-collection-view-tab> “List”
+          <div .notion-collection-filter> 
+          <div .notion-collection-sort> 
+        <div .notion-scroller.notion-collection-view-body> “🟢Beginner Level5LessonsStat”
+          <div .notion-table-view> “🟢Beginner Level5LessonsStat”
+            <div .notion-selectable.notion-collection_view-block #blk> “🟢Beginner Level5LessonsStat”
+              <div .notion-selectable.notion-collection_view-block #blk> “🟢Beginner Level5”
+                <div .notion-record-icon> “🟢”
+              <div .notion-table-view-header-row> “LessonsStatusDate”
+                <div .notion-table-view-header-cell> “Lessons”
+                <div .notion-table-view-header-cell> “Status”
+                <div .notion-table-view-header-cell> “Date”
+              <div .notion-selectable-container> “No results”
+                <div .notion-collection-view-empty-state> “No results”
+              <div .notion-selectable.notion-collection_view-block #blk> “🟡Intermediate Level7”
+                <div .notion-record-icon> “🟡”
+              <div .notion-table-view-header-row> “LessonsStatusDate”
+                <div .notion-table-view-header-cell> “Lessons”
+                <div .notion-table-view-header-cell> “Status”
+                <div .notion-table-view-header-cell> “Date”
+              <div .notion-selectable-container> “No results”
+                <div .notion-collection-view-empty-state> “No results”
+              <div .notion-selectable.notion-collection_view-block #blk> “🔴Advanced Level4”
+                <div .notion-record-icon> “🔴”
+              <div .notion-table-view-header-row> “LessonsStatusDate”
+                <div .notion-table-view-header-cell> “Lessons”
+                <div .notion-table-view-header-cell> “Status”
+                <div .notion-table-view-header-cell> “Date”
+              <div .notion-selectable-container> “No results”
+                <div .notion-collection-view-empty-state> “No results”
+              <div .notion-selectable.notion-collection_view-block #blk> “No Chapters0”
+              <div .notion-table-view-header-row> “LessonsStatusDate”
+                <div .notion-table-view-header-cell> “Lessons”
+                <div .notion-table-view-header-cell> “Status”
+                <div .notion-table-view-header-cell> “Date”
+              <div .notion-selectable-container> “No results”
+                <div .notion-collection-view-empty-state> “No results”
+  <div .notion-selectable.notion-column-block #blk> 
+<div .notion-selectable.notion-text-block #blk> 
+  <div> 
+<div .notion-selectable.notion-text-block #blk> 
+  <div> 

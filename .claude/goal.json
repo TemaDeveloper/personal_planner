@@ -16,7 +16,7 @@
   ],
   "iteration_policy": "Work the backlog in order, smallest-risk-highest-impact first. Phase 0 (Inter font on Notes surface; monochrome sidebar hover/active; heading scale 40/30/24/20 + widen comfortable column ~900px). Then Phase 1 (callout borderless tinted fill + 9-color tint palette; quote 3px left border; side-menu theme + placeholder). Phase 2 (page header: icon overlaps cover, title 40/700, hover add-cover/icon, reposition). Phase 3 (sidebar per-row ⊕/⋯). Phase 4 (slim top bar + richer ··· + slash icons). Phase 5 (Cmd-K content search; empty-state copy). Phase 6 (expose/verify BlockNote built-ins: formatting toolbar/turn-into/color; app shortcuts; copy-link; page duplicate/move/Trash/export; paste-smart). TDD pure logic; verify build/lint/test each round; commit; one-line log. Pause for the user to visually review before any deploy.",
   "blocked_condition": "Report/pause if a change needs infra/secrets, an irreversible/outward action (deploy), or a product decision (e.g. reviving databases, switching accent). Note exactly what's needed.",
-  "status": "paused",
+  "status": "active",
   "iterations": 5,
   "max_iterations": 15,
   "log": [
