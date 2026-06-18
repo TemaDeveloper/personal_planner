@@ -22,7 +22,7 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 12. **Per-page "full width" toggle** + page options menu (Notion-style ··· menu: width, lock, etc.).
 13. **Inline page links / @-mentions** — link to other pages; `@` mention menu.
 14. **Favorites / quick switcher** — pin pages, Ctrl-P style search across pages.
-15. **Breadcrumbs** — show the page's ancestor path at the top.
+15. ~~**Breadcrumbs**~~ ✅ DONE (iter 5) — root→current ancestor path, clickable, cycle-safe helper.
 16. **Drag blocks across / nested indentation polish**, block ··· menu (duplicate, move, color) — mostly BlockNote built-in; verify exposed.
 
 ## Notes / decisions

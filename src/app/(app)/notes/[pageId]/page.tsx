@@ -7,6 +7,7 @@ import { NotesEditorLoader } from "@/components/notes/notes-editor-loader";
 import { useNotesRefresh } from "@/components/notes/notes-screen";
 import { EmojiPickerButton } from "@/components/notes/emoji-picker-button";
 import { PageCover } from "@/components/notes/page-cover";
+import { Breadcrumbs } from "@/components/notes/breadcrumbs";
 
 type Loaded = { id: string; title: string; icon: string; content: unknown; coverUrl: string | null };
 
@@ -37,6 +38,7 @@ export default function NotesPageView() {
 
   return (
     <div className="notes-page w-full px-6 md:px-14 lg:px-20 py-8">
+      <Breadcrumbs pageId={page.id} />
       <PageCover
         coverUrl={page.coverUrl}
         onChange={(url) => { setPage({ ...page, coverUrl: url }); patch({ coverUrl: url }); }}
