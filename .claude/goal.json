@@ -19,7 +19,9 @@
   "status": "active",
   "iterations": 0,
   "max_iterations": 15,
-  "log": [],
+  "log": [
+    "Phase 0 DONE: Inter font scoped to Notes (next/font --font-notes); Notion heading scale in-editor via [data-content-type=heading][data-level] (30/24/20, 600); page title → 40px; comfortable column 768→900px; sidebar rows accent→monochrome grey hover/active (active text darker+semibold). App green (0 lint errors, 320 tests, build ok). Next: Phase 1 — callout borderless tinted fill + 9-color tint palette, quote 3px left border, theme BlockNote side menu + placeholder. Branch-only; recommend a visual review before any deploy."
+  ],
   "created": "2026-06-18T04:38:46Z",
   "updated": "2026-06-18T04:38:46Z"
 }
