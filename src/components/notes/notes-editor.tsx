@@ -22,6 +22,7 @@ import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
 import { useNotesRefresh, useNotesPages } from "@/components/notes/notes-screen";
 import { searchPages } from "@/lib/notes/search-pages";
+import { isBareUrl } from "@/lib/notes/is-bare-url";
 import { detectLanguage } from "@/lib/notes/detect-language";
 import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
@@ -101,6 +102,20 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     // Default to "text" so new/pasted code starts plain and auto-detection can
     // then set the real language (see autodetectCode below).
     codeBlock: { ...codeBlockOptions, defaultLanguage: "text" },
+    // Paste-smart: a bare URL pasted onto an empty line becomes a bookmark card.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pasteHandler: ({ event, editor: ed, defaultPasteHandler }: any) => {
+      const text = event.clipboardData?.getData("text/plain") ?? "";
+      if (isBareUrl(text)) {
+        const pos = ed.getTextCursorPosition();
+        const cur = pos.block;
+        const empty = cur.type === "paragraph" && (!cur.content || cur.content.length === 0);
+        if (empty) ed.updateBlock(cur, { type: "bookmark", props: { url: text.trim() } });
+        else ed.insertBlocks([{ type: "bookmark", props: { url: text.trim() } }], cur, "after");
+        return true;
+      }
+      return defaultPasteHandler();
+    },
   });
 
   // Auto-detect the language of code blocks from their content. Runs once per
