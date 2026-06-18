@@ -21,7 +21,7 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 11. ~~**Resizable / collapsible page-tree rail**~~ ✅ DONE — collapse toggle (iter 4) + drag-to-resize divider (iter 9), both persisted.
 12. **Per-page "full width" toggle** + page options menu (Notion-style ··· menu: width, lock, etc.).
 13. **Inline page links / @-mentions** — link to other pages; `@` mention menu.
-14. **Favorites / quick switcher** — quick switcher ✅ DONE (iter 11, Ctrl/Cmd-K, ranked searchPages helper TDD). Favorites/pin still pending.
+14. ~~**Favorites / quick switcher**~~ ✅ DONE — quick switcher (iter 11, Ctrl/Cmd-K) + favorites/pin (iter 12, server-side `pinned`, star toggle, Favorites section).
 15. ~~**Breadcrumbs**~~ ✅ DONE (iter 5) — root→current ancestor path, clickable, cycle-safe helper.
 16. **Drag blocks across / nested indentation polish**, block ··· menu (duplicate, move, color) — mostly BlockNote built-in; verify exposed.
 

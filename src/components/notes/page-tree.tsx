@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, Star } from "lucide-react";
 import type { TreeNode } from "@/lib/notes/types";
 import { orderBetween } from "@/lib/notes/order";
 import { TemplateGallery } from "./template-gallery";
@@ -12,6 +12,20 @@ function subtreeIds(node: TreeNode, acc: Set<string> = new Set()): Set<string> {
   acc.add(node.id);
   for (const c of node.children) subtreeIds(c, acc);
   return acc;
+}
+function flattenTree(nodes: TreeNode[], acc: TreeNode[] = []): TreeNode[] {
+  for (const n of nodes) {
+    acc.push(n);
+    flattenTree(n.children, acc);
+  }
+  return acc;
+}
+async function setPinned(id: string, pinned: boolean) {
+  await fetch(`/api/notes/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pinned }),
+  });
 }
 function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
   for (const n of nodes) {
@@ -44,8 +58,23 @@ export function PageTree({ tree, onChanged }: { tree: TreeNode[]; onChanged: () 
     onChanged();
   };
 
+  const favorites = flattenTree(tree).filter((n) => n.pinned);
+
   return (
     <div className="text-[13px]">
+      {favorites.length > 0 && (
+        <div className="mb-3">
+          <span className="stat-label px-2" style={{ color: "var(--text-faint)" }}>Favorites</span>
+          <div className="space-y-0.5 mt-1">
+            {favorites.map((f) => (
+              <Link key={f.id} href={`/notes/${f.id}`} className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-muted)" }}>
+                <span>{f.icon}</span>
+                <span className="truncate">{f.title || "Untitled"}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
       <div
         className="flex items-center justify-between px-2 mb-2 rounded-md"
         style={{ outline: dropRoot ? "2px dashed var(--accent-color)" : "none" }}
@@ -107,6 +136,12 @@ function TreeRow({ node, depth, onChanged, onMove }: {
           <span>{node.icon}</span>
           <span className="truncate">{node.title || "Untitled"}</span>
         </Link>
+        <button type="button" aria-label={node.pinned ? "Unpin page" : "Pin to favorites"}
+          onClick={async (e) => { e.preventDefault(); e.stopPropagation(); await setPinned(node.id, !node.pinned); onChanged(); }}
+          className={`px-1 ${node.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+          style={{ color: node.pinned ? "var(--accent-color)" : "var(--text-faint)" }}>
+          <Star size={13} fill={node.pinned ? "currentColor" : "none"} />
+        </button>
         <button type="button" aria-label="Delete page" onClick={del}
           className="opacity-0 group-hover:opacity-100 px-1 text-[12px]" style={{ color: "var(--text-faint)" }}>🗑</button>
       </div>

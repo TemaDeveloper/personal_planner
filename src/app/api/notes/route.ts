@@ -12,7 +12,7 @@ export async function GET() {
 
   await connectDB();
   const pages = await NotesPage.find({ userId, archived: false })
-    .select("_id parentId title icon order")
+    .select("_id parentId title icon order pinned")
     .sort({ order: 1, createdAt: 1 })
     .lean();
 
@@ -22,6 +22,7 @@ export async function GET() {
     title: p.title,
     icon: p.icon,
     order: p.order,
+    pinned: !!p.pinned,
   }));
   return NextResponse.json({ pages: flat });
 }
