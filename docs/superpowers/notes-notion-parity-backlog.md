@@ -18,7 +18,7 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 8. **Bookmark / web embed** — `/bookmark` link-preview card; BlockNote embed blocks.
 9. **Table of contents** — custom block listing the page's headings, click-to-scroll.
 10. **Math equation** — `/math` inline + block (KaTeX).
-11. **Resizable / collapsible page-tree rail** — drag to resize, collapse toggle (expandable workspace).
+11. **Resizable / collapsible page-tree rail** — collapse toggle ✅ DONE (iter 4, persisted). Drag-to-resize still pending.
 12. **Per-page "full width" toggle** + page options menu (Notion-style ··· menu: width, lock, etc.).
 13. **Inline page links / @-mentions** — link to other pages; `@` mention menu.
 14. **Favorites / quick switcher** — pin pages, Ctrl-P style search across pages.
