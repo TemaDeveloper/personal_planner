@@ -32,7 +32,8 @@ import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
 import { EquationBlock } from "@/components/notes/blocks/equation-block";
 import { MentionInline } from "@/components/notes/blocks/mention-inline";
 import { DatabaseBlock } from "@/components/notes/blocks/database-block";
-import { FileText, Info, Minus, ChevronRight, List, Bookmark, Sigma, Table2 } from "lucide-react";
+import { ButtonBlock } from "@/components/notes/blocks/button-block";
+import { FileText, Info, Minus, ChevronRight, List, Bookmark, Sigma, Table2, MousePointerClick } from "lucide-react";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -45,6 +46,7 @@ const schema = withMultiColumn(
       bookmark: BookmarkBlock(),
       equation: EquationBlock(),
       database: DatabaseBlock(),
+      button: ButtonBlock(),
     },
     inlineContentSpecs: {
       ...defaultInlineContentSpecs,
@@ -238,6 +240,14 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                 ...(() => { try { return getMultiColumnSlashMenuItems(editor); } catch { return []; } })(),
                 insertSubPageItem(),
                 insertDatabaseItem(),
+                {
+                  title: "Button",
+                  subtext: "A clickable label that can open a link",
+                  aliases: ["button", "cta", "action"],
+                  group: "Basic blocks",
+                  icon: <MousePointerClick size={18} />,
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "button" }),
+                },
                 {
                   title: "Callout",
                   subtext: "Highlighted info box",
