@@ -11,6 +11,7 @@ import { PageCover } from "@/components/notes/page-cover";
 import { Breadcrumbs } from "@/components/notes/breadcrumbs";
 import { PageOptionsMenu } from "@/components/notes/page-options-menu";
 import { relativeTime } from "@/lib/notes/relative-time";
+import { blocksToMarkdown } from "@/lib/notes/blocks-to-markdown";
 
 type Loaded = { id: string; title: string; icon: string; content: unknown; coverUrl: string | null; fullWidth: boolean; pinned: boolean; updatedAt: string | null };
 
@@ -68,6 +69,19 @@ export default function NotesPageView() {
     router.push(`/notes/${dup.id}`);
   };
 
+  const exportMarkdown = () => {
+    if (!page) return;
+    const title = page.title || "Untitled";
+    const body = blocksToMarkdown(page.content);
+    const md = `# ${title}\n\n${body}`;
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "page";
+    const url = URL.createObjectURL(new Blob([md], { type: "text/markdown" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `${slug}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (notFound) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Page not found.</div>;
   if (!page) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Loading…</div>;
 
@@ -97,6 +111,7 @@ export default function NotesPageView() {
           onToggleFavorite={toggleFavorite}
           onCopyLink={copyLink}
           onDuplicate={duplicate}
+          onExport={exportMarkdown}
           onDelete={remove}
         />
       </div>
