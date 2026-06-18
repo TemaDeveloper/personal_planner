@@ -17,7 +17,7 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 7. **Text color & highlight** — formatting toolbar + `/color` style commands (BlockNote supports text/background color).
 8. ~~**Bookmark / web embed**~~ ✅ DONE (iter 7) — `/bookmark` paste-a-link preview card; server unfurl route with SSRF guard (isPublicHttpUrl, TDD) + OG-meta parser (extractMeta, TDD) + redirect-hop validation.
 9. ~~**Table of contents**~~ ✅ DONE (iter 6) — live ToC block (collectHeadings helper, TDD), click-to-scroll, updates on edit.
-10. **Math equation** — `/math` inline + block (KaTeX).
+10. ~~**Math equation**~~ ✅ DONE (iter 10) — `/equation` block-level KaTeX, click-to-edit LaTeX (katexHtml helper, TDD). Inline math still pending.
 11. ~~**Resizable / collapsible page-tree rail**~~ ✅ DONE — collapse toggle (iter 4) + drag-to-resize divider (iter 9), both persisted.
 12. **Per-page "full width" toggle** + page options menu (Notion-style ··· menu: width, lock, etc.).
 13. **Inline page links / @-mentions** — link to other pages; `@` mention menu.

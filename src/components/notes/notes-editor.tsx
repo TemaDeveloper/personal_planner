@@ -23,6 +23,7 @@ import { CalloutBlock } from "@/components/notes/blocks/callout-block";
 import { DividerBlock } from "@/components/notes/blocks/divider-block";
 import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
 import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
+import { EquationBlock } from "@/components/notes/blocks/equation-block";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -33,6 +34,7 @@ const schema = withMultiColumn(
       divider: DividerBlock(),
       tableOfContents: TableOfContentsBlock(),
       bookmark: BookmarkBlock(),
+      equation: EquationBlock(),
     },
   })
 );
@@ -151,6 +153,13 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   aliases: ["bookmark", "link", "embed", "url"],
                   group: "Media",
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "bookmark" }),
+                },
+                {
+                  title: "Equation",
+                  subtext: "Block math with LaTeX (KaTeX)",
+                  aliases: ["math", "equation", "latex", "katex", "tex"],
+                  group: "Advanced",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "equation" }),
                 },
               ],
               query
