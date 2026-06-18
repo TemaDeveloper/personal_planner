@@ -30,4 +30,19 @@ describe("templates", () => {
     const keys = TEMPLATES.map((t) => t.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
+  it("non-blank templates are rich (multi-section, with callouts/dividers)", () => {
+    for (const t of TEMPLATES) {
+      if (t.key === "blank") continue;
+      const blocks = buildTemplate(t.key);
+      expect(blocks.length, t.key).toBeGreaterThanOrEqual(6);
+      const types = new Set(blocks.map((b) => b.type));
+      expect(types.has("heading"), `${t.key} has headings`).toBe(true);
+      expect(types.has("callout") || types.has("divider"), `${t.key} uses callout/divider`).toBe(true);
+    }
+  });
+  it("callout blocks carry an emoji prop", () => {
+    const callouts = buildTemplate("meeting").filter((b) => b.type === "callout");
+    expect(callouts.length).toBeGreaterThan(0);
+    expect(typeof callouts[0].props?.emoji).toBe("string");
+  });
 });
