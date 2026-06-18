@@ -31,7 +31,9 @@ import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
 import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
 import { EquationBlock } from "@/components/notes/blocks/equation-block";
 import { MentionInline } from "@/components/notes/blocks/mention-inline";
-import { FileText, Info, Minus, ChevronRight, List, Bookmark, Sigma } from "lucide-react";
+import { DatabaseBlock } from "@/components/notes/blocks/database-block";
+import { ButtonBlock } from "@/components/notes/blocks/button-block";
+import { FileText, Info, Minus, ChevronRight, List, Bookmark, Sigma, Table2, MousePointerClick } from "lucide-react";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -43,6 +45,8 @@ const schema = withMultiColumn(
       tableOfContents: TableOfContentsBlock(),
       bookmark: BookmarkBlock(),
       equation: EquationBlock(),
+      database: DatabaseBlock(),
+      button: ButtonBlock(),
     },
     inlineContentSpecs: {
       ...defaultInlineContentSpecs,
@@ -169,6 +173,24 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     },
   });
 
+  const insertDatabaseItem = () => ({
+    title: "Database",
+    subtext: "Table, board, gallery or list of records",
+    aliases: ["database", "db", "table", "board", "gallery", "collection"],
+    group: "Advanced",
+    icon: <Table2 size={18} />,
+    onItemClick: async () => {
+      const res = await fetch("/api/notes/databases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Untitled" }),
+      });
+      if (!res.ok) return;
+      const { database } = await res.json();
+      insertOrUpdateBlockForSlashMenu(editor, { type: "database", props: { databaseId: database.id } });
+    },
+  });
+
   const persist = useRef<(content: unknown) => Promise<void>>(async () => {});
   useLayoutEffect(() => {
     persist.current = async (content: unknown) => {
@@ -217,6 +239,15 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                 // Guard: never let a throwing sub-source hang the menu on "Loading…".
                 ...(() => { try { return getMultiColumnSlashMenuItems(editor); } catch { return []; } })(),
                 insertSubPageItem(),
+                insertDatabaseItem(),
+                {
+                  title: "Button",
+                  subtext: "A clickable label that can open a link",
+                  aliases: ["button", "cta", "action"],
+                  group: "Basic blocks",
+                  icon: <MousePointerClick size={18} />,
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "button" }),
+                },
                 {
                   title: "Callout",
                   subtext: "Highlighted info box",

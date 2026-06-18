@@ -1,5 +1,29 @@
+type MdProperty = { id: string; name: string; type: string; options?: unknown };
+type MdRow = { id: string; cells: Record<string, unknown> };
+type MdDatabase = { title?: string; properties: MdProperty[]; rows: MdRow[] };
+
+function cellMd(prop: MdProperty, value: unknown): string {
+  if (value == null || value === "") return "";
+  if (prop.type === "checkbox") return value ? "✓" : "";
+  if (prop.type === "multi_select" || prop.type === "relation") return Array.isArray(value) ? value.join(", ") : String(value);
+  if (prop.type === "date") return String(value).slice(0, 10);
+  return String(value).replace(/\|/g, "\\|");
+}
+
+/** Render a database as a GitHub-flavored Markdown table (first row = headers). */
+export function databaseToMarkdown(db: MdDatabase): string {
+  const props = db.properties ?? [];
+  if (!props.length) return "";
+  const header = `| ${props.map((p) => p.name || "Untitled").join(" | ")} |`;
+  const sep = `| ${props.map(() => "---").join(" | ")} |`;
+  const body = (db.rows ?? []).map((r) => `| ${props.map((p) => cellMd(p, r.cells[p.id])).join(" | ")} |`);
+  const title = db.title ? `**${db.title}**\n\n` : "";
+  return `${title}${[header, sep, ...body].join("\n")}`;
+}
+
 /** Serialize BlockNote document JSON to Markdown. Lossy but dependency-free:
- * covers the common block types and degrades unknown blocks to their text. */
+ * covers the common block types and degrades unknown blocks to their text.
+ * `databases` maps a database block's id → its data so DB blocks export as tables. */
 
 type Block = {
   type?: string;
@@ -34,7 +58,7 @@ function inlineText(content: unknown): string {
   return out;
 }
 
-function blockToLines(block: Block, depth: number): string[] {
+function blockToLines(block: Block, depth: number, databases: Record<string, MdDatabase>): string[] {
   const indent = "  ".repeat(depth);
   const props = block.props ?? {};
   const text = inlineText(block.content);
@@ -80,6 +104,11 @@ function blockToLines(block: Block, depth: number): string[] {
     case "equation":
       lines.push(`$$${String(props.content ?? text)}$$`);
       break;
+    case "database": {
+      const db = databases[String(props.databaseId ?? "")];
+      if (db) lines.push(databaseToMarkdown(db));
+      break;
+    }
     case "tableOfContents":
       break; // generated UI; nothing to export
     default:
@@ -88,16 +117,30 @@ function blockToLines(block: Block, depth: number): string[] {
 
   const isListItem = block.type === "bulletListItem" || block.type === "numberedListItem" || block.type === "checkListItem";
   for (const child of block.children ?? []) {
-    lines.push(...blockToLines(child, isListItem ? depth + 1 : depth));
+    lines.push(...blockToLines(child, isListItem ? depth + 1 : depth, databases));
   }
   return lines;
 }
 
-export function blocksToMarkdown(content: unknown): string {
+export function blocksToMarkdown(content: unknown, databases: Record<string, MdDatabase> = {}): string {
   if (!Array.isArray(content)) return "";
   const out: string[] = [];
   for (const block of content as Block[]) {
-    out.push(...blockToLines(block, 0));
+    out.push(...blockToLines(block, 0, databases));
   }
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
+}
+
+/** Collect all database block ids in a document (for prefetch before export). */
+export function collectDatabaseIds(content: unknown): string[] {
+  const ids = new Set<string>();
+  const walk = (nodes: unknown) => {
+    if (!Array.isArray(nodes)) return;
+    for (const n of nodes as Block[]) {
+      if (n?.type === "database" && n.props?.databaseId) ids.add(String(n.props.databaseId));
+      if (n?.children) walk(n.children);
+    }
+  };
+  walk(content);
+  return [...ids];
 }

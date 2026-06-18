@@ -622,9 +622,10 @@
 }
 
 /* ── Notes (Notion parity) — Phase 0 ───────────────────────────────── */
-/* Inter on the whole Notes surface (scoped; rest of app keeps its font). */
+/* Notion uses the system UI font stack on its content surface (not Inter).
+   Match it for true visual parity; rest of app keeps its own font. */
 .font-notes {
-  font-family: var(--font-notes), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-family: ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
 }
 /* Notion-like heading scale inside the editor (BlockNote uses [data-level]). */
 .notes-page [data-content-type="heading"][data-level="1"] { font-size: 1.875rem; line-height: 1.3; font-weight: 600; }
@@ -646,7 +647,7 @@
 .notes-page [data-callout-color="yellow"] { background: #FBF3DB; }
 .notes-page [data-callout-color="green"]  { background: #EDF3EC; }
 .notes-page [data-callout-color="blue"]   { background: #E7F3F8; }
-.notes-page [data-callout-color="purple"] { background: #F6F3F9; }
+.notes-page [data-callout-color="purple"] { background: #F3EBF9; }
 .notes-page [data-callout-color="pink"]   { background: #FAF1F5; }
 .notes-page [data-callout-color="red"]    { background: #FDEBEC; }
 .dark .notes-page [data-callout-color="gray"]   { background: rgba(255,255,255,0.055); }
