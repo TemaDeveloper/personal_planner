@@ -11,7 +11,7 @@ import { PageCover } from "@/components/notes/page-cover";
 import { Breadcrumbs } from "@/components/notes/breadcrumbs";
 import { PageOptionsMenu } from "@/components/notes/page-options-menu";
 import { relativeTime } from "@/lib/notes/relative-time";
-import { blocksToMarkdown } from "@/lib/notes/blocks-to-markdown";
+import { blocksToMarkdown, collectDatabaseIds } from "@/lib/notes/blocks-to-markdown";
 
 type Loaded = { id: string; title: string; icon: string; content: unknown; coverUrl: string | null; fullWidth: boolean; pinned: boolean; updatedAt: string | null };
 
@@ -69,10 +69,17 @@ export default function NotesPageView() {
     router.push(`/notes/${dup.id}`);
   };
 
-  const exportMarkdown = () => {
+  const exportMarkdown = async () => {
     if (!page) return;
     const title = page.title || "Untitled";
-    const body = blocksToMarkdown(page.content);
+    // Prefetch any embedded databases so they export as Markdown tables.
+    const dbIds = collectDatabaseIds(page.content);
+    const databases: Record<string, unknown> = {};
+    await Promise.all(dbIds.map(async (dbId) => {
+      const res = await fetch(`/api/notes/databases/${dbId}`);
+      if (res.ok) databases[dbId] = (await res.json()).database;
+    }));
+    const body = blocksToMarkdown(page.content, databases as never);
     const md = `# ${title}\n\n${body}`;
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "page";
     const url = URL.createObjectURL(new Blob([md], { type: "text/markdown" }));

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { blocksToMarkdown } from "@/lib/notes/blocks-to-markdown";
+import { blocksToMarkdown, databaseToMarkdown, collectDatabaseIds } from "@/lib/notes/blocks-to-markdown";
 
 describe("blocksToMarkdown", () => {
   it("serializes headings, paragraphs, and inline styles", () => {
@@ -49,5 +49,41 @@ describe("blocksToMarkdown", () => {
   it("returns empty for non-array input", () => {
     expect(blocksToMarkdown(null)).toBe("");
     expect(blocksToMarkdown("nope")).toBe("");
+  });
+});
+
+describe("databaseToMarkdown + database block export", () => {
+  const db = {
+    title: "Tasks",
+    properties: [
+      { id: "t", name: "Name", type: "title" },
+      { id: "s", name: "Status", type: "status" },
+      { id: "d", name: "Done", type: "checkbox" },
+    ],
+    rows: [
+      { id: "r1", cells: { t: "Ship it", s: "Done", d: true } },
+      { id: "r2", cells: { t: "Plan", s: "To Do" } },
+    ],
+  };
+  it("renders a GFM table with headers and rows", () => {
+    const md = databaseToMarkdown(db);
+    expect(md).toContain("**Tasks**");
+    expect(md).toContain("| Name | Status | Done |");
+    expect(md).toContain("| --- | --- | --- |");
+    expect(md).toContain("| Ship it | Done | ✓ |");
+    expect(md).toContain("| Plan | To Do |  |");
+  });
+  it("collectDatabaseIds finds database blocks (incl. nested)", () => {
+    const content = [
+      { type: "database", props: { databaseId: "db1" } },
+      { type: "column", children: [{ type: "database", props: { databaseId: "db2" } }] },
+      { type: "paragraph", content: [] },
+    ];
+    expect(collectDatabaseIds(content).sort()).toEqual(["db1", "db2"]);
+  });
+  it("blocksToMarkdown inlines a database block's table via the map", () => {
+    const content = [{ type: "database", props: { databaseId: "db1" } }];
+    const md = blocksToMarkdown(content, { db1: db });
+    expect(md).toContain("| Name | Status | Done |");
   });
 });
