@@ -45,7 +45,7 @@ export default function NotesPageView() {
   if (notFound) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Page not found.</div>;
   if (!page) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Loading…</div>;
 
-  const widthClass = page.fullWidth ? "w-full px-6 md:px-14 lg:px-20" : "max-w-3xl mx-auto px-6 md:px-10";
+  const widthClass = page.fullWidth ? "w-full px-6 md:px-14 lg:px-20" : "max-w-[900px] mx-auto px-6 md:px-10";
 
   return (
     <div className={`notes-page ${widthClass} py-8`}>
@@ -68,7 +68,7 @@ export default function NotesPageView() {
       </div>
       <input aria-label="Page title" defaultValue={page.title} placeholder="Untitled"
         onBlur={(e) => patch({ title: e.target.value })}
-        className="block w-full text-3xl font-bold bg-transparent outline-none mt-2 mb-6"
+        className="block w-full text-[2.5rem] leading-tight font-bold bg-transparent outline-none mt-2 mb-6"
         style={{ color: "var(--text-primary)" }} />
       <NotesEditorLoader pageId={page.id} initialContent={page.content} />
     </div>

@@ -124,15 +124,15 @@ function TreeRow({ node, depth, onChanged, onMove }: {
         onDragOver={(e) => { e.preventDefault(); setDropOver(true); }}
         onDragLeave={() => setDropOver(false)}
         onDrop={(e) => { e.preventDefault(); setDropOver(false); const id = e.dataTransfer.getData("text/plain"); if (id) onMove(id, node.id); }}
-        className="group flex items-center gap-1 rounded-md pr-1"
-        style={{ paddingLeft: depth * 14, background: dropOver ? "var(--accent-glow)" : active ? "var(--accent-glow)" : undefined, outline: dropOver ? "1px dashed var(--accent-color)" : "none" }}
+        className="group flex items-center gap-1 rounded-md pr-1 hover:bg-[var(--surface-raised)]"
+        style={{ paddingLeft: depth * 14, background: dropOver ? "var(--accent-glow)" : active ? "var(--surface-raised)" : undefined, outline: dropOver ? "1px dashed var(--accent-color)" : "none" }}
       >
         <button type="button" aria-label={open ? "Collapse" : "Expand"} onClick={() => setOpen((o) => !o)}
           className="w-4 h-6 flex items-center justify-center" style={{ color: "var(--text-faint)", visibility: hasKids ? "visible" : "hidden" }}>
           {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </button>
         <Link href={`/notes/${node.id}`} className="flex-1 flex items-center gap-1.5 py-1 min-w-0"
-          style={{ color: active ? "var(--accent-color)" : "var(--text-muted)" }}>
+          style={{ color: active ? "var(--text-primary)" : "var(--text-muted)", fontWeight: active ? 600 : 400 }}>
           <span>{node.icon}</span>
           <span className="truncate">{node.title || "Untitled"}</span>
         </Link>
