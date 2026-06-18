@@ -14,6 +14,7 @@ import {
   insertOrUpdateBlockForSlashMenu,
 } from "@blocknote/core";
 import { en as coreEn } from "@blocknote/core/locales";
+import { codeBlockOptions } from "@blocknote/code-block";
 import { BlockNoteView } from "@blocknote/mantine";
 import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems, locales as multiColumnLocales } from "@blocknote/xl-multi-column";
 import "@blocknote/core/fonts/inter.css";
@@ -90,6 +91,8 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     uploadFile,
     dropCursor: multiColumnDropCursor,
     dictionary: { ...coreEn, multi_column: multiColumnLocales.en },
+    // Syntax highlighting + a language dropdown on code blocks (Shiki, lazy-loaded).
+    codeBlock: codeBlockOptions,
   });
 
   const insertSubPageItem = () => ({
