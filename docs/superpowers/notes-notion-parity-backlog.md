@@ -16,7 +16,7 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 6. **Toggle headings** — expose BlockNote's `isToggleable` heading variant in the slash menu.
 7. **Text color & highlight** — formatting toolbar + `/color` style commands (BlockNote supports text/background color).
 8. **Bookmark / web embed** — `/bookmark` link-preview card; BlockNote embed blocks.
-9. **Table of contents** — custom block listing the page's headings, click-to-scroll.
+9. ~~**Table of contents**~~ ✅ DONE (iter 6) — live ToC block (collectHeadings helper, TDD), click-to-scroll, updates on edit.
 10. **Math equation** — `/math` inline + block (KaTeX).
 11. **Resizable / collapsible page-tree rail** — collapse toggle ✅ DONE (iter 4, persisted). Drag-to-resize still pending.
 12. **Per-page "full width" toggle** + page options menu (Notion-style ··· menu: width, lock, etc.).

@@ -21,6 +21,7 @@ import { useNotesRefresh } from "@/components/notes/notes-screen";
 import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
 import { DividerBlock } from "@/components/notes/blocks/divider-block";
+import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -29,6 +30,7 @@ const schema = withMultiColumn(
       subPage: SubPageBlock(),
       callout: CalloutBlock(),
       divider: DividerBlock(),
+      tableOfContents: TableOfContentsBlock(),
     },
   })
 );
@@ -133,6 +135,13 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   aliases: ["divider", "hr", "line", "rule"],
                   group: "Basic blocks",
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "divider" }),
+                },
+                {
+                  title: "Table of contents",
+                  subtext: "Live outline of the page's headings",
+                  aliases: ["toc", "table of contents", "outline"],
+                  group: "Advanced",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "tableOfContents" }),
                 },
               ],
               query
