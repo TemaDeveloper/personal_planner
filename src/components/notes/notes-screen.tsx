@@ -61,12 +61,15 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
     window.addEventListener("pointerup", onUp);
   };
 
-  // Quick switcher: Ctrl/Cmd-K opens the page jumper.
+  // Keyboard shortcuts: Ctrl/Cmd-K opens the page jumper; Ctrl/Cmd-\ toggles the rail.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSwitcherOpen((o) => !o);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault();
+        toggleRail();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -132,7 +135,7 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      {switcherOpen && <QuickSwitcher pages={pages} onClose={() => setSwitcherOpen(false)} />}
+      {switcherOpen && <QuickSwitcher pages={pages} onClose={() => setSwitcherOpen(false)} onCreated={load} />}
       </PagesCtx.Provider>
     </RefreshCtx.Provider>
   );

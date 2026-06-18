@@ -22,6 +22,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       content: page.content,
       order: page.order,
       fullWidth: page.fullWidth !== false,
+      pinned: !!page.pinned,
+      updatedAt: page.updatedAt ? new Date(page.updatedAt).toISOString() : null,
     },
   });
 }
@@ -46,14 +48,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await resolveUserId(await auth());
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
   const { id } = await params;
+  const permanent = req.nextUrl.searchParams.get("permanent") === "1";
 
-  const all = await NotesPage.find({ userId, archived: false }).select("_id parentId").lean();
+  // Permanent delete operates on the trashed subtree; soft delete on the live one.
+  const all = await NotesPage.find({ userId, archived: permanent }).select("_id parentId").lean();
   const childrenOf = new Map<string, string[]>();
   for (const p of all) {
     const key = p.parentId ? String(p.parentId) : "root";
@@ -67,6 +71,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const cur = stack.pop()!;
     toDelete.push(cur);
     stack.push(...(childrenOf.get(cur) ?? []));
+  }
+
+  if (permanent) {
+    const res = await NotesPage.deleteMany({ _id: { $in: toDelete }, userId });
+    if (res.deletedCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ ok: true, deleted: toDelete.length });
   }
 
   const res = await NotesPage.updateMany({ _id: { $in: toDelete }, userId }, { archived: true });

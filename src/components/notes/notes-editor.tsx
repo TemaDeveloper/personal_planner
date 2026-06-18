@@ -22,6 +22,7 @@ import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
 import { useNotesRefresh, useNotesPages } from "@/components/notes/notes-screen";
 import { searchPages } from "@/lib/notes/search-pages";
+import { isBareUrl } from "@/lib/notes/is-bare-url";
 import { detectLanguage } from "@/lib/notes/detect-language";
 import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
@@ -30,6 +31,7 @@ import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
 import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
 import { EquationBlock } from "@/components/notes/blocks/equation-block";
 import { MentionInline } from "@/components/notes/blocks/mention-inline";
+import { FileText, Info, Minus, ChevronRight, List, Bookmark, Sigma } from "lucide-react";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -91,11 +93,29 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     initialContent: initial,
     uploadFile,
     dropCursor: multiColumnDropCursor,
-    dictionary: { ...coreEn, multi_column: multiColumnLocales.en },
+    dictionary: {
+      ...coreEn,
+      placeholders: { ...coreEn.placeholders, default: "Write something, or press '/' for commands" },
+      multi_column: multiColumnLocales.en,
+    },
     // Syntax highlighting + a language dropdown on code blocks (Shiki, lazy-loaded).
     // Default to "text" so new/pasted code starts plain and auto-detection can
     // then set the real language (see autodetectCode below).
     codeBlock: { ...codeBlockOptions, defaultLanguage: "text" },
+    // Paste-smart: a bare URL pasted onto an empty line becomes a bookmark card.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pasteHandler: ({ event, editor: ed, defaultPasteHandler }: any) => {
+      const text = event.clipboardData?.getData("text/plain") ?? "";
+      if (isBareUrl(text)) {
+        const pos = ed.getTextCursorPosition();
+        const cur = pos.block;
+        const empty = cur.type === "paragraph" && (!cur.content || cur.content.length === 0);
+        if (empty) ed.updateBlock(cur, { type: "bookmark", props: { url: text.trim() } });
+        else ed.insertBlocks([{ type: "bookmark", props: { url: text.trim() } }], cur, "after");
+        return true;
+      }
+      return defaultPasteHandler();
+    },
   });
 
   // Auto-detect the language of code blocks from their content. Runs once per
@@ -135,6 +155,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     subtext: "Create a sub-page",
     aliases: ["page", "subpage", "child"],
     group: "Basic",
+    icon: <FileText size={18} />,
     onItemClick: async () => {
       const res = await fetch("/api/notes", {
         method: "POST",
@@ -201,6 +222,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Highlighted info box",
                   aliases: ["callout", "note", "info", "tip"],
                   group: "Basic blocks",
+                  icon: <Info size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "callout" }),
                 },
                 {
@@ -208,6 +230,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Visual separator",
                   aliases: ["divider", "hr", "line", "rule"],
                   group: "Basic blocks",
+                  icon: <Minus size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "divider" }),
                 },
                 {
@@ -215,6 +238,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Collapsible heading section",
                   aliases: ["toggle heading", "collapsible heading", "toggleh"],
                   group: "Headings",
+                  icon: <ChevronRight size={18} />,
                   onItemClick: () =>
                     insertOrUpdateBlockForSlashMenu(editor, { type: "heading", props: { level: 1, isToggleable: true } }),
                 },
@@ -223,6 +247,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Live outline of the page's headings",
                   aliases: ["toc", "table of contents", "outline"],
                   group: "Advanced",
+                  icon: <List size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "tableOfContents" }),
                 },
                 {
@@ -230,6 +255,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Save a link as a visual preview card",
                   aliases: ["bookmark", "link", "embed", "url"],
                   group: "Media",
+                  icon: <Bookmark size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "bookmark" }),
                 },
                 {
@@ -237,6 +263,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Block math with LaTeX (KaTeX)",
                   aliases: ["math", "equation", "latex", "katex", "tex"],
                   group: "Advanced",
+                  icon: <Sigma size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "equation" }),
                 },
               ],

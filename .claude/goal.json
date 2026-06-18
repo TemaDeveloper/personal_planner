@@ -1,31 +1,34 @@
 {
-  "outcome": "Three polish fixes to the Notes (Notion-style) section, each shipped and verified: (1) better programming-language detection for code blocks when typing or pasting code (sensible default, fenced-paste language detection, and auto-guess the language from pasted code content); (2) the page '···' options popup is no longer clipped/hidden by the left sidebar — it renders fully visible above all chrome; (3) the page templates are redesigned to genuinely resemble Notion's template gallery (categories + richer, well-structured multi-block templates), informed by https://www.notion.com/templates .",
+  "outcome": "Implement the Notion → Notes migration backlog (visual + functional parity) from docs/superpowers/specs/2026-06-18-notion-migration-spec.md, in phases. Databases are DEFERRED (separate later project). Accent stays brand CLAY (adopt Notion's STRUCTURE — monochrome sidebar greys, selection overlay, callout tint palette derived from our tokens — not Notion blue). Each shipped feature keeps the app green; work is branch-only until the user approves a deploy.",
   "verify": null,
   "constraints": [
-    "pnpm lint (0 errors), pnpm test, and pnpm build must all pass at the end of every iteration — never leave the app red.",
-    "Do not regress the shipped Notes features (nestable pages, autosave, slash menu incl. callout/divider/columns/toc/bookmark/equation, sub-pages, mentions, favorites, quick switcher, cover/emoji, full-width toggle, code-block highlighting).",
-    "Do not push to production or merge to main during the loop — branch-only. Production deploy happens only on explicit user approval.",
-    "Do not touch unrelated app sections except shared layout/nav touchpoints needed for the Notes popup fix.",
-    "Keep BlockNote as the editor foundation; extend via config/custom blocks/slash items, don't replace it."
+    "pnpm lint (0 errors), pnpm test, and pnpm build pass at the end of every iteration — never leave the app red.",
+    "Do NOT regress shipped Notes features (nestable pages, autosave, slash menu incl. callout/divider/columns/toc/bookmark/equation, sub-pages, @mentions, favorites, quick switcher, cover/emoji, full-width toggle, code highlight+lang-detect, rich templates, page ··· menu).",
+    "Branch-only (feat/notes-notion-impl). No merge to main / no production deploy without explicit user approval.",
+    "Keep BlockNote as the foundation — theme/extend via config, CSS, custom blocks, slash items; do not replace it.",
+    "Keep the brand clay accent; databases remain OUT until separately greenlit.",
+    "Only touch the Notes surface + its nav/layout touchpoints; don't disturb other app sections."
   ],
   "boundaries": [
-    "Work on branch feat/notes-polish-2 with frequent commits.",
-    "In scope: src/components/notes/**, src/app/(app)/notes/**, src/app/api/notes/**, src/lib/notes/**, src/lib/models/notes-page.ts, notes-related entries in src/lib/validations.ts, and notes layout/nav touchpoints in src/components/layout/** + content-shell.",
-    "May add npm deps (pnpm) when needed (e.g. a lightweight language detector).",
-    "May use WebFetch/WebSearch to study Notion's template gallery + categories.",
-    "Maintain the parity backlog at docs/superpowers/notes-notion-parity-backlog.md."
+    "src/components/notes/**, src/app/(app)/notes/**, src/app/api/notes/**, src/lib/notes/**, src/lib/models/notes-page.ts, notes-related validations, notes nav/layout touchpoints in src/components/layout/** + content-shell, and src/app/globals.css for scoped Notes CSS.",
+    "May add npm deps (pnpm) when justified (e.g. next/font Inter).",
+    "Follow the phased backlog (Phase 0 → 6) in the migration spec."
   ],
-  "iteration_policy": "Each round: pick the next of the three deliverables by impact (start with the '···' popup visibility bug since it makes the menu unusable; then code-block language detection; then the templates redesign, which is the largest). Implement natively (TDD for pure logic such as a language-detection helper or template generators), keep the app green, commit, and append a one-line log entry. The templates task may span several iterations (research Notion categories, redesign the gallery UX, then author richer templates).",
-  "blocked_condition": "Report and pause if a fix needs infrastructure/secrets not available, an irreversible/outward-facing action (deploy), or a product decision only the user can make (e.g. exactly which Notion template categories/templates to include).",
-  "status": "complete",
-  "iterations": 2,
-  "max_iterations": 10,
+  "iteration_policy": "Work the backlog in order, smallest-risk-highest-impact first. Phase 0 (Inter font on Notes surface; monochrome sidebar hover/active; heading scale 40/30/24/20 + widen comfortable column ~900px). Then Phase 1 (callout borderless tinted fill + 9-color tint palette; quote 3px left border; side-menu theme + placeholder). Phase 2 (page header: icon overlaps cover, title 40/700, hover add-cover/icon, reposition). Phase 3 (sidebar per-row ⊕/⋯). Phase 4 (slim top bar + richer ··· + slash icons). Phase 5 (Cmd-K content search; empty-state copy). Phase 6 (expose/verify BlockNote built-ins: formatting toolbar/turn-into/color; app shortcuts; copy-link; page duplicate/move/Trash/export; paste-smart). TDD pure logic; verify build/lint/test each round; commit; one-line log. Pause for the user to visually review before any deploy.",
+  "blocked_condition": "Report/pause if a change needs infra/secrets, an irreversible/outward action (deploy), or a product decision (e.g. reviving databases, switching accent). Note exactly what's needed.",
+  "status": "paused",
+  "iterations": 5,
+  "max_iterations": 15,
   "log": [
-    "Iter 1: Fixed deliverable (2) — page '···' popup clipping (Breadcrumbs-null + justify-between pushed the button left; wrapped breadcrumbs in flex-1 so the menu stays pinned right).",
-    "Iter 2: Deliverable (1) DONE — code-block language auto-detection (detectLanguage heuristic, TDD 9 cases; default 'text' then auto-set; guarded).",
-    "Iter 3: Deliverable (3) CONTENT — rewrote all 21 templates into rich Notion-quality pages (callouts/dividers/checklists/quotes/ToC) + headless load test (all 21 create a valid BlockNote doc).",
-    "Iter 4: Gallery UX polish — category filter tabs, tinted icon chips, hover lift, 3-col grid, busy guard. All three deliverables met. PAUSED for user review + deploy approval (branch-only constraint). Recommend /goal done + deploy."
+    "Phase 0 DONE: Inter font scoped to Notes (next/font --font-notes); Notion heading scale in-editor via [data-content-type=heading][data-level] (30/24/20, 600); page title → 40px; comfortable column 768→900px; sidebar rows accent→monochrome grey hover/active (active text darker+semibold). App green (0 lint errors, 320 tests, build ok). Next: Phase 1 — callout borderless tinted fill + 9-color tint palette, quote 3px left border, theme BlockNote side menu + placeholder. Branch-only; recommend a visual review before any deploy.",
+    "Phase 1 (part) DONE: callout borderless tinted fill; quote 3px left border; Notion placeholder copy.",
+    "Phase 1 DONE: 9-color callout tint palette (color prop + swatch picker, [data-callout-color] CSS light+dark, helper TDD'd, 323 tests).",
+    "Phase 2 (part) DONE: page header — 64px icon overlapping the cover bottom when set; Add-cover affordance reveals on header hover when none; title 40px. App green (0 errors, 323 tests, build ok). Still TODO in Phase 2: cover REPOSITION (needs a `coverPosition` model field + drag focal point). Next: cover reposition, then Phase 3 (sidebar per-row ⊕ add-subpage + ⋯ menu).",
+    "Phase 3 DONE: sidebar TreeRow now has hover ⊕ add-subpage (POST /api/notes parentId → expand + navigate) and a ⋯ menu (inline Rename via input, Add sub-page, Delete) folding the old 🗑; ⭐ favorite kept; monochrome theming, clay accent. App green (0 errors, 323 tests, build ok). Next: Phase 4 — slim Notes top bar + richer ··· menu + slash-item icons + popover transitions.",
+    "Phase 4 DONE: slim top bar (breadcrumb + 'Edited <relative>' + ⭐ favorite toggle + ···); relativeTime() helper TDD'd (4 tests, 327 total); GET /api/notes/[id] now returns pinned+updatedAt; ··· menu enriched (favorites/copy-link/full-width/delete, Esc-close, notesPop fade-scale transition); custom slash items got lucide icons. App green (0 errors, 327 tests, build ok). Next: Phase 5 — Cmd-K content search + empty-state copy.",
+    "Phase 5 DONE: blocksToText()/snippetAround() TDD'd (8 tests, 331 total); new GET /api/notes/search?q= (title+body, ranked, snippets); QuickSwitcher now does debounced content search w/ recent list + body snippets + 'Create page <query>' action; /notes empty state upgraded to a quick-start (New page button + ⌘/Ctrl-K hint). App green (0 errors, 331 tests, build ok). Next: Phase 6 — expose/verify BlockNote built-ins (formatting toolbar/turn-into/color), app shortcuts (Cmd+\\, Cmd+D, Esc), copy-link-to-block, page duplicate/move/Trash+restore/export, paste-smart (URL→bookmark).",
+    "Phase 6 DONE (4 commits): (1) page deep-duplicate endpoint + ··· menu wiring + Ctrl/Cmd-\\ rail toggle; (2) Trash + restore + delete-forever (trash API, restore API, DELETE ?permanent=1, TrashModal from sidebar); (3) paste-smart bare-URL→bookmark (isBareUrl TDD + editor pasteHandler); (4) Markdown export (blocksToMarkdown serializer TDD + ··· 'Export Markdown'). BlockNote built-ins (formatting toolbar / turn-into / color / side menu) confirmed exposed — only slashMenu is overridden. App green (0 errors, 338 tests, build ok). Backlog Phases 0–6 substantially complete. PAUSED for user visual review before any deploy. Remaining nice-to-haves (not blocking): copy-link-to-specific-block (needs block anchors), move-via-menu (drag-renest already works), cover reposition (needs coverPosition field)."
   ],
-  "created": "2026-06-18T01:59:25Z",
-  "updated": "2026-06-18T02:08:50.625Z"
+  "created": "2026-06-18T04:38:46Z",
+  "updated": "2026-06-18T04:49:53.427Z"
 }

@@ -1,0 +1,33 @@
+{
+  "url": "https://candle-gosling-511.notion.site/Python-Roadmap-By-Data-With-Baraa-28334b251f12819c924be86a2e85f6eb",
+  "result": {
+    "notion-bulleted_list-block": {
+      "tag": "div",
+      "cls": "notion-selectable notion-bulleted_list-block",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(44, 44, 43)",
+      "font": "ui-sans-serif",
+      "size": "16px",
+      "weight": "400",
+      "lh": "24px",
+      "pad": "0px",
+      "radius": "0px",
+      "borderLeft": "0px none rgb(44, 44, 43)",
+      "text": "Data with BaraaPython Bootcamp Playlist "
+    },
+    "notion-callout-block": {
+      "tag": "div",
+      "cls": "notion-selectable notion-callout-block",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(44, 44, 43)",
+      "font": "ui-sans-serif",
+      "size": "16px",
+      "weight": "400",
+      "lh": "24px",
+      "pad": "8px",
+      "radius": "0px",
+      "borderLeft": "0px none rgb(44, 44, 43)",
+      "text": "Your ProgressBy ChapterTable🟢Beginner L"
+    }
+  }
+}
