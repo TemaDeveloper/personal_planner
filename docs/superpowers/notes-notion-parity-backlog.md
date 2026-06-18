@@ -15,7 +15,7 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 5. ~~**Columns / multi-column layout**~~ ✅ DONE (iter 3) — `@blocknote/xl-multi-column` wired (schema + slash items + drop cursor).
 6. **Toggle headings** — expose BlockNote's `isToggleable` heading variant in the slash menu.
 7. **Text color & highlight** — formatting toolbar + `/color` style commands (BlockNote supports text/background color).
-8. **Bookmark / web embed** — `/bookmark` link-preview card; BlockNote embed blocks.
+8. ~~**Bookmark / web embed**~~ ✅ DONE (iter 7) — `/bookmark` paste-a-link preview card; server unfurl route with SSRF guard (isPublicHttpUrl, TDD) + OG-meta parser (extractMeta, TDD) + redirect-hop validation.
 9. ~~**Table of contents**~~ ✅ DONE (iter 6) — live ToC block (collectHeadings helper, TDD), click-to-scroll, updates on edit.
 10. **Math equation** — `/math` inline + block (KaTeX).
 11. **Resizable / collapsible page-tree rail** — collapse toggle ✅ DONE (iter 4, persisted). Drag-to-resize still pending.

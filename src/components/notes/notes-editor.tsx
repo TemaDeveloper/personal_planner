@@ -22,6 +22,7 @@ import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
 import { DividerBlock } from "@/components/notes/blocks/divider-block";
 import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
+import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -31,6 +32,7 @@ const schema = withMultiColumn(
       callout: CalloutBlock(),
       divider: DividerBlock(),
       tableOfContents: TableOfContentsBlock(),
+      bookmark: BookmarkBlock(),
     },
   })
 );
@@ -142,6 +144,13 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   aliases: ["toc", "table of contents", "outline"],
                   group: "Advanced",
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "tableOfContents" }),
+                },
+                {
+                  title: "Web bookmark",
+                  subtext: "Save a link as a visual preview card",
+                  aliases: ["bookmark", "link", "embed", "url"],
+                  group: "Media",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "bookmark" }),
                 },
               ],
               query
