@@ -13,8 +13,8 @@ export const CalloutBlock = createReactBlockSpec(
   {
     render: (props) => (
       <div
-        className="flex gap-2.5 rounded-lg px-3 py-2.5 my-1"
-        style={{ background: "var(--surface-raised)", border: "1px solid var(--border-subtle)" }}
+        className="flex gap-2.5 rounded-md px-3 py-3 my-1"
+        style={{ background: "var(--surface-raised)" }}
       >
         <span contentEditable={false} className="shrink-0 leading-7">
           <EmojiPickerButton

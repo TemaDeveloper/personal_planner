@@ -91,7 +91,11 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     initialContent: initial,
     uploadFile,
     dropCursor: multiColumnDropCursor,
-    dictionary: { ...coreEn, multi_column: multiColumnLocales.en },
+    dictionary: {
+      ...coreEn,
+      placeholders: { ...coreEn.placeholders, default: "Write something, or press '/' for commands" },
+      multi_column: multiColumnLocales.en,
+    },
     // Syntax highlighting + a language dropdown on code blocks (Shiki, lazy-loaded).
     // Default to "text" so new/pasted code starts plain and auto-detection can
     // then set the real language (see autodetectCode below).

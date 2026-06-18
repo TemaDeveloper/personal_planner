@@ -629,3 +629,10 @@
 .notes-page [data-content-type="heading"][data-level="1"] { font-size: 1.875rem; line-height: 1.3; font-weight: 600; }
 .notes-page [data-content-type="heading"][data-level="2"] { font-size: 1.5rem;   line-height: 1.3; font-weight: 600; }
 .notes-page [data-content-type="heading"][data-level="3"] { font-size: 1.25rem;  line-height: 1.3; font-weight: 600; }
+
+/* Notes — Phase 1: quote as a Notion-style left-bordered block. */
+.notes-page [data-content-type="quote"] {
+  border-left: 3px solid var(--text-faint, rgba(55, 53, 47, 0.4));
+  padding-left: 14px;
+  font-style: normal;
+}
