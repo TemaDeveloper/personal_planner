@@ -13,8 +13,9 @@ import {
   filterSuggestionItems,
   insertOrUpdateBlockForSlashMenu,
 } from "@blocknote/core";
+import { en as coreEn } from "@blocknote/core/locales";
 import { BlockNoteView } from "@blocknote/mantine";
-import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems } from "@blocknote/xl-multi-column";
+import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems, locales as multiColumnLocales } from "@blocknote/xl-multi-column";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
@@ -80,7 +81,16 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     return Array.isArray(c) && c.length > 0 ? (c as never) : undefined;
   }, [initialContent]);
 
-  const editor = useCreateBlockNote({ schema, initialContent: initial, uploadFile, dropCursor: multiColumnDropCursor });
+  // The multi-column extension reads its slash-menu labels from
+  // `dictionary.multi_column`; without it getMultiColumnSlashMenuItems throws,
+  // which would make the "/" menu hang on "Loading…" forever.
+  const editor = useCreateBlockNote({
+    schema,
+    initialContent: initial,
+    uploadFile,
+    dropCursor: multiColumnDropCursor,
+    dictionary: { ...coreEn, multi_column: multiColumnLocales.en },
+  });
 
   const insertSubPageItem = () => ({
     title: "Page",
@@ -145,7 +155,8 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
             filterSuggestionItems(
               [
                 ...getDefaultReactSlashMenuItems(editor),
-                ...getMultiColumnSlashMenuItems(editor),
+                // Guard: never let a throwing sub-source hang the menu on "Loading…".
+                ...(() => { try { return getMultiColumnSlashMenuItems(editor); } catch { return []; } })(),
                 insertSubPageItem(),
                 {
                   title: "Callout",
