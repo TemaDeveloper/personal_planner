@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, ChevronDown, Star, Plus, MoreHorizontal } from "lucide-react";
+import { ChevronRight, ChevronDown, Star, Plus, MoreHorizontal, Trash2 } from "lucide-react";
 import type { TreeNode } from "@/lib/notes/types";
 import { orderBetween } from "@/lib/notes/order";
 import { TemplateGallery } from "./template-gallery";
+import { TrashModal } from "./trash-modal";
 
 function subtreeIds(node: TreeNode, acc: Set<string> = new Set()): Set<string> {
   acc.add(node.id);
@@ -39,6 +40,7 @@ function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
 export function PageTree({ tree, onChanged }: { tree: TreeNode[]; onChanged: () => void }) {
   const [dropRoot, setDropRoot] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
 
   const move = async (draggedId: string, targetId: string | null) => {
     if (draggedId === targetId) return;
@@ -92,9 +94,16 @@ export function PageTree({ tree, onChanged }: { tree: TreeNode[]; onChanged: () 
           className="w-full text-left px-2 py-1.5 rounded-md text-[12px]" style={{ color: "var(--text-muted)" }}>
           ＋ New page
         </button>
+        <button type="button" onClick={() => setTrashOpen(true)}
+          className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-muted)" }}>
+          <Trash2 size={13} /> Trash
+        </button>
       </div>
       {galleryOpen && (
         <TemplateGallery onClose={() => setGalleryOpen(false)} onCreated={onChanged} />
+      )}
+      {trashOpen && (
+        <TrashModal onClose={() => setTrashOpen(false)} onChanged={onChanged} />
       )}
     </div>
   );
