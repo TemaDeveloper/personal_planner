@@ -30,6 +30,7 @@ import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
 import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
 import { EquationBlock } from "@/components/notes/blocks/equation-block";
 import { MentionInline } from "@/components/notes/blocks/mention-inline";
+import { FileText, Info, Minus, ChevronRight, List, Bookmark, Sigma } from "lucide-react";
 
 const schema = withMultiColumn(
   BlockNoteSchema.create({
@@ -139,6 +140,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     subtext: "Create a sub-page",
     aliases: ["page", "subpage", "child"],
     group: "Basic",
+    icon: <FileText size={18} />,
     onItemClick: async () => {
       const res = await fetch("/api/notes", {
         method: "POST",
@@ -205,6 +207,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Highlighted info box",
                   aliases: ["callout", "note", "info", "tip"],
                   group: "Basic blocks",
+                  icon: <Info size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "callout" }),
                 },
                 {
@@ -212,6 +215,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Visual separator",
                   aliases: ["divider", "hr", "line", "rule"],
                   group: "Basic blocks",
+                  icon: <Minus size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "divider" }),
                 },
                 {
@@ -219,6 +223,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Collapsible heading section",
                   aliases: ["toggle heading", "collapsible heading", "toggleh"],
                   group: "Headings",
+                  icon: <ChevronRight size={18} />,
                   onItemClick: () =>
                     insertOrUpdateBlockForSlashMenu(editor, { type: "heading", props: { level: 1, isToggleable: true } }),
                 },
@@ -227,6 +232,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Live outline of the page's headings",
                   aliases: ["toc", "table of contents", "outline"],
                   group: "Advanced",
+                  icon: <List size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "tableOfContents" }),
                 },
                 {
@@ -234,6 +240,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Save a link as a visual preview card",
                   aliases: ["bookmark", "link", "embed", "url"],
                   group: "Media",
+                  icon: <Bookmark size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "bookmark" }),
                 },
                 {
@@ -241,6 +248,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   subtext: "Block math with LaTeX (KaTeX)",
                   aliases: ["math", "equation", "latex", "katex", "tex"],
                   group: "Advanced",
+                  icon: <Sigma size={18} />,
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "equation" }),
                 },
               ],

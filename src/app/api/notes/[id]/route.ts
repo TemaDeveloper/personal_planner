@@ -22,6 +22,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       content: page.content,
       order: page.order,
       fullWidth: page.fullWidth !== false,
+      pinned: !!page.pinned,
+      updatedAt: page.updatedAt ? new Date(page.updatedAt).toISOString() : null,
     },
   });
 }
