@@ -9,19 +9,42 @@ import {
 import {
   BlockNoteSchema,
   defaultBlockSpecs,
+  defaultInlineContentSpecs,
   filterSuggestionItems,
   insertOrUpdateBlockForSlashMenu,
 } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
+import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems } from "@blocknote/xl-multi-column";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
-import { useNotesRefresh } from "@/components/notes/notes-screen";
+import { useNotesRefresh, useNotesPages } from "@/components/notes/notes-screen";
+import { searchPages } from "@/lib/notes/search-pages";
 import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
+import { CalloutBlock } from "@/components/notes/blocks/callout-block";
+import { DividerBlock } from "@/components/notes/blocks/divider-block";
+import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
+import { BookmarkBlock } from "@/components/notes/blocks/bookmark-block";
+import { EquationBlock } from "@/components/notes/blocks/equation-block";
+import { MentionInline } from "@/components/notes/blocks/mention-inline";
 
-const schema = BlockNoteSchema.create({
-  blockSpecs: { ...defaultBlockSpecs, subPage: SubPageBlock() },
-});
+const schema = withMultiColumn(
+  BlockNoteSchema.create({
+    blockSpecs: {
+      ...defaultBlockSpecs,
+      subPage: SubPageBlock(),
+      callout: CalloutBlock(),
+      divider: DividerBlock(),
+      tableOfContents: TableOfContentsBlock(),
+      bookmark: BookmarkBlock(),
+      equation: EquationBlock(),
+    },
+    inlineContentSpecs: {
+      ...defaultInlineContentSpecs,
+      mention: MentionInline,
+    },
+  })
+);
 
 /** Reads the app's dark-mode state (Tailwind `dark` class on <html>). */
 function useIsDark(): boolean {
@@ -40,6 +63,7 @@ function useIsDark(): boolean {
 export function NotesEditor({ pageId, initialContent }: { pageId: string; initialContent: unknown }) {
   const isDark = useIsDark();
   const refresh = useNotesRefresh();
+  const pages = useNotesPages();
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   const uploadFile = async (file: File): Promise<string> => {
@@ -56,7 +80,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     return Array.isArray(c) && c.length > 0 ? (c as never) : undefined;
   }, [initialContent]);
 
-  const editor = useCreateBlockNote({ schema, initialContent: initial, uploadFile });
+  const editor = useCreateBlockNote({ schema, initialContent: initial, uploadFile, dropCursor: multiColumnDropCursor });
 
   const insertSubPageItem = () => ({
     title: "Page",
@@ -103,10 +127,70 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
         onChange={() => debouncedSave(editor.document)}
       >
         <SuggestionMenuController
+          triggerCharacter="@"
+          getItems={async (query) =>
+            searchPages(pages, query).slice(0, 10).map((p) => ({
+              title: `${p.icon} ${p.title || "Untitled"}`,
+              onItemClick: () =>
+                editor.insertInlineContent([
+                  { type: "mention", props: { pageId: p.id, label: p.title || "Untitled" } },
+                  " ",
+                ]),
+            }))
+          }
+        />
+        <SuggestionMenuController
           triggerCharacter="/"
           getItems={async (query) =>
             filterSuggestionItems(
-              [...getDefaultReactSlashMenuItems(editor), insertSubPageItem()],
+              [
+                ...getDefaultReactSlashMenuItems(editor),
+                ...getMultiColumnSlashMenuItems(editor),
+                insertSubPageItem(),
+                {
+                  title: "Callout",
+                  subtext: "Highlighted info box",
+                  aliases: ["callout", "note", "info", "tip"],
+                  group: "Basic blocks",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "callout" }),
+                },
+                {
+                  title: "Divider",
+                  subtext: "Visual separator",
+                  aliases: ["divider", "hr", "line", "rule"],
+                  group: "Basic blocks",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "divider" }),
+                },
+                {
+                  title: "Toggle heading",
+                  subtext: "Collapsible heading section",
+                  aliases: ["toggle heading", "collapsible heading", "toggleh"],
+                  group: "Headings",
+                  onItemClick: () =>
+                    insertOrUpdateBlockForSlashMenu(editor, { type: "heading", props: { level: 1, isToggleable: true } }),
+                },
+                {
+                  title: "Table of contents",
+                  subtext: "Live outline of the page's headings",
+                  aliases: ["toc", "table of contents", "outline"],
+                  group: "Advanced",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "tableOfContents" }),
+                },
+                {
+                  title: "Web bookmark",
+                  subtext: "Save a link as a visual preview card",
+                  aliases: ["bookmark", "link", "embed", "url"],
+                  group: "Media",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "bookmark" }),
+                },
+                {
+                  title: "Equation",
+                  subtext: "Block math with LaTeX (KaTeX)",
+                  aliases: ["math", "equation", "latex", "katex", "tex"],
+                  group: "Advanced",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "equation" }),
+                },
+              ],
               query
             )
           }

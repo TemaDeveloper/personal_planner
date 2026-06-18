@@ -4,7 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
-export function EmojiPickerButton({ value, onPick }: { value: string; onPick: (emoji: string) => void }) {
+export function EmojiPickerButton({
+  value,
+  onPick,
+  buttonClassName,
+}: {
+  value: string;
+  onPick: (emoji: string) => void;
+  buttonClassName?: string;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -18,7 +26,7 @@ export function EmojiPickerButton({ value, onPick }: { value: string; onPick: (e
   return (
     <div className="relative inline-block" ref={ref}>
       <button type="button" aria-label="Change icon" onClick={() => setOpen((o) => !o)}
-        className="text-4xl leading-none hover:bg-[var(--surface-raised)] rounded-md px-1">
+        className={buttonClassName ?? "text-4xl leading-none hover:bg-[var(--surface-raised)] rounded-md px-1"}>
         {value || "📄"}
       </button>
       {open && (

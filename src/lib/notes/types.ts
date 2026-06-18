@@ -7,6 +7,7 @@ export interface FlatPage {
   title: string;
   icon: string;
   order: number;
+  pinned?: boolean;
 }
 
 export interface TreeNode extends FlatPage {

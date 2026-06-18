@@ -67,3 +67,4 @@ cypress/downloads/
 
 # Keep the example env (no secrets) tracked
 !.env.example
+.env*.local
