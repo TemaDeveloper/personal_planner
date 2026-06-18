@@ -18,9 +18,16 @@ import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
 import { useNotesRefresh } from "@/components/notes/notes-screen";
 import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
+import { CalloutBlock } from "@/components/notes/blocks/callout-block";
+import { DividerBlock } from "@/components/notes/blocks/divider-block";
 
 const schema = BlockNoteSchema.create({
-  blockSpecs: { ...defaultBlockSpecs, subPage: SubPageBlock() },
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    subPage: SubPageBlock(),
+    callout: CalloutBlock(),
+    divider: DividerBlock(),
+  },
 });
 
 /** Reads the app's dark-mode state (Tailwind `dark` class on <html>). */
@@ -106,7 +113,24 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
           triggerCharacter="/"
           getItems={async (query) =>
             filterSuggestionItems(
-              [...getDefaultReactSlashMenuItems(editor), insertSubPageItem()],
+              [
+                ...getDefaultReactSlashMenuItems(editor),
+                insertSubPageItem(),
+                {
+                  title: "Callout",
+                  subtext: "Highlighted info box",
+                  aliases: ["callout", "note", "info", "tip"],
+                  group: "Basic blocks",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "callout" }),
+                },
+                {
+                  title: "Divider",
+                  subtext: "Visual separator",
+                  aliases: ["divider", "hr", "line", "rule"],
+                  group: "Basic blocks",
+                  onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "divider" }),
+                },
+              ],
               query
             )
           }
