@@ -1,0 +1,44 @@
+{
+  "outcome": "The app's Notes section is a faithful, free, out-of-the-box Notion clone: a full-width (not vertically-centered) expandable workspace where pages are created/nested infinitely, edited as blocks, and a rich '/' slash menu exposes the full range of Notion block types and actions. Feature parity with Notion's core editing/organization experience (the kind a Pro user expects), implemented natively in-app.",
+  "verify": null,
+  "constraints": [
+    "pnpm lint (0 errors), pnpm test, and pnpm build must all pass at the end of every iteration — never leave the app red.",
+    "Do not regress existing Notes data or the v1/v2 features already shipped (nestable pages, autosave, templates, emoji picker, cover images, /page sub-pages, private-blob image serving).",
+    "Do not push to production or merge to main during the loop — branch-only. Production deploy happens only on explicit user approval.",
+    "Do not touch unrelated app sections (calendar, work, gym, etc.) except where shared layout/nav must accommodate the wider Notes workspace.",
+    "Keep BlockNote as the editor foundation; extend it (custom blocks, slash items, layout) rather than replacing it."
+  ],
+  "boundaries": [
+    "Work on branch feat/notes-notion-parity with frequent commits.",
+    "In scope: src/components/notes/**, src/app/(app)/notes/**, src/app/api/notes/**, src/lib/notes/**, src/lib/models/notes-page.ts, notes-related entries in src/lib/validations.ts, and notes nav/layout touchpoints in src/components/layout/** + content-shell.",
+    "May add npm deps (pnpm) when needed for parity (e.g. BlockNote extensions).",
+    "May use WebSearch/WebFetch to research Notion's feature set and BlockNote capabilities.",
+    "Maintain a living parity backlog at docs/superpowers/notes-notion-parity-backlog.md (what Notion has, what's done, what's next, priority)."
+  ],
+  "iteration_policy": "Each round: (1) consult/maintain the parity backlog; (2) pick the highest-impact unmet capability (early rounds prioritize the explicit asks: full-width expandable layout replacing the centered column, then a broad '/' slash command set, then the major Notion block types: headings, to-do, toggle lists, callouts, quotes, code, dividers, tables, columns/layout, images/files, bookmarks, math, sub-pages, links/mentions); (3) implement it natively (TDD for pure logic; BlockNote custom blocks/slash items for editor features), keeping the app green; (4) commit; (5) append a one-line log entry of what shipped and what's next.",
+  "blocked_condition": "Report and pause if a capability requires infrastructure/secrets/credentials not available, an irreversible/outward-facing action (deploy, external publish), or a product decision only the user can make (e.g. which non-core Notion features are out of scope). Note exactly what is needed.",
+  "status": "complete",
+  "iterations": 14,
+  "max_iterations": 20,
+  "log": [
+    "Iter 1: Researched Notion + BlockNote; wrote parity backlog. Shipped full-width workspace (removed centered max-w-3xl column, zeroed BlockNote inline padding so content aligns with title).",
+    "Iter 2: Added Callout (emoji + editable highlighted box) and Divider custom blocks, registered in the schema + surfaced as '/' slash items (Basic blocks group). Default BlockNote slash items already cover headings/lists/toggle/quote/code/table/image/video/audio/file.",
+    "Iter 3: Multi-column layouts via @blocknote/xl-multi-column — withMultiColumn schema wrap, multiColumnDropCursor (drag blocks into columns), getMultiColumnSlashMenuItems (/2 columns, /3 columns).",
+    "Iter 4: Collapsible page-tree rail (persisted to localStorage) so the workspace expands to the full window — collapse chevron in the rail, reveal button in main. Serves the explicit 'expandable workspace' ask.",
+    "Iter 5: Breadcrumbs (root→current ancestor path, clickable) above the page header, backed by a cycle-safe pageAncestors() helper (TDD, 4 tests).",
+    "Iter 6: Live Table of Contents block (/toc) — collectHeadings() helper (TDD, 4 tests) + block that lists headings, click-to-scroll, updates via useEditorChange.",
+    "Iter 7: Web bookmark block (/bookmark) — paste a link → SSRF-guarded server unfurl route (isPublicHttpUrl blocks private/loopback/link-local + validates each redirect hop; timeout + body cap) → OG-meta preview card. Pure helpers isPublicHttpUrl + extractMeta TDD'd (9 tests).",
+    "Iter 8: Editable callout emoji — the callout icon is now a clickable emoji-mart picker (parameterized EmojiPickerButton with buttonClassName) that updates the block prop.",
+    "Iter 9: Drag-to-resize the page-tree rail (pointer-drag divider, clamp 180–480px, persisted) — completes the resizable+collapsible expandable workspace.",
+    "Iter 10: Math equation block (/equation) via KaTeX — katexHtml helper (TDD, 3 tests), click-to-edit LaTeX, throwOnError:false.",
+    "Iter 11: Quick switcher (Ctrl/Cmd-K) — ranked searchPages() helper (TDD, 5 tests) + keyboard-navigable command palette to jump to any page.",
+    "Iter 11.5: Paused, reported core-parity assessment; user chose to resume on polish/nice-to-haves.",
+    "Iter 12: Favorites — server-side `pinned` field (model + list API + update schema), star toggle on tree rows, and a Favorites section at the top of the rail.",
+    "Iter 13: Page ··· options menu — per-page server-side `fullWidth` field; menu toggles full-width vs comfortable centered column, and deletes the page.",
+    "Iter 14: @-mention menu — inline links to other pages (reuses searchPages). Paused for a scope decision; user chose 'a few more extras'.",
+    "Iter 15: Toggle-heading slash item (heading with isToggleable:true) in the Headings group.",
+    "Iter 16: Live mention chips — custom inline content 'mention' (createReactInlineContentSpec, registered raw — inline specs are not factories) that reflects the referenced page's live icon+title and navigates on click; @ menu now inserts it instead of a plain link. Extras essentially exhausted; remaining (inline math editing UX) is low-value/higher-risk. Recommend wrapping: /goal done — core+polish Notion parity achieved, app green throughout (286 tests, 0 lint errors)."
+  ],
+  "created": "2026-06-18T00:42:28Z",
+  "updated": "2026-06-18T01:26:05.083Z"
+}
