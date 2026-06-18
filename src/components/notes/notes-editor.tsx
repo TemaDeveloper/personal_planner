@@ -13,6 +13,7 @@ import {
   insertOrUpdateBlockForSlashMenu,
 } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
+import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems } from "@blocknote/xl-multi-column";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
@@ -21,14 +22,16 @@ import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
 import { DividerBlock } from "@/components/notes/blocks/divider-block";
 
-const schema = BlockNoteSchema.create({
-  blockSpecs: {
-    ...defaultBlockSpecs,
-    subPage: SubPageBlock(),
-    callout: CalloutBlock(),
-    divider: DividerBlock(),
-  },
-});
+const schema = withMultiColumn(
+  BlockNoteSchema.create({
+    blockSpecs: {
+      ...defaultBlockSpecs,
+      subPage: SubPageBlock(),
+      callout: CalloutBlock(),
+      divider: DividerBlock(),
+    },
+  })
+);
 
 /** Reads the app's dark-mode state (Tailwind `dark` class on <html>). */
 function useIsDark(): boolean {
@@ -63,7 +66,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     return Array.isArray(c) && c.length > 0 ? (c as never) : undefined;
   }, [initialContent]);
 
-  const editor = useCreateBlockNote({ schema, initialContent: initial, uploadFile });
+  const editor = useCreateBlockNote({ schema, initialContent: initial, uploadFile, dropCursor: multiColumnDropCursor });
 
   const insertSubPageItem = () => ({
     title: "Page",
@@ -115,6 +118,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
             filterSuggestionItems(
               [
                 ...getDefaultReactSlashMenuItems(editor),
+                ...getMultiColumnSlashMenuItems(editor),
                 insertSubPageItem(),
                 {
                   title: "Callout",

@@ -8,11 +8,11 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 - `/page` live sub-page block; template library (gallery, ~21 templates); emoji picker; cover images (private Blob via authenticated route).
 
 ## Parity gaps (prioritized)
-1. **Full-width expandable layout** — replace the centered `max-w-3xl` column with a wide, full-bleed workspace (Notion "full width" feel). [ITER 1 — in progress]
-2. **Broader `/` slash menu** — ensure ALL default BlockNote blocks are surfaced + grouped (Basic / Lists / Media / Advanced), with good labels/aliases. Currently only defaults + /page are wired.
-3. **Callout block** — custom block: icon + colored background.
-4. **Divider** — `/divider` horizontal rule (custom block; not in BlockNote defaults).
-5. **Columns / multi-column layout** — add `@blocknote/xl-multi-column` (`/2 columns`, `/3 columns`).
+1. ~~**Full-width expandable layout**~~ ✅ DONE (iter 1) — centered column replaced with full-width page.
+2. ~~**Broader `/` slash menu**~~ ✅ DONE — default BlockNote items already surface headings/lists/toggle/quote/code/table/image/video/audio/file; custom items added for sub-page, callout, divider, columns.
+3. ~~**Callout block**~~ ✅ DONE (iter 2).
+4. ~~**Divider**~~ ✅ DONE (iter 2).
+5. ~~**Columns / multi-column layout**~~ ✅ DONE (iter 3) — `@blocknote/xl-multi-column` wired (schema + slash items + drop cursor).
 6. **Toggle headings** — expose BlockNote's `isToggleable` heading variant in the slash menu.
 7. **Text color & highlight** — formatting toolbar + `/color` style commands (BlockNote supports text/background color).
 8. **Bookmark / web embed** — `/bookmark` link-preview card; BlockNote embed blocks.
