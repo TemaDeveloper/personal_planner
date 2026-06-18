@@ -146,6 +146,15 @@ function TreeRow({ node, depth, onChanged, onMove }: {
     }
   };
 
+  const duplicate = async () => {
+    setMenuOpen(false);
+    const res = await fetch(`/api/notes/${node.id}/duplicate`, { method: "POST" });
+    if (!res.ok) return;
+    const { page } = await res.json();
+    onChanged();
+    router.push(`/notes/${page.id}`);
+  };
+
   const rename = async (value: string) => {
     setRenaming(false);
     const next = value.trim();
@@ -211,6 +220,10 @@ function TreeRow({ node, depth, onChanged, onMove }: {
               <button type="button" onClick={() => { setMenuOpen(false); addSubpage(); }}
                 className="w-full text-left px-3 py-1.5 hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-primary)" }}>
                 Add sub-page
+              </button>
+              <button type="button" onClick={duplicate}
+                className="w-full text-left px-3 py-1.5 hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-primary)" }}>
+                Duplicate
               </button>
               <button type="button" onClick={del}
                 className="w-full text-left px-3 py-1.5 hover:bg-[var(--surface-raised)]" style={{ color: "var(--danger, #c0392b)" }}>

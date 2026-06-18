@@ -60,6 +60,14 @@ export default function NotesPageView() {
     }
   };
 
+  const duplicate = async () => {
+    const res = await fetch(`/api/notes/${pageId}/duplicate`, { method: "POST" });
+    if (!res.ok) { toast.error("Failed to duplicate page"); return; }
+    const { page: dup } = await res.json();
+    refresh();
+    router.push(`/notes/${dup.id}`);
+  };
+
   if (notFound) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Page not found.</div>;
   if (!page) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Loading…</div>;
 
@@ -88,6 +96,7 @@ export default function NotesPageView() {
           onToggleFullWidth={() => { const fw = !page.fullWidth; setPage({ ...page, fullWidth: fw }); patch({ fullWidth: fw }); }}
           onToggleFavorite={toggleFavorite}
           onCopyLink={copyLink}
+          onDuplicate={duplicate}
           onDelete={remove}
         />
       </div>

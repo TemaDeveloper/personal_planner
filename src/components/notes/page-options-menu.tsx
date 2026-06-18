@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, Trash2, MoveHorizontal, Link2, Star } from "lucide-react";
+import { MoreHorizontal, Trash2, MoveHorizontal, Link2, Star, Copy } from "lucide-react";
 
-/** The page "···" menu: favorite, copy link, full-width toggle, delete. */
+/** The page "···" menu: favorite, copy link, duplicate, full-width toggle, delete. */
 export function PageOptionsMenu({
   fullWidth,
   pinned,
   onToggleFullWidth,
   onToggleFavorite,
   onCopyLink,
+  onDuplicate,
   onDelete,
 }: {
   fullWidth: boolean;
@@ -17,6 +18,7 @@ export function PageOptionsMenu({
   onToggleFullWidth: () => void;
   onToggleFavorite: () => void;
   onCopyLink: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -51,6 +53,10 @@ export function PageOptionsMenu({
           <button type="button" onClick={() => { onCopyLink(); setOpen(false); }}
             className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-[13px] hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-primary)" }}>
             <Link2 size={15} /> Copy link
+          </button>
+          <button type="button" onClick={() => { onDuplicate(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-[13px] hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-primary)" }}>
+            <Copy size={15} /> Duplicate
           </button>
           <button type="button" onClick={() => { onToggleFullWidth(); setOpen(false); }}
             className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-md text-[13px] hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-primary)" }}>
