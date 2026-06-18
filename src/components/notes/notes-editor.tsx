@@ -17,7 +17,8 @@ import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems } 
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
-import { useNotesRefresh } from "@/components/notes/notes-screen";
+import { useNotesRefresh, useNotesPages } from "@/components/notes/notes-screen";
+import { searchPages } from "@/lib/notes/search-pages";
 import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
 import { DividerBlock } from "@/components/notes/blocks/divider-block";
@@ -56,6 +57,7 @@ function useIsDark(): boolean {
 export function NotesEditor({ pageId, initialContent }: { pageId: string; initialContent: unknown }) {
   const isDark = useIsDark();
   const refresh = useNotesRefresh();
+  const pages = useNotesPages();
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   const uploadFile = async (file: File): Promise<string> => {
@@ -118,6 +120,19 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
         slashMenu={false}
         onChange={() => debouncedSave(editor.document)}
       >
+        <SuggestionMenuController
+          triggerCharacter="@"
+          getItems={async (query) =>
+            searchPages(pages, query).slice(0, 10).map((p) => ({
+              title: `${p.icon} ${p.title || "Untitled"}`,
+              onItemClick: () =>
+                editor.insertInlineContent([
+                  { type: "link", href: `/notes/${p.id}`, content: p.title || "Untitled" },
+                  " ",
+                ]),
+            }))
+          }
+        />
         <SuggestionMenuController
           triggerCharacter="/"
           getItems={async (query) =>

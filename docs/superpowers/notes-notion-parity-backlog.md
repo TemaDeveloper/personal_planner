@@ -20,7 +20,7 @@ Goal: make the Notes section feel/behave like Notion (Pro), free & out-of-the-bo
 10. ~~**Math equation**~~ ✅ DONE (iter 10) — `/equation` block-level KaTeX, click-to-edit LaTeX (katexHtml helper, TDD). Inline math still pending.
 11. ~~**Resizable / collapsible page-tree rail**~~ ✅ DONE — collapse toggle (iter 4) + drag-to-resize divider (iter 9), both persisted.
 12. ~~**Per-page "full width" toggle** + page options menu~~ ✅ DONE (iter 13) — ··· menu with full-width toggle (server-side `fullWidth`) + delete page.
-13. **Inline page links / @-mentions** — link to other pages; `@` mention menu.
+13. ~~**Inline page links / @-mentions**~~ ✅ DONE (iter 14) — `@` suggestion menu lists pages and inserts an inline link to the chosen page (reuses searchPages). (Live-updating mention chips are a future nicety; this is a plain inline link.)
 14. ~~**Favorites / quick switcher**~~ ✅ DONE — quick switcher (iter 11, Ctrl/Cmd-K) + favorites/pin (iter 12, server-side `pinned`, star toggle, Favorites section).
 15. ~~**Breadcrumbs**~~ ✅ DONE (iter 5) — root→current ancestor path, clickable, cycle-safe helper.
 16. **Drag blocks across / nested indentation polish**, block ··· menu (duplicate, move, color) — mostly BlockNote built-in; verify exposed.
