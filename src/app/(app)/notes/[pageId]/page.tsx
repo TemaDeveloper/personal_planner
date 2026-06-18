@@ -59,17 +59,36 @@ export default function NotesPageView() {
           onDelete={remove}
         />
       </div>
-      <PageCover
-        coverUrl={page.coverUrl}
-        onChange={(url) => { setPage({ ...page, coverUrl: url }); patch({ coverUrl: url }); }}
-      />
-      <div className="mt-3">
-        <EmojiPickerButton value={page.icon} onPick={(emoji) => { setPage({ ...page, icon: emoji }); patch({ icon: emoji }); }} />
+      <div className="group/header">
+        {/* Cover banner (only when set) */}
+        {page.coverUrl && (
+          <PageCover
+            coverUrl={page.coverUrl}
+            onChange={(url) => { setPage({ ...page, coverUrl: url }); patch({ coverUrl: url }); }}
+          />
+        )}
+        {/* Icon — overlaps the cover's bottom edge when a cover is present (Notion look). */}
+        <div className={page.coverUrl ? "-mt-10 relative z-10" : "mt-3"}>
+          <EmojiPickerButton
+            value={page.icon}
+            onPick={(emoji) => { setPage({ ...page, icon: emoji }); patch({ icon: emoji }); }}
+            buttonClassName="text-[64px] leading-none hover:bg-[var(--surface-raised)] rounded-md px-1"
+          />
+        </div>
+        {/* Hover affordance: Add cover (when none yet) */}
+        {!page.coverUrl && (
+          <div className="opacity-0 group-hover/header:opacity-100 transition-opacity mt-1">
+            <PageCover
+              coverUrl={null}
+              onChange={(url) => { setPage({ ...page, coverUrl: url }); patch({ coverUrl: url }); }}
+            />
+          </div>
+        )}
+        <input aria-label="Page title" defaultValue={page.title} placeholder="Untitled"
+          onBlur={(e) => patch({ title: e.target.value })}
+          className="block w-full text-[2.5rem] leading-tight font-bold bg-transparent outline-none mt-2 mb-6"
+          style={{ color: "var(--text-primary)" }} />
       </div>
-      <input aria-label="Page title" defaultValue={page.title} placeholder="Untitled"
-        onBlur={(e) => patch({ title: e.target.value })}
-        className="block w-full text-[2.5rem] leading-tight font-bold bg-transparent outline-none mt-2 mb-6"
-        style={{ color: "var(--text-primary)" }} />
       <NotesEditorLoader pageId={page.id} initialContent={page.content} />
     </div>
   );
