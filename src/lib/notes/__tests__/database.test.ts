@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
-  isSelectType, genId, OPTION_COLOR_KEYS,
+  isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -34,6 +34,13 @@ describe("optionColor / isSelectType", () => {
   it("falls back to default for unknown colors", () => {
     expect(optionColor("chartreuse")).toEqual(optionColor("default"));
     expect(OPTION_COLOR_KEYS).toContain("blue");
+  });
+  it("assigns a stable non-default color per label", () => {
+    const c = colorForLabel("Marketing");
+    expect(c).toBe(colorForLabel("Marketing"));
+    expect(c).not.toBe("default");
+    expect(c).not.toBe("gray");
+    expect(OPTION_COLOR_KEYS).toContain(c);
   });
   it("classifies select-like types", () => {
     expect(isSelectType("select")).toBe(true);

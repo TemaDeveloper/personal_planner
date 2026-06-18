@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2 } from "lucide-react";
-import type { DBProperty, DBRow, DBView, ViewType } from "@/lib/models/notes-database";
-import { groupRowsByProperty, isSelectType, optionColor } from "@/lib/notes/database";
+import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
+import { groupRowsByProperty, isSelectType, optionColor, colorForLabel } from "@/lib/notes/database";
 import { CellEditor } from "./cell-editor";
+import { AddViewButton, ColumnMenu } from "./schema-controls";
 
 type DB = { id: string; title: string; icon: string; properties: DBProperty[]; views: DBView[]; rows: DBRow[] };
 
@@ -50,10 +51,48 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ properties }),
     });
   };
+  const saveViews = async (views: DBView[]) => {
+    setDb((d) => d ? { ...d, views } : d);
+    await fetch(`/api/notes/databases/${databaseId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ views }),
+    });
+  };
   const addColumn = () => {
     if (!db) return;
     const id = `p_${Date.now().toString(36)}`;
     saveSchema([...db.properties, { id, name: "New", type: "text" }]);
+  };
+  const changeColumnType = (propId: string, type: PropertyType) => {
+    if (!db) return;
+    saveSchema(db.properties.map((p) => p.id === propId
+      ? { ...p, type, options: isSelectType(type) ? (p.options ?? []) : p.options }
+      : p));
+  };
+  const deleteColumn = (propId: string) => {
+    if (!db) return;
+    saveSchema(db.properties.filter((p) => p.id !== propId));
+  };
+  const addOption = (propId: string, label: string) => {
+    if (!db) return;
+    setDb((d) => {
+      if (!d) return d;
+      const properties = d.properties.map((p) => {
+        if (p.id !== propId || (p.options ?? []).some((o) => o.label === label)) return p;
+        const opt = { id: `o_${Date.now().toString(36)}`, label, color: colorForLabel(label) };
+        return { ...p, options: [...(p.options ?? []), opt] };
+      });
+      fetch(`/api/notes/databases/${databaseId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ properties }),
+      });
+      return { ...d, properties };
+    });
+  };
+  const addView = (type: ViewType) => {
+    if (!db) return;
+    const groupBy = type === "board" ? db.properties.find((p) => isSelectType(p.type))?.id : undefined;
+    const view: DBView = { id: `v_${Date.now().toString(36)}`, name: type[0].toUpperCase() + type.slice(1), type, groupBy };
+    saveViews([...db.views, view]);
+    setActiveView(db.views.length);
   };
 
   if (missing) return <div contentEditable={false} className="my-2 text-[13px] px-3 py-2 rounded-md" style={{ background: "var(--surface-raised)", color: "var(--text-faint)" }}>Database not found.</div>;
@@ -72,10 +111,11 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
             {VIEW_ICON[v.type]} {v.name}
           </button>
         ))}
+        <AddViewButton onAdd={addView} />
       </div>
 
       {view?.type === "table" && (
-        <TableView db={db} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onSaveSchema={saveSchema} />
+        <TableView db={db} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onSaveSchema={saveSchema} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} />
       )}
       {view?.type === "board" && (
         <BoardView db={db} view={view} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
@@ -95,10 +135,13 @@ function Chip({ label, color }: { label: string; color: string }) {
   return <span className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none" style={{ background: c.bg, color: c.text }}>{label}</span>;
 }
 
-function TableView({ db, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchema }: {
+function TableView({ db, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchema, onChangeType, onDeleteColumn, onAddOption }: {
   db: DB; onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddRow: () => void; onAddColumn: () => void; onDeleteRow: (id: string) => void;
   onSaveSchema: (p: DBProperty[]) => void;
+  onChangeType: (propId: string, t: import("@/lib/models/notes-database").PropertyType) => void;
+  onDeleteColumn: (propId: string) => void;
+  onAddOption: (propId: string, label: string) => void;
 }) {
   return (
     <div className="overflow-x-auto border rounded-md" style={{ borderColor: "var(--border-subtle)" }}>
@@ -108,8 +151,11 @@ function TableView({ db, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchem
             {db.properties.map((p) => (
               <th key={p.id} className="text-left font-normal px-2 py-1.5 border-b border-r whitespace-nowrap"
                 style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)", minWidth: p.type === "title" ? 200 : 120 }}>
-                <input value={p.name} onChange={(e) => onSaveSchema(db.properties.map((q) => q.id === p.id ? { ...q, name: e.target.value } : q))}
-                  className="bg-transparent outline-none w-full" style={{ color: "var(--text-muted)" }} />
+                <span className="flex items-center gap-1">
+                  <input value={p.name} onChange={(e) => onSaveSchema(db.properties.map((q) => q.id === p.id ? { ...q, name: e.target.value } : q))}
+                    className="bg-transparent outline-none w-full" style={{ color: "var(--text-muted)" }} />
+                  <ColumnMenu prop={p} onChangeType={(t) => onChangeType(p.id, t)} onDelete={() => onDeleteColumn(p.id)} />
+                </span>
               </th>
             ))}
             <th className="px-2 py-1.5 border-b w-8" style={{ borderColor: "var(--border-subtle)" }}>
@@ -122,7 +168,7 @@ function TableView({ db, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchem
             <tr key={row.id} className="group/row">
               {db.properties.map((p) => (
                 <td key={p.id} className="px-2 py-1 border-b border-r align-top" style={{ borderColor: "var(--border-subtle)" }}>
-                  <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} />
+                  <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} onAddOption={(label) => onAddOption(p.id, label)} />
                 </td>
               ))}
               <td className="px-1 py-1 border-b text-center" style={{ borderColor: "var(--border-subtle)" }}>

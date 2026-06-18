@@ -5,8 +5,8 @@ import type { DBProperty } from "@/lib/models/notes-database";
 import { optionColor } from "@/lib/notes/database";
 
 /** Inline editor for a single database cell, dispatched by property type. */
-export function CellEditor({ prop, value, onChange }: {
-  prop: DBProperty; value: unknown; onChange: (v: unknown) => void;
+export function CellEditor({ prop, value, onChange, onAddOption }: {
+  prop: DBProperty; value: unknown; onChange: (v: unknown) => void; onAddOption?: (label: string) => void;
 }) {
   switch (prop.type) {
     case "checkbox":
@@ -25,9 +25,9 @@ export function CellEditor({ prop, value, onChange }: {
       return <TextCell value={value} onChange={onChange} type="url" />;
     case "select":
     case "status":
-      return <SelectCell prop={prop} value={value as string} onChange={onChange} />;
+      return <SelectCell prop={prop} value={value as string} onChange={onChange} onAddOption={onAddOption} />;
     case "multi_select":
-      return <MultiSelectCell prop={prop} value={(value as string[]) || []} onChange={onChange} />;
+      return <MultiSelectCell prop={prop} value={(value as string[]) || []} onChange={onChange} onAddOption={onAddOption} />;
     default: // title, text
       return <TextCell value={value} onChange={onChange} bold={prop.type === "title"} />;
   }
@@ -63,7 +63,17 @@ function Chip({ label, color }: { label: string; color: string }) {
   return <span className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none" style={{ background: c.bg, color: c.text }}>{label}</span>;
 }
 
-function SelectCell({ prop, value, onChange }: { prop: DBProperty; value: string; onChange: (v: string) => void }) {
+function OptionCreator({ onCreate }: { onCreate: (label: string) => void }) {
+  const [v, setV] = useState("");
+  return (
+    <input value={v} placeholder="Type to add option…" onChange={(e) => setV(e.target.value)}
+      onKeyDown={(e) => { if (e.key === "Enter" && v.trim()) { onCreate(v.trim()); setV(""); } }}
+      className="w-full px-1.5 py-1 mb-1 bg-transparent outline-none text-[12px] border-b"
+      style={{ color: "var(--text-primary)", borderColor: "var(--border-subtle)" }} />
+  );
+}
+
+function SelectCell({ prop, value, onChange, onAddOption }: { prop: DBProperty; value: string; onChange: (v: string) => void; onAddOption?: (label: string) => void }) {
   const { open, setOpen, ref } = usePopover();
   const opt = prop.options?.find((o) => o.label === value);
   return (
@@ -72,8 +82,9 @@ function SelectCell({ prop, value, onChange }: { prop: DBProperty; value: string
         {value ? <Chip label={value} color={opt?.color ?? "default"} /> : <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>—</span>}
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 p-1 rounded-lg border min-w-[140px] animate-[notesPop_120ms_ease-out]"
+        <div className="absolute z-50 mt-1 p-1 rounded-lg border min-w-[150px] animate-[notesPop_120ms_ease-out]"
           style={{ background: "var(--surface-1)", borderColor: "var(--border-default)", boxShadow: "0 8px 24px rgba(0,0,0,.14)" }}>
+          {onAddOption && <OptionCreator onCreate={(label) => { onAddOption(label); onChange(label); setOpen(false); }} />}
           {(prop.options ?? []).map((o) => (
             <button key={o.id} type="button" onClick={() => { onChange(o.label); setOpen(false); }}
               className="block w-full text-left px-1.5 py-1 rounded hover:bg-[var(--surface-raised)]">
@@ -92,7 +103,7 @@ function SelectCell({ prop, value, onChange }: { prop: DBProperty; value: string
   );
 }
 
-function MultiSelectCell({ prop, value, onChange }: { prop: DBProperty; value: string[]; onChange: (v: string[]) => void }) {
+function MultiSelectCell({ prop, value, onChange, onAddOption }: { prop: DBProperty; value: string[]; onChange: (v: string[]) => void; onAddOption?: (label: string) => void }) {
   const { open, setOpen, ref } = usePopover();
   const toggle = (label: string) => onChange(value.includes(label) ? value.filter((x) => x !== label) : [...value, label]);
   return (
@@ -102,8 +113,9 @@ function MultiSelectCell({ prop, value, onChange }: { prop: DBProperty; value: s
           : <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>—</span>}
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 p-1 rounded-lg border min-w-[140px] animate-[notesPop_120ms_ease-out]"
+        <div className="absolute z-50 mt-1 p-1 rounded-lg border min-w-[150px] animate-[notesPop_120ms_ease-out]"
           style={{ background: "var(--surface-1)", borderColor: "var(--border-default)", boxShadow: "0 8px 24px rgba(0,0,0,.14)" }}>
+          {onAddOption && <OptionCreator onCreate={(label) => { onAddOption(label); onChange([...value, label]); }} />}
           {(prop.options ?? []).map((o) => (
             <button key={o.id} type="button" onClick={() => toggle(o.label)}
               className="flex items-center gap-2 w-full text-left px-1.5 py-1 rounded hover:bg-[var(--surface-raised)]">

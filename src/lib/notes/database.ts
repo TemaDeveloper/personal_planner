@@ -20,6 +20,14 @@ export function optionColor(key: string | undefined) {
   return NOTION_OPTION_COLORS[key ?? "default"] ?? NOTION_OPTION_COLORS.default;
 }
 
+/** Deterministically assign a (non-default) palette color to a new option label. */
+export function colorForLabel(label: string): string {
+  const palette = OPTION_COLOR_KEYS.filter((k) => k !== "default" && k !== "gray");
+  let h = 0;
+  for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
+}
+
 /** Deterministic-enough id for client-created schema/rows (no crypto needed). */
 export function genId(prefix: string, seed: number): string {
   return `${prefix}_${seed.toString(36)}${(seed * 2654435761 % 1e9).toString(36)}`;
