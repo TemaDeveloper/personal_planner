@@ -5,6 +5,7 @@ import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { buildPageTree } from "@/lib/notes/page-tree";
 import type { FlatPage } from "@/lib/notes/types";
 import { PageTree } from "./page-tree";
+import { QuickSwitcher } from "./quick-switcher";
 
 const RefreshCtx = createContext<() => void>(() => {});
 export const useNotesRefresh = () => useContext(RefreshCtx);
@@ -17,6 +18,7 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
   const [drawer, setDrawer] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [railWidth, setRailWidth] = useState(260);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/notes");
@@ -58,6 +60,18 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   };
+
+  // Quick switcher: Ctrl/Cmd-K opens the page jumper.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSwitcherOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const tree = buildPageTree(pages);
 
@@ -118,6 +132,7 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      {switcherOpen && <QuickSwitcher pages={pages} onClose={() => setSwitcherOpen(false)} />}
       </PagesCtx.Provider>
     </RefreshCtx.Provider>
   );
