@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2 } from "lucide-react";
+import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
 import { groupRowsByProperty, isSelectType, optionColor, colorForLabel } from "@/lib/notes/database";
 import { CellEditor } from "./cell-editor";
 import { AddViewButton, ColumnMenu } from "./schema-controls";
+import { CalendarView } from "./calendar-view";
 
 type DB = { id: string; title: string; icon: string; properties: DBProperty[]; views: DBView[]; rows: DBRow[] };
 
 const VIEW_ICON: Record<ViewType, React.ReactNode> = {
   table: <Table2 size={14} />, board: <Columns3 size={14} />, list: <ListIcon size={14} />,
-  gallery: <LayoutGrid size={14} />, calendar: <Table2 size={14} />,
+  gallery: <LayoutGrid size={14} />, calendar: <CalendarDays size={14} />,
 };
 
 /** Renders an editable Notion-style database: view-switcher tabs + the active view. */
@@ -125,6 +126,9 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       )}
       {view?.type === "list" && (
         <ListView db={db} titleProp={titleProp} onAddRow={() => addRow()} />
+      )}
+      {view?.type === "calendar" && (
+        <CalendarView properties={db.properties} rows={db.rows} titleProp={titleProp} onAddRow={addRow} />
       )}
     </div>
   );

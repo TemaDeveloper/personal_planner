@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid } from "lucide-react";
+import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid, CalendarDays } from "lucide-react";
 import type { DBProperty, PropertyType, ViewType } from "@/lib/models/notes-database";
 import { PROPERTY_TYPE_LABELS } from "@/lib/notes/database";
 
@@ -24,6 +24,7 @@ const VIEW_TYPES: { type: ViewType; label: string; icon: React.ReactNode }[] = [
   { type: "board", label: "Board", icon: <Columns3 size={14} /> },
   { type: "gallery", label: "Gallery", icon: <LayoutGrid size={14} /> },
   { type: "list", label: "List", icon: <ListIcon size={14} /> },
+  { type: "calendar", label: "Calendar", icon: <CalendarDays size={14} /> },
 ];
 
 /** "+" after the view tabs: add a new saved view of a chosen type. */
