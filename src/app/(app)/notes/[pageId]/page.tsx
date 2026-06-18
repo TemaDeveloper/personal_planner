@@ -49,8 +49,10 @@ export default function NotesPageView() {
 
   return (
     <div className={`notes-page ${widthClass} py-8`}>
-      <div className="flex items-start justify-between gap-2">
-        <Breadcrumbs pageId={page.id} />
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <Breadcrumbs pageId={page.id} />
+        </div>
         <PageOptionsMenu
           fullWidth={page.fullWidth}
           onToggleFullWidth={() => { const fw = !page.fullWidth; setPage({ ...page, fullWidth: fw }); patch({ fullWidth: fw }); }}
