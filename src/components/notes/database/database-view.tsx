@@ -101,8 +101,19 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
 
   const view = db.views[activeView] ?? db.views[0];
 
+  const saveTitle = (title: string) => {
+    setDb((d) => d ? { ...d, title } : d);
+    fetch(`/api/notes/databases/${databaseId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title }),
+    });
+  };
+
   return (
     <div contentEditable={false} className="my-2 select-none">
+      {/* Database title (Notion shows the collection name above its views) */}
+      <input value={db.title} onChange={(e) => saveTitle(e.target.value)} placeholder="Untitled"
+        className="block bg-transparent outline-none text-[18px] font-semibold mb-1.5"
+        style={{ color: "var(--text-primary)" }} />
       {/* View-switcher tab bar */}
       <div className="flex items-center gap-1 border-b mb-1.5" style={{ borderColor: "var(--border-subtle)" }}>
         {db.views.map((v, i) => (
