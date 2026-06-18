@@ -22,6 +22,7 @@ import "@blocknote/mantine/style.css";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
 import { useNotesRefresh, useNotesPages } from "@/components/notes/notes-screen";
 import { searchPages } from "@/lib/notes/search-pages";
+import { detectLanguage } from "@/lib/notes/detect-language";
 import { SubPageBlock } from "@/components/notes/blocks/sub-page-block";
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
 import { DividerBlock } from "@/components/notes/blocks/divider-block";
@@ -92,8 +93,42 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     dropCursor: multiColumnDropCursor,
     dictionary: { ...coreEn, multi_column: multiColumnLocales.en },
     // Syntax highlighting + a language dropdown on code blocks (Shiki, lazy-loaded).
-    codeBlock: codeBlockOptions,
+    // Default to "text" so new/pasted code starts plain and auto-detection can
+    // then set the real language (see autodetectCode below).
+    codeBlock: { ...codeBlockOptions, defaultLanguage: "text" },
   });
+
+  // Auto-detect the language of code blocks from their content. Runs once per
+  // block (autodetected set), only while the language is still the "text"
+  // default, so it never fights an explicit choice or loops.
+  const autodetected = useRef<Set<string>>(new Set());
+  const autodetectCode = () => {
+    const all: { id: string; type: string; props: Record<string, unknown>; content: unknown }[] = [];
+    const walk = (blocks: typeof all) => {
+      for (const b of blocks) {
+        all.push(b);
+        const kids = (b as { children?: typeof all }).children;
+        if (Array.isArray(kids)) walk(kids);
+      }
+    };
+    walk(editor.document as unknown as typeof all);
+    for (const block of all) {
+      if (block.type !== "codeBlock" || autodetected.current.has(block.id)) continue;
+      const lang = block.props?.language as string | undefined;
+      if (lang && lang !== "text") continue;
+      const text = Array.isArray(block.content)
+        ? (block.content as unknown[])
+            .map((n) => (n && typeof n === "object" && "text" in n ? String((n as { text?: unknown }).text ?? "") : ""))
+            .join("")
+        : "";
+      if (text.trim().length < 12) continue;
+      const guess = detectLanguage(text);
+      if (guess && guess !== lang) {
+        autodetected.current.add(block.id);
+        editor.updateBlock(block.id, { props: { language: guess } });
+      }
+    }
+  };
 
   const insertSubPageItem = () => ({
     title: "Page",
@@ -137,7 +172,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
         editor={editor}
         theme={isDark ? "dark" : "light"}
         slashMenu={false}
-        onChange={() => debouncedSave(editor.document)}
+        onChange={() => { debouncedSave(editor.document); queueMicrotask(autodetectCode); }}
       >
         <SuggestionMenuController
           triggerCharacter="@"
