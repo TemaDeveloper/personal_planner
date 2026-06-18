@@ -17,10 +17,15 @@
   ],
   "iteration_policy": "Each round: pick the next of the three deliverables by impact (start with the '···' popup visibility bug since it makes the menu unusable; then code-block language detection; then the templates redesign, which is the largest). Implement natively (TDD for pure logic such as a language-detection helper or template generators), keep the app green, commit, and append a one-line log entry. The templates task may span several iterations (research Notion categories, redesign the gallery UX, then author richer templates).",
   "blocked_condition": "Report and pause if a fix needs infrastructure/secrets not available, an irreversible/outward-facing action (deploy), or a product decision only the user can make (e.g. exactly which Notion template categories/templates to include).",
-  "status": "active",
-  "iterations": 0,
+  "status": "complete",
+  "iterations": 2,
   "max_iterations": 10,
-  "log": [],
+  "log": [
+    "Iter 1: Fixed deliverable (2) — page '···' popup clipping (Breadcrumbs-null + justify-between pushed the button left; wrapped breadcrumbs in flex-1 so the menu stays pinned right).",
+    "Iter 2: Deliverable (1) DONE — code-block language auto-detection (detectLanguage heuristic, TDD 9 cases; default 'text' then auto-set; guarded).",
+    "Iter 3: Deliverable (3) CONTENT — rewrote all 21 templates into rich Notion-quality pages (callouts/dividers/checklists/quotes/ToC) + headless load test (all 21 create a valid BlockNote doc).",
+    "Iter 4: Gallery UX polish — category filter tabs, tinted icon chips, hover lift, 3-col grid, busy guard. All three deliverables met. PAUSED for user review + deploy approval (branch-only constraint). Recommend /goal done + deploy."
+  ],
   "created": "2026-06-18T01:59:25Z",
-  "updated": "2026-06-18T01:59:25Z"
+  "updated": "2026-06-18T02:08:50.625Z"
 }
