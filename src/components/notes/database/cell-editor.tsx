@@ -1,14 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { DBProperty } from "@/lib/models/notes-database";
-import { optionColor } from "@/lib/notes/database";
+import type { DBProperty, DBRow } from "@/lib/models/notes-database";
+import { optionColor, computeRollup, relatedRowsFor } from "@/lib/notes/database";
+import { ProgressRing } from "./progress-ring";
+
+/** Related-database data needed to render relation chips and rollups. */
+export type RelatedDbs = Record<string, { rows: DBRow[]; titleId?: string }>;
+export type CellCtx = { properties: DBProperty[]; row: DBRow; relatedDbs: RelatedDbs };
+
+function relTitle(row: DBRow, titleId?: string): string {
+  return (titleId ? String(row.cells[titleId] ?? "") : "") || "Untitled";
+}
 
 /** Inline editor for a single database cell, dispatched by property type. */
-export function CellEditor({ prop, value, onChange, onAddOption }: {
-  prop: DBProperty; value: unknown; onChange: (v: unknown) => void; onAddOption?: (label: string) => void;
+export function CellEditor({ prop, value, onChange, onAddOption, ctx }: {
+  prop: DBProperty; value: unknown; onChange: (v: unknown) => void; onAddOption?: (label: string) => void; ctx?: CellCtx;
 }) {
   switch (prop.type) {
+    case "relation":
+      return <RelationCell prop={prop} value={(value as string[]) || []} onChange={onChange} ctx={ctx} />;
+    case "rollup":
+      return <RollupCell prop={prop} ctx={ctx} />;
     case "checkbox":
       return (
         <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)}
@@ -101,6 +114,47 @@ function SelectCell({ prop, value, onChange, onAddOption }: { prop: DBProperty; 
       )}
     </div>
   );
+}
+
+function RelationCell({ prop, value, onChange, ctx }: { prop: DBProperty; value: string[]; onChange: (v: string[]) => void; ctx?: CellCtx }) {
+  const { open, setOpen, ref } = usePopover();
+  const target = prop.relationDbId ? ctx?.relatedDbs[prop.relationDbId] : undefined;
+  if (!prop.relationDbId) return <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>Set target DB →</span>;
+  const toggle = (id: string) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+  const rowsT = target?.rows ?? [];
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" onClick={() => setOpen((o) => !o)} className="w-full text-left flex flex-wrap gap-1 min-h-5">
+        {value.length ? value.map((id) => {
+          const r = rowsT.find((x) => x.id === id);
+          return <span key={id} className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none underline decoration-dotted" style={{ background: "var(--surface-raised)", color: "var(--text-primary)" }}>{r ? relTitle(r, target?.titleId) : "↗"}</span>;
+        }) : <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>—</span>}
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 p-1 rounded-lg border min-w-[180px] max-h-56 overflow-y-auto animate-[notesPop_120ms_ease-out]"
+          style={{ background: "var(--surface-1)", borderColor: "var(--border-default)", boxShadow: "0 8px 24px rgba(0,0,0,.14)" }}>
+          {rowsT.length === 0 && <div className="px-2 py-1 text-[12px]" style={{ color: "var(--text-faint)" }}>No rows in target database.</div>}
+          {rowsT.map((r) => (
+            <button key={r.id} type="button" onClick={() => toggle(r.id)}
+              className="flex items-center gap-2 w-full text-left px-1.5 py-1 rounded text-[13px] hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-primary)" }}>
+              <input type="checkbox" readOnly checked={value.includes(r.id)} className="accent-[var(--accent-color)]" />
+              {relTitle(r, target?.titleId)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RollupCell({ prop, ctx }: { prop: DBProperty; ctx?: CellCtx }) {
+  if (!ctx || !prop.rollupRelation) return <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>—</span>;
+  const relProp = ctx.properties.find((p) => p.id === prop.rollupRelation);
+  const targetDb = relProp?.relationDbId ? ctx.relatedDbs[relProp.relationDbId] : undefined;
+  const related = relatedRowsFor(relProp ? ctx.row.cells[relProp.id] : undefined, targetDb?.rows ?? []);
+  const { value, isPercent } = computeRollup(prop, related);
+  if (isPercent) return <ProgressRing value={value} />;
+  return <span className="text-[13px]" style={{ color: "var(--text-primary)" }}>{value}</span>;
 }
 
 function MultiSelectCell({ prop, value, onChange, onAddOption }: { prop: DBProperty; value: string[]; onChange: (v: string[]) => void; onAddOption?: (label: string) => void }) {

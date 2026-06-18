@@ -1,4 +1,4 @@
-import type { DBProperty, DBRow, DBView, PropertyType } from "@/lib/models/notes-database";
+import type { DBProperty, DBRow, DBView, PropertyType, RollupFn } from "@/lib/models/notes-database";
 
 /** Notion's option color palette → chip background + text (light mode).
  * Functional color tokens used to render select/status chips. */
@@ -43,6 +43,8 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   date: "Date",
   checkbox: "Checkbox",
   url: "URL",
+  relation: "Relation",
+  rollup: "Rollup",
 };
 
 export function isSelectType(t: PropertyType): boolean {
@@ -98,6 +100,33 @@ export function groupRowsByProperty(
   const empty = groups.get("__empty__") ?? [];
   if (empty.length) out.push({ key: "__empty__", label: "No " + prop.name, color: "default", rows: empty });
   return out;
+}
+
+/** Aggregate a rollup for one row over its related rows.
+ * `relatedRows` are the rows of the target database referenced by the relation cell. */
+export function computeRollup(
+  prop: DBProperty,
+  relatedRows: DBRow[]
+): { value: number; isPercent: boolean } {
+  const fn: RollupFn = prop.rollupFn ?? "count";
+  const target = prop.rollupTarget;
+  if (fn === "count") return { value: relatedRows.length, isPercent: false };
+  if (fn === "sum") {
+    const sum = relatedRows.reduce((acc, r) => acc + (Number(target && r.cells[target]) || 0), 0);
+    return { value: sum, isPercent: false };
+  }
+  // percent_checked → fraction of related rows whose target cell is truthy (0..1)
+  if (!relatedRows.length || !target) return { value: 0, isPercent: true };
+  const checked = relatedRows.filter((r) => !!r.cells[target]).length;
+  return { value: checked / relatedRows.length, isPercent: true };
+}
+
+/** Resolve the related rows referenced by a relation cell value (array of row ids). */
+export function relatedRowsFor(cellValue: unknown, targetRows: DBRow[]): DBRow[] {
+  const ids = Array.isArray(cellValue) ? (cellValue as string[]) : [];
+  if (!ids.length) return [];
+  const byId = new Map(targetRows.map((r) => [r.id, r]));
+  return ids.map((id) => byId.get(id)).filter((r): r is DBRow => !!r);
 }
 
 /** Human-readable cell text for plain rendering (list/exports). */

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
-  isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel,
+  isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -74,6 +74,40 @@ describe("groupRowsByProperty", () => {
     const g = groupRowsByProperty(rows, { id: "t", name: "T", type: "text" });
     expect(g).toHaveLength(1);
     expect(g[0].rows).toHaveLength(4);
+  });
+});
+
+describe("relatedRowsFor", () => {
+  const target: DBRow[] = [
+    { id: "a", cells: { done: true } },
+    { id: "b", cells: { done: false } },
+    { id: "c", cells: { done: true } },
+  ];
+  it("resolves the referenced ids, ignoring unknowns", () => {
+    expect(relatedRowsFor(["a", "c", "zzz"], target).map((r) => r.id)).toEqual(["a", "c"]);
+    expect(relatedRowsFor(undefined, target)).toEqual([]);
+  });
+});
+
+describe("computeRollup", () => {
+  const related: DBRow[] = [
+    { id: "a", cells: { done: true, n: 2 } },
+    { id: "b", cells: { done: false, n: 3 } },
+    { id: "c", cells: { done: true, n: 5 } },
+  ];
+  it("counts related rows", () => {
+    expect(computeRollup({ id: "r", name: "R", type: "rollup", rollupFn: "count" }, related)).toEqual({ value: 3, isPercent: false });
+  });
+  it("sums a numeric target", () => {
+    expect(computeRollup({ id: "r", name: "R", type: "rollup", rollupFn: "sum", rollupTarget: "n" }, related)).toEqual({ value: 10, isPercent: false });
+  });
+  it("computes percent checked (0..1)", () => {
+    const r = computeRollup({ id: "r", name: "R", type: "rollup", rollupFn: "percent_checked", rollupTarget: "done" }, related);
+    expect(r.isPercent).toBe(true);
+    expect(r.value).toBeCloseTo(2 / 3);
+  });
+  it("is 0 percent for no related rows", () => {
+    expect(computeRollup({ id: "r", name: "R", type: "rollup", rollupFn: "percent_checked", rollupTarget: "done" }, [])).toEqual({ value: 0, isPercent: true });
   });
 });
 

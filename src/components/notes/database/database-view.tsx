@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
 import { groupRowsByProperty, isSelectType, optionColor, colorForLabel } from "@/lib/notes/database";
-import { CellEditor } from "./cell-editor";
+import { CellEditor, type RelatedDbs } from "./cell-editor";
 import { AddViewButton, ColumnMenu } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
 
@@ -21,12 +21,34 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   const [activeView, setActiveView] = useState(0);
   const [missing, setMissing] = useState(false);
 
+  const [relatedDbs, setRelatedDbs] = useState<RelatedDbs>({});
+
   const load = useCallback(async () => {
     const res = await fetch(`/api/notes/databases/${databaseId}`);
     if (!res.ok) { setMissing(true); return; }
     setDb((await res.json()).database);
   }, [databaseId]);
   useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- initial fetch
+
+  // Prefetch databases referenced by relation properties (for chips + rollups).
+  const relationTargets = useMemo(
+    () => Array.from(new Set((db?.properties ?? []).filter((p) => p.type === "relation" && p.relationDbId).map((p) => p.relationDbId as string))),
+    [db]
+  );
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(relationTargets.map(async (id) => {
+      const res = await fetch(`/api/notes/databases/${id}`);
+      if (!res.ok) return null;
+      const { database } = await res.json();
+      const titleId = (database.properties as { id: string; type: string }[]).find((p) => p.type === "title")?.id;
+      return [id, { rows: database.rows, titleId }] as const;
+    })).then((entries) => {
+      if (cancelled) return;
+      setRelatedDbs(Object.fromEntries(entries.filter(Boolean) as [string, { rows: never[]; titleId?: string }][]));
+    });
+    return () => { cancelled = true; };
+  }, [relationTargets]);
 
   const titleProp = useMemo(() => db?.properties.find((p) => p.type === "title"), [db]);
 
@@ -127,7 +149,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       </div>
 
       {view?.type === "table" && (
-        <TableView db={db} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onSaveSchema={saveSchema} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} />
+        <TableView db={db} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onSaveSchema={saveSchema} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
       )}
       {view?.type === "board" && (
         <BoardView db={db} view={view} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
@@ -150,13 +172,14 @@ function Chip({ label, color }: { label: string; color: string }) {
   return <span className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none" style={{ background: c.bg, color: c.text }}>{label}</span>;
 }
 
-function TableView({ db, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchema, onChangeType, onDeleteColumn, onAddOption }: {
-  db: DB; onCell: (rowId: string, cells: Record<string, unknown>) => void;
+function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchema, onChangeType, onDeleteColumn, onAddOption, onConfigProp }: {
+  db: DB; relatedDbs: RelatedDbs; onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddRow: () => void; onAddColumn: () => void; onDeleteRow: (id: string) => void;
   onSaveSchema: (p: DBProperty[]) => void;
   onChangeType: (propId: string, t: import("@/lib/models/notes-database").PropertyType) => void;
   onDeleteColumn: (propId: string) => void;
   onAddOption: (propId: string, label: string) => void;
+  onConfigProp: (p: DBProperty[]) => void;
 }) {
   return (
     <div className="overflow-x-auto border rounded-md" style={{ borderColor: "var(--border-subtle)" }}>
@@ -169,7 +192,8 @@ function TableView({ db, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchem
                 <span className="flex items-center gap-1">
                   <input value={p.name} onChange={(e) => onSaveSchema(db.properties.map((q) => q.id === p.id ? { ...q, name: e.target.value } : q))}
                     className="bg-transparent outline-none w-full" style={{ color: "var(--text-muted)" }} />
-                  <ColumnMenu prop={p} onChangeType={(t) => onChangeType(p.id, t)} onDelete={() => onDeleteColumn(p.id)} />
+                  <ColumnMenu prop={p} properties={db.properties} onChangeType={(t) => onChangeType(p.id, t)} onDelete={() => onDeleteColumn(p.id)}
+                    onConfig={(patch) => onConfigProp(db.properties.map((q) => q.id === p.id ? { ...q, ...patch } : q))} />
                 </span>
               </th>
             ))}
@@ -183,7 +207,7 @@ function TableView({ db, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchem
             <tr key={row.id} className="group/row">
               {db.properties.map((p) => (
                 <td key={p.id} className="px-2 py-1 border-b border-r align-top" style={{ borderColor: "var(--border-subtle)" }}>
-                  <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} onAddOption={(label) => onAddOption(p.id, label)} />
+                  <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} onAddOption={(label) => onAddOption(p.id, label)} ctx={{ properties: db.properties, row, relatedDbs }} />
                 </td>
               ))}
               <td className="px-1 py-1 border-b text-center" style={{ borderColor: "var(--border-subtle)" }}>

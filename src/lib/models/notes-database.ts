@@ -5,9 +5,11 @@ import mongoose, { Schema, type Document } from "mongoose";
 
 export type PropertyType =
   | "title" | "text" | "number" | "select" | "multi_select"
-  | "status" | "date" | "checkbox" | "url";
+  | "status" | "date" | "checkbox" | "url" | "relation" | "rollup";
 
 export type ViewType = "table" | "board" | "gallery" | "list" | "calendar";
+
+export type RollupFn = "count" | "percent_checked" | "sum";
 
 export interface SelectOption {
   id: string;
@@ -20,6 +22,10 @@ export interface DBProperty {
   name: string;
   type: PropertyType;
   options?: SelectOption[]; // for select / multi_select / status
+  relationDbId?: string;    // for relation: the target database id
+  rollupRelation?: string;  // for rollup: the relation property id on THIS db
+  rollupTarget?: string;    // for rollup: the property id on the related db to aggregate
+  rollupFn?: RollupFn;      // for rollup: how to aggregate
 }
 
 export interface DBView {
