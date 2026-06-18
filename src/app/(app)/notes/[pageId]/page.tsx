@@ -85,7 +85,8 @@ export default function NotesPageView() {
   if (notFound) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Page not found.</div>;
   if (!page) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Loading…</div>;
 
-  const widthClass = page.fullWidth ? "w-full px-6 md:px-14 lg:px-20" : "max-w-[900px] mx-auto px-6 md:px-10";
+  // Notion full-width pages render with ~96px fluid side gutters; comfortable pages use a ~900px column.
+  const widthClass = page.fullWidth ? "w-full px-6 md:px-12 lg:px-24" : "max-w-[900px] mx-auto px-6 md:px-10";
 
   return (
     <div className={`notes-page ${widthClass} py-8`}>

@@ -1,12 +1,10 @@
-import { Inter } from "next/font/google";
 import { NotesScreen } from "@/components/notes/notes-screen";
 
-// Notion uses Inter; scope it to the Notes surface so the rest of the app keeps its brand font.
-const inter = Inter({ subsets: ["latin"], variable: "--font-notes", display: "swap" });
-
+// Notion renders its content surface in the system UI font stack (see .font-notes
+// in globals.css), so no web font is loaded here — matches Notion for parity.
 export default function NotesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${inter.variable} font-notes h-full`}>
+    <div className="font-notes h-full">
       <NotesScreen>{children}</NotesScreen>
     </div>
   );
