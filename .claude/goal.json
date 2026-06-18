@@ -24,7 +24,8 @@
     "Phase 1 (part) DONE: callout borderless tinted fill; quote 3px left border; Notion placeholder copy.",
     "Phase 1 DONE: 9-color callout tint palette (color prop + swatch picker, [data-callout-color] CSS light+dark, helper TDD'd, 323 tests).",
     "Phase 2 (part) DONE: page header — 64px icon overlapping the cover bottom when set; Add-cover affordance reveals on header hover when none; title 40px. App green (0 errors, 323 tests, build ok). Still TODO in Phase 2: cover REPOSITION (needs a `coverPosition` model field + drag focal point). Next: cover reposition, then Phase 3 (sidebar per-row ⊕ add-subpage + ⋯ menu).",
-    "Phase 3 DONE: sidebar TreeRow now has hover ⊕ add-subpage (POST /api/notes parentId → expand + navigate) and a ⋯ menu (inline Rename via input, Add sub-page, Delete) folding the old 🗑; ⭐ favorite kept; monochrome theming, clay accent. App green (0 errors, 323 tests, build ok). Next: Phase 4 — slim Notes top bar + richer ··· menu + slash-item icons + popover transitions."
+    "Phase 3 DONE: sidebar TreeRow now has hover ⊕ add-subpage (POST /api/notes parentId → expand + navigate) and a ⋯ menu (inline Rename via input, Add sub-page, Delete) folding the old 🗑; ⭐ favorite kept; monochrome theming, clay accent. App green (0 errors, 323 tests, build ok). Next: Phase 4 — slim Notes top bar + richer ··· menu + slash-item icons + popover transitions.",
+    "Phase 4 DONE: slim top bar (breadcrumb + 'Edited <relative>' + ⭐ favorite toggle + ···); relativeTime() helper TDD'd (4 tests, 327 total); GET /api/notes/[id] now returns pinned+updatedAt; ··· menu enriched (favorites/copy-link/full-width/delete, Esc-close, notesPop fade-scale transition); custom slash items got lucide icons. App green (0 errors, 327 tests, build ok). Next: Phase 5 — Cmd-K content search + empty-state copy."
   ],
   "created": "2026-06-18T04:38:46Z",
   "updated": "2026-06-18T04:49:53.427Z"

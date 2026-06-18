@@ -132,7 +132,7 @@ export function NotesScreen({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      {switcherOpen && <QuickSwitcher pages={pages} onClose={() => setSwitcherOpen(false)} />}
+      {switcherOpen && <QuickSwitcher pages={pages} onClose={() => setSwitcherOpen(false)} onCreated={load} />}
       </PagesCtx.Provider>
     </RefreshCtx.Provider>
   );
