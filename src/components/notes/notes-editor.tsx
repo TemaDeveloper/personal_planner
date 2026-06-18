@@ -156,6 +156,14 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
                   onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: "divider" }),
                 },
                 {
+                  title: "Toggle heading",
+                  subtext: "Collapsible heading section",
+                  aliases: ["toggle heading", "collapsible heading", "toggleh"],
+                  group: "Headings",
+                  onItemClick: () =>
+                    insertOrUpdateBlockForSlashMenu(editor, { type: "heading", props: { level: 1, isToggleable: true } }),
+                },
+                {
                   title: "Table of contents",
                   subtext: "Live outline of the page's headings",
                   aliases: ["toc", "table of contents", "outline"],
