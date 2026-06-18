@@ -36,7 +36,7 @@ export default function NotesPageView() {
   if (!page) return <div className="p-8 text-sm" style={{ color: "var(--text-faint)" }}>Loading…</div>;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 md:px-10 py-6">
+    <div className="notes-page w-full px-6 md:px-14 lg:px-20 py-8">
       <PageCover
         coverUrl={page.coverUrl}
         onChange={(url) => { setPage({ ...page, coverUrl: url }); patch({ coverUrl: url }); }}

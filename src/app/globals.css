@@ -606,3 +606,16 @@
   color: var(--text-primary);
   margin-bottom: 0.75rem;
 }
+
+/* Notes (Notion-style) — full-width editor.
+   BlockNote adds its own inline padding + no max-width; we zero the padding so
+   the editor text aligns with the page title, and let our .notes-page wrapper
+   control the horizontal rhythm. The workspace spans the full content area. */
+.notes-page .bn-editor {
+  max-width: none;
+  padding-inline: 0;
+}
+.notes-page .bn-container,
+.notes-page .bn-editor {
+  width: 100%;
+}
