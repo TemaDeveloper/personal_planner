@@ -636,3 +636,24 @@
   padding-left: 14px;
   font-style: normal;
 }
+
+/* Notes — Phase 1: 9-color callout tints (light + dark), applied by [data-callout-color]. */
+.notes-page [data-callout-color="default"] { background: var(--surface-raised); }
+.notes-page [data-callout-color="gray"]   { background: #F1F1EF; }
+.notes-page [data-callout-color="brown"]  { background: #F4EEEE; }
+.notes-page [data-callout-color="orange"] { background: #FAEBDD; }
+.notes-page [data-callout-color="yellow"] { background: #FBF3DB; }
+.notes-page [data-callout-color="green"]  { background: #EDF3EC; }
+.notes-page [data-callout-color="blue"]   { background: #E7F3F8; }
+.notes-page [data-callout-color="purple"] { background: #F6F3F9; }
+.notes-page [data-callout-color="pink"]   { background: #FAF1F5; }
+.notes-page [data-callout-color="red"]    { background: #FDEBEC; }
+.dark .notes-page [data-callout-color="gray"]   { background: rgba(255,255,255,0.055); }
+.dark .notes-page [data-callout-color="brown"]  { background: rgba(160,110,90,0.18); }
+.dark .notes-page [data-callout-color="orange"] { background: rgba(217,133,55,0.18); }
+.dark .notes-page [data-callout-color="yellow"] { background: rgba(203,145,40,0.18); }
+.dark .notes-page [data-callout-color="green"]  { background: rgba(75,150,90,0.18); }
+.dark .notes-page [data-callout-color="blue"]   { background: rgba(35,131,226,0.18); }
+.dark .notes-page [data-callout-color="purple"] { background: rgba(140,100,180,0.18); }
+.dark .notes-page [data-callout-color="pink"]   { background: rgba(200,100,160,0.18); }
+.dark .notes-page [data-callout-color="red"]    { background: rgba(200,80,75,0.18); }
