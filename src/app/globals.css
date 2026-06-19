@@ -620,6 +620,20 @@
 .notes-page .bn-editor {
   width: 100%;
 }
+/* Notion has no editor "card": the content sits flush on the page background.
+   BlockNote/Mantine paints the editor white + adds a frame, which reads as a
+   boxed card over our cream page. Make it transparent and frameless. */
+.notes-page {
+  --bn-colors-editor-background: transparent;
+  --bn-colors-editor-text: var(--text-primary);
+}
+.notes-page .bn-container,
+.notes-page .bn-editor,
+.notes-page .bn-editor .ProseMirror {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
 
 /* ── Notes (Notion parity) — Phase 0 ───────────────────────────────── */
 /* Notion uses the system UI font stack on its content surface (not Inter).
