@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 import { monthMatrix, indexByDay, WEEKDAYS, MONTH_NAMES, localDateKey } from "@/lib/notes/calendar-grid";
+import { isSelectType, optionColor } from "@/lib/notes/database";
 
 /** Month-grid calendar: places rows on their date-property day. */
 export function CalendarView({ properties, rows, titleProp, onAddRow }: {
@@ -11,6 +12,18 @@ export function CalendarView({ properties, rows, titleProp, onAddRow }: {
   onAddRow: (seed?: Record<string, unknown>) => void;
 }) {
   const dateProp = properties.find((p) => p.type === "date");
+  // Color event pills by the first select/status property (Notion colors
+  // calendar entries by their status/category).
+  const colorProp = properties.find((p) => isSelectType(p.type));
+  const pillStyle = (row: DBRow) => {
+    if (!colorProp) return { background: "var(--accent-glow)", color: "var(--text-primary)" };
+    const v = row.cells[colorProp.id];
+    const label = Array.isArray(v) ? v[0] : v;
+    const opt = colorProp.options?.find((o) => o.label === label);
+    if (!opt) return { background: "var(--accent-glow)", color: "var(--text-primary)" };
+    const c = optionColor(opt.color);
+    return { background: c.bg, color: c.text };
+  };
   const today = new Date();
   const [ym, setYm] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const todayKey = localDateKey(today);
@@ -50,7 +63,7 @@ export function CalendarView({ properties, rows, titleProp, onAddRow }: {
               </div>
               <div className="space-y-1 mt-1">
                 {items.map((row) => (
-                  <div key={row.id} className="text-[12px] truncate rounded px-1 py-0.5" style={{ background: "var(--accent-glow)", color: "var(--text-primary)" }}>
+                  <div key={row.id} className="text-[12px] truncate rounded px-1 py-0.5" style={pillStyle(row)}>
                     {titleProp ? (String(row.cells[titleProp.id] ?? "") || "Untitled") : "Untitled"}
                   </div>
                 ))}
