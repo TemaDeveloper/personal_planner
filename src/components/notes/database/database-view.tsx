@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays, Search } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
-import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts, applyFilters } from "@/lib/notes/database";
+import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts, applyFilters, reorderRows } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
 import { AddViewButton, ColumnMenu, SortControl, FilterControl, PropertiesControl } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
@@ -185,6 +185,18 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   };
   const hidden = view?.hidden ?? [];
   const visibleProps = db.properties.filter((p) => !hidden.includes(p.id));
+  // Manual row drag-reorder is only meaningful in raw order (Notion disables it
+  // when a sort/filter/search is active).
+  const canReorder = !view?.sorts?.length && !view?.filters?.length && !query.trim();
+  const moveRow = (fromId: string, toId: string) => {
+    if (!db) return;
+    const rows = reorderRows(db.rows, fromId, toId);
+    if (rows === db.rows) return;
+    setDb((d) => d ? { ...d, rows } : d);
+    fetch(`/api/notes/databases/${databaseId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }),
+    });
+  };
 
   // Title + column-name typing update locally and debounce the PATCH (was one
   // network write per keystroke → out-of-order races / last-write-wins).
@@ -236,7 +248,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       </div>
 
       {view?.type === "table" && (
-        <TableView db={{ ...viewDb, properties: visibleProps }} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
+        <TableView db={{ ...viewDb, properties: visibleProps }} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} onMoveRow={canReorder ? moveRow : undefined} />
       )}
       {view?.type === "board" && (
         <BoardView db={{ ...viewDb, properties: visibleProps }} groupProp={groupPropFor(db, view)} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
@@ -259,7 +271,7 @@ function Chip({ label, color }: { label: string; color: string }) {
   return <span className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none" style={{ background: c.bg, color: c.text }}>{label}</span>;
 }
 
-function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onRenameColumn, onChangeType, onDeleteColumn, onAddOption, onConfigProp }: {
+function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onRenameColumn, onChangeType, onDeleteColumn, onAddOption, onConfigProp, onMoveRow }: {
   db: DB; relatedDbs: RelatedDbs; onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddRow: () => void; onAddColumn: () => void; onDeleteRow: (id: string) => void;
   onRenameColumn: (propId: string, name: string) => void;
@@ -267,12 +279,14 @@ function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow,
   onDeleteColumn: (propId: string) => void;
   onAddOption: (propId: string, label: string) => void;
   onConfigProp: (p: DBProperty[]) => void;
+  onMoveRow?: (fromId: string, toId: string) => void;
 }) {
   return (
     <div className="overflow-x-auto border rounded-md" style={{ borderColor: "var(--border-subtle)" }}>
       <table className="w-full border-collapse text-[13px]">
         <thead>
           <tr>
+            {onMoveRow && <th className="w-5 border-b" style={{ borderColor: "var(--border-subtle)" }} />}
             {db.properties.map((p) => (
               <th key={p.id} className="text-left font-normal px-2 py-1.5 border-b border-r whitespace-nowrap"
                 style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)", minWidth: p.type === "title" ? 200 : 120 }}>
@@ -291,7 +305,16 @@ function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow,
         </thead>
         <tbody>
           {db.rows.map((row) => (
-            <tr key={row.id} className="group/row">
+            <tr key={row.id} className="group/row"
+              onDragOver={onMoveRow ? (e) => e.preventDefault() : undefined}
+              onDrop={onMoveRow ? (e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (id) onMoveRow(id, row.id); } : undefined}>
+              {onMoveRow && (
+                <td className="border-b text-center align-middle" style={{ borderColor: "var(--border-subtle)" }}>
+                  <span draggable onDragStart={(e) => e.dataTransfer.setData("text/plain", row.id)}
+                    className="cursor-grab active:cursor-grabbing opacity-0 group-hover/row:opacity-100 inline-block" style={{ color: "var(--text-faint)" }}
+                    aria-label="Drag to reorder">⠿</span>
+                </td>
+              )}
               {db.properties.map((p) => (
                 <td key={p.id} className="px-2 py-1 border-b border-r align-top" style={{ borderColor: "var(--border-subtle)" }}>
                   <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} onAddOption={(label) => onAddOption(p.id, label)} ctx={{ properties: db.properties, row, relatedDbs }} />

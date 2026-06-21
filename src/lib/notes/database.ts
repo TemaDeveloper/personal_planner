@@ -181,6 +181,21 @@ export function migrateRowsForTypeChange(
   });
 }
 
+/** Move row `fromId` to the position of `toId` (drops before it). Returns a new
+ * array; a no-op when either id is missing or they're equal. Pure. */
+export function reorderRows(rows: DBRow[], fromId: string, toId: string): DBRow[] {
+  if (fromId === toId) return rows;
+  const from = rows.findIndex((r) => r.id === fromId);
+  const to = rows.findIndex((r) => r.id === toId);
+  if (from < 0 || to < 0) return rows;
+  const next = rows.slice();
+  const [moved] = next.splice(from, 1);
+  // After removing `from`, recompute the insertion index of `toId`.
+  const insertAt = next.findIndex((r) => r.id === toId);
+  next.splice(insertAt, 0, moved);
+  return next;
+}
+
 /** Stable multi-key sort of rows by a view's sort spec. Pure; numbers compare
  * numerically, dates/strings lexically, arrays by their first value; empty
  * values sort last regardless of direction. */

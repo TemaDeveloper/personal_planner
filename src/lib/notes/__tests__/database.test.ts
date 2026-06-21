@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
   isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor, filterRows,
-  migrateCellValue, migrateRowsForTypeChange, applySorts, applyFilters,
+  migrateCellValue, migrateRowsForTypeChange, applySorts, applyFilters, reorderRows,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -231,6 +231,20 @@ describe("applyFilters", () => {
       { prop: "tags", op: "is_not_empty" },
     ]);
     expect(out.map((r) => r.id)).toEqual(["1"]);
+  });
+});
+
+describe("reorderRows", () => {
+  const rows: DBRow[] = ["a", "b", "c", "d"].map((id) => ({ id, cells: {} }));
+  it("moves a row to before the target (downward)", () => {
+    expect(reorderRows(rows, "a", "c").map((r) => r.id)).toEqual(["b", "a", "c", "d"]);
+  });
+  it("moves a row upward", () => {
+    expect(reorderRows(rows, "d", "b").map((r) => r.id)).toEqual(["a", "d", "b", "c"]);
+  });
+  it("is a no-op for same id or missing ids", () => {
+    expect(reorderRows(rows, "a", "a")).toBe(rows);
+    expect(reorderRows(rows, "z", "b")).toBe(rows);
   });
 });
 
