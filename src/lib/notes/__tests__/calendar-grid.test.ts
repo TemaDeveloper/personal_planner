@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { monthMatrix, indexByDay, WEEKDAYS } from "@/lib/notes/calendar-grid";
+import { monthMatrix, indexByDay, WEEKDAYS, localDateKey } from "@/lib/notes/calendar-grid";
 
 describe("monthMatrix", () => {
   it("returns 6 weeks of 7 days", () => {
@@ -17,6 +17,18 @@ describe("monthMatrix", () => {
     const m = monthMatrix(2026, 0); // Jan 2026, 1st is Thursday
     expect(m[0][0]).toBe("2025-12-29");
     expect(m[0]).toContain("2026-01-01");
+  });
+});
+
+describe("localDateKey", () => {
+  it("formats a date as local yyyy-mm-dd with zero-padding", () => {
+    expect(localDateKey(new Date(2026, 0, 5))).toBe("2026-01-05");
+    expect(localDateKey(new Date(2026, 11, 31))).toBe("2026-12-31");
+  });
+  it("uses local fields, not UTC (no toISOString shift)", () => {
+    // 2026-06-18 09:00 LOCAL → key must be 2026-06-18 regardless of tz offset.
+    const d = new Date(2026, 5, 18, 9, 0, 0);
+    expect(localDateKey(d)).toBe("2026-06-18");
   });
 });
 

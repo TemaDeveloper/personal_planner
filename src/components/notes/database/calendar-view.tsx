@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
-import { monthMatrix, indexByDay, WEEKDAYS, MONTH_NAMES } from "@/lib/notes/calendar-grid";
+import { monthMatrix, indexByDay, WEEKDAYS, MONTH_NAMES, localDateKey } from "@/lib/notes/calendar-grid";
 
 /** Month-grid calendar: places rows on their date-property day. */
 export function CalendarView({ properties, rows, titleProp, onAddRow }: {
@@ -13,7 +13,7 @@ export function CalendarView({ properties, rows, titleProp, onAddRow }: {
   const dateProp = properties.find((p) => p.type === "date");
   const today = new Date();
   const [ym, setYm] = useState({ y: today.getFullYear(), m: today.getMonth() });
-  const todayKey = today.toISOString().slice(0, 10);
+  const todayKey = localDateKey(today);
 
   const weeks = useMemo(() => monthMatrix(ym.y, ym.m), [ym]);
   const byDay = useMemo(() => indexByDay(rows, dateProp?.id), [rows, dateProp]);

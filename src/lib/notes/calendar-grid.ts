@@ -1,3 +1,13 @@
+/** yyyy-mm-dd for a Date in LOCAL time (not UTC). Use for "today" so the grid
+ * highlights the user's local date rather than a UTC day that can be off-by-one
+ * near midnight in non-UTC zones. */
+export function localDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 /** Build a 6-week month grid (Mon-first) of ISO date strings (yyyy-mm-dd),
  * including leading/trailing days from adjacent months. Pure + deterministic. */
 export function monthMatrix(year: number, month: number): string[][] {
