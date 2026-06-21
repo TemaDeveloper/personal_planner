@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid, CalendarDays, ArrowUpDown, Filter, X } from "lucide-react";
+import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid, CalendarDays, ArrowUpDown, Filter, X, Eye, EyeOff, SlidersHorizontal } from "lucide-react";
 import type { DBFilter, DBProperty, DBSort, FilterOp, PropertyType, RollupFn, ViewType } from "@/lib/models/notes-database";
 import { PROPERTY_TYPE_LABELS } from "@/lib/notes/database";
 
@@ -100,6 +100,43 @@ export function FilterControl({ properties, filters, onChange }: {
           <button type="button" onClick={add} className="flex items-center gap-1 px-1 py-1 text-[12px]" style={{ color: "var(--text-muted)" }}>
             <Plus size={13} /> Add filter
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Properties control: toggle which properties are visible in the active view.
+ * The title property is always visible (can't be hidden). */
+export function PropertiesControl({ properties, hidden, onToggle }: {
+  properties: DBProperty[]; hidden: string[]; onToggle: (propId: string, hide: boolean) => void;
+}) {
+  const { open, setOpen, ref } = usePopover();
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" aria-label="Properties" onClick={() => setOpen((o) => !o)}
+        className="p-1.5 rounded-md hover:bg-[var(--surface-raised)]"
+        style={{ color: hidden.length ? "var(--accent-color)" : "var(--text-muted)" }}>
+        <SlidersHorizontal size={15} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-50 mt-1 p-1 rounded-lg border min-w-[200px] animate-[notesPop_120ms_ease-out]" style={popoverStyle}>
+          <div className="px-2 py-1 text-[11px] uppercase tracking-wide" style={{ color: "var(--text-faint)" }}>Properties</div>
+          {properties.map((p) => {
+            const isHidden = hidden.includes(p.id);
+            const isTitle = p.type === "title";
+            return (
+              <button key={p.id} type="button" disabled={isTitle}
+                onClick={() => onToggle(p.id, !isHidden)}
+                className="flex items-center justify-between gap-2 w-full text-left px-2 py-1 rounded text-[13px] hover:bg-[var(--surface-raised)] disabled:opacity-60"
+                style={{ color: "var(--text-primary)" }}>
+                <span className="truncate">{p.name || "Untitled"}</span>
+                {isTitle ? <Eye size={14} style={{ color: "var(--text-faint)" }} />
+                  : isHidden ? <EyeOff size={14} style={{ color: "var(--text-faint)" }} />
+                  : <Eye size={14} style={{ color: "var(--text-muted)" }} />}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

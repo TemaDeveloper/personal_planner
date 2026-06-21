@@ -5,7 +5,7 @@ import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarD
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
 import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts, applyFilters } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
-import { AddViewButton, ColumnMenu, SortControl, FilterControl } from "./schema-controls";
+import { AddViewButton, ColumnMenu, SortControl, FilterControl, PropertiesControl } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
 
@@ -177,6 +177,14 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     if (!db || !view) return;
     saveViews(db.views.map((v) => v.id === view.id ? { ...v, filters } : v));
   };
+  const toggleHidden = (propId: string, hide: boolean) => {
+    if (!db || !view) return;
+    const cur = view.hidden ?? [];
+    const hidden = hide ? [...new Set([...cur, propId])] : cur.filter((id) => id !== propId);
+    saveViews(db.views.map((v) => v.id === view.id ? { ...v, hidden } : v));
+  };
+  const hidden = view?.hidden ?? [];
+  const visibleProps = db.properties.filter((p) => !hidden.includes(p.id));
 
   // Title + column-name typing update locally and debounce the PATCH (was one
   // network write per keystroke → out-of-order races / last-write-wins).
@@ -212,6 +220,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
         <div className="ml-auto flex items-center gap-1">
           <FilterControl properties={db.properties} filters={view?.filters ?? []} onChange={setFilters} />
           <SortControl properties={db.properties} sort={view?.sorts?.[0]} onSet={setSort} />
+          <PropertiesControl properties={db.properties} hidden={hidden} onToggle={toggleHidden} />
           {searchOpen ? (
             <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)}
               onBlur={() => { if (!query) setSearchOpen(false); }} placeholder="Search…"
@@ -227,16 +236,16 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       </div>
 
       {view?.type === "table" && (
-        <TableView db={viewDb} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
+        <TableView db={{ ...viewDb, properties: visibleProps }} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
       )}
       {view?.type === "board" && (
-        <BoardView db={viewDb} view={view} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
+        <BoardView db={{ ...viewDb, properties: visibleProps }} groupProp={groupPropFor(db, view)} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
       )}
       {(view?.type === "gallery") && (
-        <GalleryView db={viewDb} titleProp={titleProp} onAddRow={() => addRow()} />
+        <GalleryView db={{ ...viewDb, properties: visibleProps }} coverProp={db.properties.find((p) => p.type === "image")} titleProp={titleProp} onAddRow={() => addRow()} />
       )}
       {view?.type === "list" && (
-        <ListView db={viewDb} titleProp={titleProp} onAddRow={() => addRow()} />
+        <ListView db={{ ...viewDb, properties: visibleProps }} titleProp={titleProp} onAddRow={() => addRow()} />
       )}
       {view?.type === "calendar" && (
         <CalendarView properties={db.properties} rows={viewDb.rows} titleProp={titleProp} onAddRow={addRow} />
@@ -332,11 +341,16 @@ function CardProps({ properties, row, limit = 4 }: { properties: DBProperty[]; r
   );
 }
 
-function BoardView({ db, view, titleProp, onCell, onAddRow }: {
-  db: DB; view: DBView; titleProp?: DBProperty;
+/** The board's grouping property — explicit so it works even when the group
+ * property is hidden from display via DBView.hidden. */
+function groupPropFor(db: DB, view: DBView): DBProperty | undefined {
+  return db.properties.find((p) => p.id === view.groupBy) ?? db.properties.find((p) => isSelectType(p.type));
+}
+
+function BoardView({ db, groupProp, titleProp, onCell, onAddRow }: {
+  db: DB; groupProp?: DBProperty; titleProp?: DBProperty;
   onCell: (rowId: string, cells: Record<string, unknown>) => void; onAddRow: (seed?: Record<string, unknown>) => void;
 }) {
-  const groupProp = db.properties.find((p) => p.id === view.groupBy) ?? db.properties.find((p) => isSelectType(p.type));
   const groups = groupRowsByProperty(db.rows, groupProp);
   const [overKey, setOverKey] = useState<string | null>(null);
 
@@ -381,9 +395,8 @@ function BoardView({ db, view, titleProp, onCell, onAddRow }: {
   );
 }
 
-function GalleryView({ db, titleProp, onAddRow }: { db: DB; titleProp?: DBProperty; onAddRow: () => void }) {
-  // Notion gallery cards lead with a cover image: use the first image property.
-  const coverProp = db.properties.find((p) => p.type === "image");
+function GalleryView({ db, coverProp, titleProp, onAddRow }: { db: DB; coverProp?: DBProperty; titleProp?: DBProperty; onAddRow: () => void }) {
+  // Notion gallery cards lead with a cover image (the first image property).
   return (
     <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
       {db.rows.map((row) => {
