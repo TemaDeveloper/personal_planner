@@ -154,6 +154,15 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
     }
   };
 
+  // Light up code blocks on initial load too: a page may have code saved as
+  // "text" (e.g. created before detection, or pasted then navigated away);
+  // Notion shows the language immediately, so detect once after mount.
+  useEffect(() => {
+    const t = setTimeout(autodetectCode, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount; editor is stable
+  }, []);
+
   const insertSubPageItem = () => ({
     title: "Page",
     subtext: "Create a sub-page",
