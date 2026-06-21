@@ -26,7 +26,9 @@ export function CalendarView({ properties, rows, titleProp, onAddRow }: {
   };
   const today = new Date();
   const [ym, setYm] = useState({ y: today.getFullYear(), m: today.getMonth() });
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const todayKey = localDateKey(today);
+  const DAY_MAX = 3; // events shown per day before a "+N more" toggle
 
   const weeks = useMemo(() => monthMatrix(ym.y, ym.m), [ym]);
   const byDay = useMemo(() => indexByDay(rows, dateProp?.id), [rows, dateProp]);
@@ -54,6 +56,9 @@ export function CalendarView({ properties, rows, titleProp, onAddRow }: {
         {weeks.flat().map((day) => {
           const inMonth = Number(day.slice(5, 7)) === ym.m + 1;
           const items = byDay.get(day) ?? [];
+          const expanded = expandedDays.has(day);
+          const shown = expanded ? items : items.slice(0, DAY_MAX);
+          const overflow = items.length - shown.length;
           return (
             <div key={day} className="min-h-20 px-1.5 py-1 border-r border-b group/day" style={{ borderColor: "var(--border-subtle)", background: inMonth ? undefined : "var(--surface-raised)" }}>
               <div className="flex items-center justify-between">
@@ -62,11 +67,18 @@ export function CalendarView({ properties, rows, titleProp, onAddRow }: {
                   className="opacity-0 group-hover/day:opacity-100" style={{ color: "var(--text-faint)" }}><Plus size={12} /></button>
               </div>
               <div className="space-y-1 mt-1">
-                {items.map((row) => (
+                {shown.map((row) => (
                   <div key={row.id} className="text-[12px] truncate rounded px-1 py-0.5" style={pillStyle(row)}>
                     {titleProp ? (String(row.cells[titleProp.id] ?? "") || "Untitled") : "Untitled"}
                   </div>
                 ))}
+                {(overflow > 0 || expanded) && items.length > DAY_MAX && (
+                  <button type="button"
+                    onClick={() => setExpandedDays((s) => { const n = new Set(s); if (expanded) n.delete(day); else n.add(day); return n; })}
+                    className="text-[11px] px-1" style={{ color: "var(--text-muted)" }}>
+                    {expanded ? "Show less" : `+${overflow} more`}
+                  </button>
+                )}
               </div>
             </div>
           );
