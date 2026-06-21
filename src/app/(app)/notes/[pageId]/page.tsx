@@ -148,12 +148,14 @@ export default function NotesPageView() {
             />
           </div>
         )}
-        <input aria-label="Page title" defaultValue={page.title} placeholder="Untitled"
+        <input key={`title-${page.id}`} aria-label="Page title" defaultValue={page.title} placeholder="Untitled"
           onBlur={(e) => patch({ title: e.target.value })}
           className="block w-full text-[2.5rem] leading-tight font-bold bg-transparent outline-none mt-2 mb-6"
           style={{ color: "var(--text-primary)" }} />
       </div>
-      <NotesEditorLoader pageId={page.id} initialContent={page.content} />
+      {/* key={page.id}: remount the editor per page so navigating pages can't
+          carry one page's content/save-target onto another (data-loss fix). */}
+      <NotesEditorLoader key={page.id} pageId={page.id} initialContent={page.content} />
     </div>
   );
 }

@@ -3,9 +3,13 @@ import { auth } from "@/lib/auth";
 import { resolveUserId } from "@/lib/session";
 import { connectDB } from "@/lib/db";
 import NotesPage from "@/lib/models/notes-page";
+import NotesDatabase from "@/lib/models/notes-database";
+import { collectDatabaseIds, rewriteContentIds } from "@/lib/notes/duplicate-content";
 
 /** Deep-duplicate a page and its entire subtree. The new root is titled
- * "Copy of <title>" and placed right after the original among its siblings. */
+ * "Copy of <title>" and placed right after the original. Referenced databases
+ * are cloned (so the copy is independent), and in-content sub-page / mention
+ * ids are rewritten to point at the new copies. */
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await resolveUserId(await auth());
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,7 +29,20 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     childrenOf.set(key, arr);
   }
 
-  // New root order: just after the original.
+  // Order the new root between the original and its next sibling (avoids the
+  // +0.5 collision when the same page is duplicated twice).
+  const siblings = (childrenOf.get(root.parentId ? String(root.parentId) : "root") ?? [])
+    .slice().sort((a, b) => a.order - b.order);
+  const idx = siblings.findIndex((s) => String(s._id) === String(root._id));
+  const next = siblings[idx + 1];
+  const newRootOrder = next ? (root.order + next.order) / 2 : root.order + 1;
+
+  // PASS 1 — copy the page subtree (content not yet rewritten), recording the
+  // original content per new page and the old→new page id map.
+  type Pending = { newId: string; content: unknown };
+  const pageMap: Record<string, string> = {};
+  const pending: Pending[] = [];
+
   const newRoot = await NotesPage.create({
     userId,
     parentId: root.parentId ?? null,
@@ -33,17 +50,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     icon: root.icon,
     coverUrl: root.coverUrl ?? "",
     content: root.content,
-    order: root.order + 0.5,
+    order: newRootOrder,
     fullWidth: root.fullWidth,
   });
+  pageMap[String(root._id)] = String(newRoot._id);
+  pending.push({ newId: String(newRoot._id), content: root.content });
 
-  // Recreate descendants depth-first, preserving structure under new parents.
   const stack: { oldId: string; newParentId: string }[] = [{ oldId: String(root._id), newParentId: String(newRoot._id) }];
-  let count = 1;
   while (stack.length) {
     const { oldId, newParentId } = stack.pop()!;
-    const kids = childrenOf.get(oldId) ?? [];
-    for (const k of kids) {
+    for (const k of childrenOf.get(oldId) ?? []) {
       const copy = await NotesPage.create({
         userId,
         parentId: newParentId,
@@ -54,10 +70,35 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         order: k.order,
         fullWidth: k.fullWidth,
       });
-      count++;
+      pageMap[String(k._id)] = String(copy._id);
+      pending.push({ newId: String(copy._id), content: k.content });
       stack.push({ oldId: String(k._id), newParentId: String(copy._id) });
     }
   }
 
-  return NextResponse.json({ page: { id: String(newRoot._id), title: newRoot.title }, count }, { status: 201 });
+  // PASS 2 — for each new page: clone the databases it references, then rewrite
+  // databaseId + subPage/mention pageId in its content and save.
+  for (const { newId, content } of pending) {
+    const dbIds = collectDatabaseIds(content);
+    const dbMap: Record<string, string> = {};
+    for (const dbId of dbIds) {
+      const src = await NotesDatabase.findOne({ _id: dbId, userId }).lean();
+      if (!src) continue;
+      const clone = await NotesDatabase.create({
+        userId,
+        title: src.title,
+        icon: src.icon,
+        properties: src.properties,
+        views: src.views,
+        rows: src.rows,
+      });
+      dbMap[dbId] = String(clone._id);
+    }
+    if (dbIds.length || Object.keys(pageMap).length) {
+      const rewritten = rewriteContentIds(content, dbMap, pageMap);
+      await NotesPage.updateOne({ _id: newId, userId }, { content: rewritten });
+    }
+  }
+
+  return NextResponse.json({ page: { id: String(newRoot._id), title: newRoot.title }, count: pending.length }, { status: 201 });
 }

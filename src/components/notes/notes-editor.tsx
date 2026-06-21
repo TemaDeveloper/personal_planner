@@ -206,6 +206,14 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
 
   const debouncedSave = useDebouncedSave<unknown>((c) => persist.current(c), 600);
 
+  // Flush the latest content on unmount. The editor is keyed per page, so it
+  // unmounts when navigating away — without this, edits made in the last 600ms
+  // (still sitting in the debounce) would be dropped. pageId/editor are this
+  // instance's, so the flush always targets the correct (departing) page.
+  useEffect(() => {
+    return () => { void persist.current(editor.document); };
+  }, [editor]);
+
   return (
     <div className="relative">
       <div className="absolute right-2 -top-6 text-[11px]" style={{ color: "var(--text-faint)" }}>
