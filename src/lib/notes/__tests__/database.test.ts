@@ -24,10 +24,11 @@ describe("buildDefaultDatabase", () => {
 });
 
 describe("genId", () => {
-  it("is prefixed and stable for a seed", () => {
+  it("is prefixed and unique across calls (even with the same seed)", () => {
     expect(genId("p", 5).startsWith("p_")).toBe(true);
-    expect(genId("p", 5)).toBe(genId("p", 5));
-    expect(genId("p", 5)).not.toBe(genId("p", 6));
+    // Must be unique across databases that happen to share a seed.
+    const ids = new Set(Array.from({ length: 200 }, () => genId("p", 5)));
+    expect(ids.size).toBe(200);
   });
 });
 

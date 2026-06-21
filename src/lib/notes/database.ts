@@ -28,9 +28,12 @@ export function colorForLabel(label: string): string {
   return palette[h % palette.length];
 }
 
-/** Deterministic-enough id for client-created schema/rows (no crypto needed). */
+/** Unique id for schema/rows (no crypto needed). The seed keeps ids readable
+ * and ordered within one buildDefaultDatabase call; a random suffix guarantees
+ * uniqueness ACROSS databases, so e.g. a rollup target id from one database
+ * can't accidentally match a property in another. */
 export function genId(prefix: string, seed: number): string {
-  return `${prefix}_${seed.toString(36)}${(seed * 2654435761 % 1e9).toString(36)}`;
+  return `${prefix}_${seed.toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
