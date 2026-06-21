@@ -36,14 +36,26 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   // (never a stale snapshot that could clobber a concurrent menu edit).
   const dbRef = useRef<DB | null>(null);
   useEffect(() => { dbRef.current = db; });
-  const flushMeta = useDebouncedSave<void>(() => {
+  const metaDirty = useRef(false);
+  const sendMeta = useRef(() => {
     const cur = dbRef.current;
     if (!cur) return;
+    metaDirty.current = false;
     fetch(`/api/notes/databases/${databaseId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: cur.title, properties: cur.properties }),
     });
-  }, 500);
+  });
+  const debouncedMeta = useDebouncedSave<void>(() => sendMeta.current(), 500);
+  const flushMeta = () => { metaDirty.current = true; debouncedMeta(); };
+  // Flush a pending title/column-name edit on unmount (the editor is keyed per
+  // page, so this view unmounts on navigation — without this the last <500ms of
+  // typing would be dropped).
+  useEffect(() => {
+    const send = sendMeta;
+    const dirty = metaDirty;
+    return () => { if (dirty.current) send.current(); };
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/notes/databases/${databaseId}`);
