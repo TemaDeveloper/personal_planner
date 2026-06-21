@@ -129,6 +129,19 @@ export function relatedRowsFor(cellValue: unknown, targetRows: DBRow[]): DBRow[]
   return ids.map((id) => byId.get(id)).filter((r): r is DBRow => !!r);
 }
 
+/** Filter rows by a free-text query across all cell values (in-view search). */
+export function filterRows(rows: DBRow[], query: string): DBRow[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter((r) =>
+    Object.values(r.cells).some((v) => {
+      if (v == null) return false;
+      const s = Array.isArray(v) ? v.join(" ") : String(v);
+      return s.toLowerCase().includes(q);
+    })
+  );
+}
+
 /** Human-readable cell text for plain rendering (list/exports). */
 export function formatCellText(prop: DBProperty, value: unknown): string {
   if (value == null || value === "") return "";

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
-  isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor,
+  isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor, filterRows,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -108,6 +108,25 @@ describe("computeRollup", () => {
   });
   it("is 0 percent for no related rows", () => {
     expect(computeRollup({ id: "r", name: "R", type: "rollup", rollupFn: "percent_checked", rollupTarget: "done" }, [])).toEqual({ value: 0, isPercent: true });
+  });
+});
+
+describe("filterRows", () => {
+  const rows = [
+    { id: "1", cells: { t: "Ship the feature", tags: ["urgent", "backend"] } },
+    { id: "2", cells: { t: "Plan sprint", tags: ["planning"] } },
+    { id: "3", cells: { t: "Review PRs" } },
+  ];
+  it("returns all rows for empty query", () => {
+    expect(filterRows(rows, "  ")).toHaveLength(3);
+  });
+  it("matches across text and array cells, case-insensitively", () => {
+    expect(filterRows(rows, "ship").map((r) => r.id)).toEqual(["1"]);
+    expect(filterRows(rows, "BACKEND").map((r) => r.id)).toEqual(["1"]);
+    expect(filterRows(rows, "plan").map((r) => r.id)).toEqual(["2"]);
+  });
+  it("returns empty when nothing matches", () => {
+    expect(filterRows(rows, "zzz")).toEqual([]);
   });
 });
 

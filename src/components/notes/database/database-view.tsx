@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays, Search } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
-import { groupRowsByProperty, isSelectType, optionColor, colorForLabel } from "@/lib/notes/database";
+import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
 import { AddViewButton, ColumnMenu } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
@@ -20,6 +20,8 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   const [db, setDb] = useState<DB | null>(null);
   const [activeView, setActiveView] = useState(0);
   const [missing, setMissing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const [relatedDbs, setRelatedDbs] = useState<RelatedDbs>({});
 
@@ -122,6 +124,8 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   if (!db) return <div contentEditable={false} className="my-2 text-[13px] px-1" style={{ color: "var(--text-faint)" }}>Loading database…</div>;
 
   const view = db.views[activeView] ?? db.views[0];
+  // In-view search filters the rows shown (edits still patch by row id).
+  const viewDb = { ...db, rows: filterRows(db.rows, query) };
 
   const saveTitle = (title: string) => {
     setDb((d) => d ? { ...d, title } : d);
@@ -136,32 +140,49 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       <input value={db.title} onChange={(e) => saveTitle(e.target.value)} placeholder="Untitled"
         className="block bg-transparent outline-none text-[18px] font-semibold mb-1.5"
         style={{ color: "var(--text-primary)" }} />
-      {/* View-switcher tab bar */}
-      <div className="flex items-center gap-1 border-b mb-1.5" style={{ borderColor: "var(--border-subtle)" }}>
+      {/* View-switcher tab bar — Notion-style pills + a search control */}
+      <div className="flex items-center gap-1 border-b mb-1.5 pb-1" style={{ borderColor: "var(--border-subtle)" }}>
         {db.views.map((v, i) => (
           <button key={v.id} type="button" onClick={() => setActiveView(i)}
-            className="flex items-center gap-1.5 px-2 py-1.5 text-[13px] -mb-px border-b-2"
-            style={{ borderColor: i === activeView ? "var(--text-primary)" : "transparent", color: i === activeView ? "var(--text-primary)" : "var(--text-muted)", fontWeight: i === activeView ? 600 : 400 }}>
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[13px] transition-colors"
+            style={{
+              background: i === activeView ? "var(--surface-raised)" : "transparent",
+              color: i === activeView ? "var(--text-primary)" : "var(--text-muted)",
+              fontWeight: i === activeView ? 600 : 400,
+            }}>
             {VIEW_ICON[v.type]} {v.name}
           </button>
         ))}
         <AddViewButton onAdd={addView} />
+        <div className="ml-auto flex items-center gap-1">
+          {searchOpen ? (
+            <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)}
+              onBlur={() => { if (!query) setSearchOpen(false); }} placeholder="Search…"
+              className="w-36 px-2 py-1 rounded-md text-[13px] outline-none border"
+              style={{ background: "var(--surface-raised)", color: "var(--text-primary)", borderColor: "var(--border-subtle)" }} />
+          ) : (
+            <button type="button" aria-label="Search rows" onClick={() => setSearchOpen(true)}
+              className="p-1.5 rounded-md hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-muted)" }}>
+              <Search size={15} />
+            </button>
+          )}
+        </div>
       </div>
 
       {view?.type === "table" && (
-        <TableView db={db} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onSaveSchema={saveSchema} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
+        <TableView db={viewDb} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onSaveSchema={saveSchema} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
       )}
       {view?.type === "board" && (
-        <BoardView db={db} view={view} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
+        <BoardView db={viewDb} view={view} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
       )}
       {(view?.type === "gallery") && (
-        <GalleryView db={db} titleProp={titleProp} onAddRow={() => addRow()} />
+        <GalleryView db={viewDb} titleProp={titleProp} onAddRow={() => addRow()} />
       )}
       {view?.type === "list" && (
-        <ListView db={db} titleProp={titleProp} onAddRow={() => addRow()} />
+        <ListView db={viewDb} titleProp={titleProp} onAddRow={() => addRow()} />
       )}
       {view?.type === "calendar" && (
-        <CalendarView properties={db.properties} rows={db.rows} titleProp={titleProp} onAddRow={addRow} />
+        <CalendarView properties={db.properties} rows={viewDb.rows} titleProp={titleProp} onAddRow={addRow} />
       )}
     </div>
   );
@@ -229,6 +250,31 @@ function rowTitle(row: DBRow, titleProp?: DBProperty): string {
   return titleProp ? (String(row.cells[titleProp.id] ?? "") || "Untitled") : "Untitled";
 }
 
+/** Secondary properties shown on a card (board/gallery), below the title.
+ * Select-like values render as colored chips; others as muted text. */
+function CardProps({ properties, row, limit = 4 }: { properties: DBProperty[]; row: DBRow; limit?: number }) {
+  const shown = properties.filter((p) => p.type !== "title").filter((p) => {
+    const v = row.cells[p.id];
+    return v != null && v !== "" && !(Array.isArray(v) && v.length === 0);
+  }).slice(0, limit);
+  if (!shown.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-1.5">
+      {shown.map((p) => {
+        const v = row.cells[p.id];
+        if (isSelectType(p.type)) {
+          const vals = Array.isArray(v) ? v : [v];
+          return vals.map((val, i) => {
+            const opt = p.options?.find((o) => o.label === val);
+            return <Chip key={`${p.id}-${i}`} label={String(val)} color={opt?.color ?? "default"} />;
+          });
+        }
+        return <span key={p.id} className="text-[12px]" style={{ color: "var(--text-muted)" }}>{formatCellText(p, v)}</span>;
+      })}
+    </div>
+  );
+}
+
 function BoardView({ db, view, titleProp, onCell, onAddRow }: {
   db: DB; view: DBView; titleProp?: DBProperty;
   onCell: (rowId: string, cells: Record<string, unknown>) => void; onAddRow: (seed?: Record<string, unknown>) => void;
@@ -243,7 +289,8 @@ function BoardView({ db, view, titleProp, onCell, onAddRow }: {
           <div className="space-y-2">
             {g.rows.map((row) => (
               <div key={row.id} className="rounded-md border px-2.5 py-2 text-[13px]" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)", color: "var(--text-primary)" }}>
-                {rowTitle(row, titleProp)}
+                <div className="font-medium">{rowTitle(row, titleProp)}</div>
+                <CardProps properties={db.properties.filter((p) => p.id !== groupProp?.id)} row={row} />
               </div>
             ))}
             <button type="button"
@@ -265,16 +312,8 @@ function GalleryView({ db, titleProp, onAddRow }: { db: DB; titleProp?: DBProper
     <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
       {db.rows.map((row) => (
         <div key={row.id} className="rounded-lg border p-3 text-[13px] min-h-20" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
-          <div className="font-medium mb-1" style={{ color: "var(--text-primary)" }}>{rowTitle(row, titleProp)}</div>
-          {db.properties.filter((p) => p.type !== "title").slice(0, 3).map((p) => {
-            const v = row.cells[p.id];
-            if (v == null || v === "") return null;
-            if (isSelectType(p.type)) {
-              const opt = p.options?.find((o) => o.label === (Array.isArray(v) ? v[0] : v));
-              return <div key={p.id} className="mt-1"><Chip label={String(Array.isArray(v) ? v[0] : v)} color={opt?.color ?? "default"} /></div>;
-            }
-            return <div key={p.id} className="text-[12px] mt-0.5" style={{ color: "var(--text-muted)" }}>{String(v)}</div>;
-          })}
+          <div className="font-medium" style={{ color: "var(--text-primary)" }}>{rowTitle(row, titleProp)}</div>
+          <CardProps properties={db.properties} row={row} />
         </div>
       ))}
       <button type="button" onClick={onAddRow} className="rounded-lg border border-dashed flex items-center justify-center min-h-20 text-[13px]" style={{ borderColor: "var(--border-default)", color: "var(--text-faint)" }}>
