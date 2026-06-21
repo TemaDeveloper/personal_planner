@@ -50,7 +50,7 @@ export function AddViewButton({ onAdd }: { onAdd: (type: ViewType) => void }) {
   );
 }
 
-const TYPES: PropertyType[] = ["text", "number", "select", "multi_select", "status", "date", "checkbox", "url", "relation", "rollup"];
+const TYPES: PropertyType[] = ["text", "number", "select", "multi_select", "status", "date", "checkbox", "url", "image", "relation", "rollup"];
 const ROLLUP_FNS: { fn: RollupFn; label: string }[] = [
   { fn: "count", label: "Count" }, { fn: "percent_checked", label: "Percent checked" }, { fn: "sum", label: "Sum" },
 ];

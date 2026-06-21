@@ -36,6 +36,8 @@ export function CellEditor({ prop, value, onChange, onAddOption, ctx }: {
       );
     case "url":
       return <TextCell value={value} onChange={onChange} type="url" />;
+    case "image":
+      return <ImageCell value={value as string} onChange={onChange} />;
     case "select":
     case "status":
       return <SelectCell prop={prop} value={value as string} onChange={onChange} onAddOption={onAddOption} />;
@@ -56,6 +58,37 @@ function TextCell({ value, onChange, type = "text", bold }: {
       onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
       className="bg-transparent outline-none w-full text-[13px]"
       style={{ color: "var(--text-primary)", fontWeight: bold ? 500 : 400 }} />
+  );
+}
+
+/** Image cell: shows a thumbnail when set, with a popover to paste/clear the URL. */
+function ImageCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { open, setOpen, ref } = usePopover();
+  const [draft, setDraft] = useState(value || "");
+  useEffect(() => { setDraft(value || ""); }, [value]); // eslint-disable-line react-hooks/set-state-in-effect -- sync external value
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" onClick={() => setOpen((o) => !o)} className="block">
+        {value
+          // eslint-disable-next-line @next/next/no-img-element -- arbitrary user URL; next/image needs configured domains
+          ? <img src={value} alt="" className="h-8 w-8 rounded object-cover" />
+          : <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>＋ Image</span>}
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 p-2 rounded-lg border w-64 animate-[notesPop_120ms_ease-out]"
+          style={{ background: "var(--surface-1)", borderColor: "var(--border-default)", boxShadow: "0 8px 24px rgba(0,0,0,.14)" }}>
+          <input autoFocus value={draft} placeholder="Paste image URL…"
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { onChange(draft.trim()); setOpen(false); } }}
+            className="w-full px-2 py-1 text-[13px] bg-transparent outline-none rounded border"
+            style={{ color: "var(--text-primary)", borderColor: "var(--border-subtle)" }} />
+          {value && (
+            <button type="button" onClick={() => { onChange(""); setOpen(false); }}
+              className="mt-1 text-[12px]" style={{ color: "var(--text-faint)" }}>Clear</button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

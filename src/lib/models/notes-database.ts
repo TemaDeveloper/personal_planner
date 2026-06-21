@@ -5,7 +5,7 @@ import mongoose, { Schema, type Document } from "mongoose";
 
 export type PropertyType =
   | "title" | "text" | "number" | "select" | "multi_select"
-  | "status" | "date" | "checkbox" | "url" | "relation" | "rollup";
+  | "status" | "date" | "checkbox" | "url" | "image" | "relation" | "rollup";
 
 export type ViewType = "table" | "board" | "gallery" | "list" | "calendar";
 

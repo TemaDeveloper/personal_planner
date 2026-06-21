@@ -46,6 +46,7 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   date: "Date",
   checkbox: "Checkbox",
   url: "URL",
+  image: "Image",
   relation: "Relation",
   rollup: "Rollup",
 };

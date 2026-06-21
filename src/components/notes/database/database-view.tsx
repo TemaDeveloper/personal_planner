@@ -298,7 +298,7 @@ function rowTitle(row: DBRow, titleProp?: DBProperty): string {
 /** Secondary properties shown on a card (board/gallery), below the title.
  * Select-like values render as colored chips; others as muted text. */
 function CardProps({ properties, row, limit = 4 }: { properties: DBProperty[]; row: DBRow; limit?: number }) {
-  const shown = properties.filter((p) => p.type !== "title").filter((p) => {
+  const shown = properties.filter((p) => p.type !== "title" && p.type !== "image").filter((p) => {
     const v = row.cells[p.id];
     return v != null && v !== "" && !(Array.isArray(v) && v.length === 0);
   }).slice(0, limit);
@@ -353,14 +353,27 @@ function BoardView({ db, view, titleProp, onCell, onAddRow }: {
 }
 
 function GalleryView({ db, titleProp, onAddRow }: { db: DB; titleProp?: DBProperty; onAddRow: () => void }) {
+  // Notion gallery cards lead with a cover image: use the first image property.
+  const coverProp = db.properties.find((p) => p.type === "image");
   return (
     <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
-      {db.rows.map((row) => (
-        <div key={row.id} className="rounded-lg border p-3 text-[13px] min-h-20" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
-          <div className="font-medium" style={{ color: "var(--text-primary)" }}>{rowTitle(row, titleProp)}</div>
-          <CardProps properties={db.properties} row={row} />
+      {db.rows.map((row) => {
+        const cover = coverProp ? (row.cells[coverProp.id] as string) : "";
+        return (
+        <div key={row.id} className="rounded-lg border text-[13px] overflow-hidden" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
+          {coverProp && (
+            cover
+              // eslint-disable-next-line @next/next/no-img-element -- arbitrary user URL; next/image needs configured domains
+              ? <img src={cover} alt="" className="w-full aspect-[16/10] object-cover" />
+              : <div className="w-full aspect-[16/10]" style={{ background: "var(--surface-raised)" }} />
+          )}
+          <div className="p-3">
+            <div className="font-medium" style={{ color: "var(--text-primary)" }}>{rowTitle(row, titleProp)}</div>
+            <CardProps properties={db.properties.filter((p) => p.type !== "image")} row={row} />
+          </div>
         </div>
-      ))}
+        );
+      })}
       <button type="button" onClick={onAddRow} className="rounded-lg border border-dashed flex items-center justify-center min-h-20 text-[13px]" style={{ borderColor: "var(--border-default)", color: "var(--text-faint)" }}>
         <Plus size={16} /> New
       </button>
