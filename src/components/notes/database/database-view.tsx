@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays, Search } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
-import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts } from "@/lib/notes/database";
+import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts, applyFilters } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
-import { AddViewButton, ColumnMenu, SortControl } from "./schema-controls";
+import { AddViewButton, ColumnMenu, SortControl, FilterControl } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
 
@@ -165,13 +165,17 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   if (!db) return <div contentEditable={false} className="my-2 text-[13px] px-1" style={{ color: "var(--text-faint)" }}>Loading database…</div>;
 
   const view = db.views[activeView] ?? db.views[0];
-  // In-view search + sort shape the rows shown (edits still patch by row id).
-  const viewDb = { ...db, rows: applySorts(filterRows(db.rows, query), view?.sorts, db.properties) };
+  // Filters → search → sort shape the rows shown (edits still patch by row id).
+  const viewDb = { ...db, rows: applySorts(filterRows(applyFilters(db.rows, view?.filters), query), view?.sorts, db.properties) };
 
   const setSort = (propId: string, dir: "asc" | "desc" | null) => {
     if (!db || !view) return;
     const sorts = dir ? [{ prop: propId, dir }] : [];
     saveViews(db.views.map((v) => v.id === view.id ? { ...v, sorts } : v));
+  };
+  const setFilters = (filters: import("@/lib/models/notes-database").DBFilter[]) => {
+    if (!db || !view) return;
+    saveViews(db.views.map((v) => v.id === view.id ? { ...v, filters } : v));
   };
 
   // Title + column-name typing update locally and debounce the PATCH (was one
@@ -206,6 +210,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
         ))}
         <AddViewButton onAdd={addView} />
         <div className="ml-auto flex items-center gap-1">
+          <FilterControl properties={db.properties} filters={view?.filters ?? []} onChange={setFilters} />
           <SortControl properties={db.properties} sort={view?.sorts?.[0]} onSet={setSort} />
           {searchOpen ? (
             <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)}

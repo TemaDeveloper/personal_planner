@@ -216,6 +216,34 @@ export function applySorts(
     .map((x) => x.row);
 }
 
+/** Apply a view's filters (AND) to rows. Pure. `is`/`is_not`/`contains` compare
+ * case-insensitively against the cell's text (arrays match if ANY element does);
+ * `is_empty`/`is_not_empty` test presence. */
+export function applyFilters(
+  rows: DBRow[],
+  filters: { prop: string; op: string; value?: string }[] | undefined
+): DBRow[] {
+  if (!filters || !filters.length) return rows;
+  const isEmpty = (v: unknown) =>
+    v == null || v === "" || (Array.isArray(v) && v.length === 0);
+  const texts = (v: unknown): string[] =>
+    (Array.isArray(v) ? v : [v]).filter((x) => x != null && x !== "").map((x) => String(x).toLowerCase());
+  return rows.filter((row) =>
+    filters.every((f) => {
+      const v = row.cells[f.prop];
+      const needle = (f.value ?? "").toLowerCase();
+      switch (f.op) {
+        case "is_empty": return isEmpty(v);
+        case "is_not_empty": return !isEmpty(v);
+        case "is": return texts(v).includes(needle);
+        case "is_not": return !texts(v).includes(needle);
+        case "contains": return texts(v).some((t) => t.includes(needle));
+        default: return true;
+      }
+    })
+  );
+}
+
 /** Filter rows by a free-text query across all cell values (in-view search). */
 export function filterRows(rows: DBRow[], query: string): DBRow[] {
   const q = query.trim().toLowerCase();

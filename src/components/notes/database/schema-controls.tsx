@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid, CalendarDays, ArrowUpDown } from "lucide-react";
-import type { DBProperty, DBSort, PropertyType, RollupFn, ViewType } from "@/lib/models/notes-database";
+import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid, CalendarDays, ArrowUpDown, Filter, X } from "lucide-react";
+import type { DBFilter, DBProperty, DBSort, FilterOp, PropertyType, RollupFn, ViewType } from "@/lib/models/notes-database";
 import { PROPERTY_TYPE_LABELS } from "@/lib/notes/database";
 
 function usePopover() {
@@ -44,6 +44,62 @@ export function AddViewButton({ onAdd }: { onAdd: (type: ViewType) => void }) {
               {v.icon} {v.label}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const FILTER_OPS: { op: FilterOp; label: string; needsValue: boolean }[] = [
+  { op: "is", label: "Is", needsValue: true },
+  { op: "is_not", label: "Is not", needsValue: true },
+  { op: "contains", label: "Contains", needsValue: true },
+  { op: "is_empty", label: "Is empty", needsValue: false },
+  { op: "is_not_empty", label: "Is not empty", needsValue: false },
+];
+
+/** Filter control: add/edit/remove a list of AND filters for the active view. */
+export function FilterControl({ properties, filters, onChange }: {
+  properties: DBProperty[]; filters: DBFilter[]; onChange: (f: DBFilter[]) => void;
+}) {
+  const { open, setOpen, ref } = usePopover();
+  const filterable = properties.filter((p) => p.type !== "rollup" && p.type !== "image" && p.type !== "relation");
+  const set = (i: number, patch: Partial<DBFilter>) => onChange(filters.map((f, j) => j === i ? { ...f, ...patch } : f));
+  const add = () => filterable[0] && onChange([...filters, { prop: filterable[0].id, op: "is", value: "" }]);
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" aria-label="Filter" onClick={() => setOpen((o) => !o)}
+        className="p-1.5 rounded-md hover:bg-[var(--surface-raised)]"
+        style={{ color: filters.length ? "var(--accent-color)" : "var(--text-muted)" }}>
+        <Filter size={15} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-50 mt-1 p-2 rounded-lg border min-w-[280px] animate-[notesPop_120ms_ease-out]" style={popoverStyle}>
+          {filters.length === 0 && <div className="px-1 pb-2 text-[12px]" style={{ color: "var(--text-faint)" }}>No filters yet.</div>}
+          {filters.map((f, i) => {
+            const op = FILTER_OPS.find((o) => o.op === f.op);
+            return (
+              <div key={i} className="flex items-center gap-1 mb-1">
+                <select value={f.prop} onChange={(e) => set(i, { prop: e.target.value })}
+                  className="px-1 py-1 text-[12px] rounded border outline-none" style={selectStyle}>
+                  {filterable.map((p) => <option key={p.id} value={p.id}>{p.name || "Untitled"}</option>)}
+                </select>
+                <select value={f.op} onChange={(e) => set(i, { op: e.target.value as FilterOp })}
+                  className="px-1 py-1 text-[12px] rounded border outline-none" style={selectStyle}>
+                  {FILTER_OPS.map((o) => <option key={o.op} value={o.op}>{o.label}</option>)}
+                </select>
+                {op?.needsValue && (
+                  <input value={f.value ?? ""} onChange={(e) => set(i, { value: e.target.value })} placeholder="value"
+                    className="w-20 px-1 py-1 text-[12px] rounded border outline-none" style={selectStyle} />
+                )}
+                <button type="button" aria-label="Remove filter" onClick={() => onChange(filters.filter((_, j) => j !== i))}
+                  style={{ color: "var(--text-faint)" }}><X size={13} /></button>
+              </div>
+            );
+          })}
+          <button type="button" onClick={add} className="flex items-center gap-1 px-1 py-1 text-[12px]" style={{ color: "var(--text-muted)" }}>
+            <Plus size={13} /> Add filter
+          </button>
         </div>
       )}
     </div>

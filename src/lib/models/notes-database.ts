@@ -33,6 +33,14 @@ export interface DBSort {
   dir: "asc" | "desc";
 }
 
+export type FilterOp = "is" | "is_not" | "contains" | "is_empty" | "is_not_empty";
+
+export interface DBFilter {
+  prop: string; // property id
+  op: FilterOp;
+  value?: string; // ignored for is_empty / is_not_empty
+}
+
 export interface DBView {
   id: string;
   name: string;
@@ -40,6 +48,7 @@ export interface DBView {
   groupBy?: string; // property id, for board
   hidden?: string[]; // hidden property ids
   sorts?: DBSort[]; // applied in order
+  filters?: DBFilter[]; // applied as AND
 }
 
 export interface DBRow {

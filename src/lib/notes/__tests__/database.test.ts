@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
   isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor, filterRows,
-  migrateCellValue, migrateRowsForTypeChange, applySorts,
+  migrateCellValue, migrateRowsForTypeChange, applySorts, applyFilters,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -201,6 +201,36 @@ describe("applySorts", () => {
   it("sorts text case-insensitively via localeCompare", () => {
     const out = applySorts(rows, [{ prop: "t", dir: "asc" }], props);
     expect(out.map((r) => r.cells.t)).toEqual(["apple", "Banana", "Cherry", "Date"]);
+  });
+});
+
+describe("applyFilters", () => {
+  const rows: DBRow[] = [
+    { id: "1", cells: { s: "Done", tags: ["urgent", "backend"] } },
+    { id: "2", cells: { s: "To Do", tags: ["planning"] } },
+    { id: "3", cells: { s: "Done" } },
+  ];
+  it("returns all rows with no filters", () => {
+    expect(applyFilters(rows, [])).toHaveLength(3);
+    expect(applyFilters(rows, undefined)).toHaveLength(3);
+  });
+  it("is / is_not match exact (case-insensitive)", () => {
+    expect(applyFilters(rows, [{ prop: "s", op: "is", value: "done" }]).map((r) => r.id)).toEqual(["1", "3"]);
+    expect(applyFilters(rows, [{ prop: "s", op: "is_not", value: "Done" }]).map((r) => r.id)).toEqual(["2"]);
+  });
+  it("contains matches any array element", () => {
+    expect(applyFilters(rows, [{ prop: "tags", op: "contains", value: "back" }]).map((r) => r.id)).toEqual(["1"]);
+  });
+  it("is_empty / is_not_empty test presence", () => {
+    expect(applyFilters(rows, [{ prop: "tags", op: "is_empty" }]).map((r) => r.id)).toEqual(["3"]);
+    expect(applyFilters(rows, [{ prop: "tags", op: "is_not_empty" }]).map((r) => r.id)).toEqual(["1", "2"]);
+  });
+  it("ANDs multiple filters", () => {
+    const out = applyFilters(rows, [
+      { prop: "s", op: "is", value: "Done" },
+      { prop: "tags", op: "is_not_empty" },
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["1"]);
   });
 });
 
