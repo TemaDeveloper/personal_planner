@@ -7,6 +7,7 @@ import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRo
 import { CellEditor, type RelatedDbs } from "./cell-editor";
 import { AddViewButton, ColumnMenu, SortControl, FilterControl, PropertiesControl } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
+import { RowPeek } from "./row-peek";
 import { useDebouncedSave } from "@/hooks/use-debounced-save";
 
 type DB = { id: string; title: string; icon: string; properties: DBProperty[]; views: DBView[]; rows: DBRow[] };
@@ -29,6 +30,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   const [missing, setMissing] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [peekRowId, setPeekRowId] = useState<string | null>(null);
 
   const [relatedDbs, setRelatedDbs] = useState<RelatedDbs>({});
 
@@ -185,6 +187,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   };
   const hidden = view?.hidden ?? [];
   const visibleProps = db.properties.filter((p) => !hidden.includes(p.id));
+  const peekRow = peekRowId ? db.rows.find((r) => r.id === peekRowId) : undefined;
   // Manual row drag-reorder is only meaningful in raw order (Notion disables it
   // when a sort/filter/search is active).
   const canReorder = !view?.sorts?.length && !view?.filters?.length && !query.trim();
@@ -248,19 +251,24 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       </div>
 
       {view?.type === "table" && (
-        <TableView db={{ ...viewDb, properties: visibleProps }} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} onMoveRow={canReorder ? moveRow : undefined} />
+        <TableView db={{ ...viewDb, properties: visibleProps }} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} onMoveRow={canReorder ? moveRow : undefined} onOpenRow={setPeekRowId} />
       )}
       {view?.type === "board" && (
-        <BoardView db={{ ...viewDb, properties: visibleProps }} groupProp={groupPropFor(db, view)} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
+        <BoardView db={{ ...viewDb, properties: visibleProps }} groupProp={groupPropFor(db, view)} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} onOpenRow={setPeekRowId} />
       )}
       {(view?.type === "gallery") && (
-        <GalleryView db={{ ...viewDb, properties: visibleProps }} coverProp={db.properties.find((p) => p.type === "image")} titleProp={titleProp} onAddRow={() => addRow()} />
+        <GalleryView db={{ ...viewDb, properties: visibleProps }} coverProp={db.properties.find((p) => p.type === "image")} titleProp={titleProp} onAddRow={() => addRow()} onOpenRow={setPeekRowId} />
       )}
       {view?.type === "list" && (
-        <ListView db={{ ...viewDb, properties: visibleProps }} titleProp={titleProp} onAddRow={() => addRow()} />
+        <ListView db={{ ...viewDb, properties: visibleProps }} titleProp={titleProp} onAddRow={() => addRow()} onOpenRow={setPeekRowId} />
       )}
       {view?.type === "calendar" && (
         <CalendarView properties={db.properties} rows={viewDb.rows} titleProp={titleProp} onAddRow={addRow} />
+      )}
+
+      {peekRow && (
+        <RowPeek properties={db.properties} row={peekRow} relatedDbs={relatedDbs}
+          onCell={patchRow} onAddOption={addOption} onClose={() => setPeekRowId(null)} />
       )}
     </div>
   );
@@ -271,7 +279,7 @@ function Chip({ label, color }: { label: string; color: string }) {
   return <span className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none" style={{ background: c.bg, color: c.text }}>{label}</span>;
 }
 
-function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onRenameColumn, onChangeType, onDeleteColumn, onAddOption, onConfigProp, onMoveRow }: {
+function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onRenameColumn, onChangeType, onDeleteColumn, onAddOption, onConfigProp, onMoveRow, onOpenRow }: {
   db: DB; relatedDbs: RelatedDbs; onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddRow: () => void; onAddColumn: () => void; onDeleteRow: (id: string) => void;
   onRenameColumn: (propId: string, name: string) => void;
@@ -280,6 +288,7 @@ function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow,
   onAddOption: (propId: string, label: string) => void;
   onConfigProp: (p: DBProperty[]) => void;
   onMoveRow?: (fromId: string, toId: string) => void;
+  onOpenRow: (id: string) => void;
 }) {
   return (
     <div className="overflow-x-auto border rounded-md" style={{ borderColor: "var(--border-subtle)" }}>
@@ -320,7 +329,9 @@ function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow,
                   <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} onAddOption={(label) => onAddOption(p.id, label)} ctx={{ properties: db.properties, row, relatedDbs }} />
                 </td>
               ))}
-              <td className="px-1 py-1 border-b text-center" style={{ borderColor: "var(--border-subtle)" }}>
+              <td className="px-1 py-1 border-b text-center whitespace-nowrap" style={{ borderColor: "var(--border-subtle)" }}>
+                <button type="button" onClick={() => onOpenRow(row.id)} aria-label="Open row"
+                  className="opacity-0 group-hover/row:opacity-100 mr-1 text-[11px]" style={{ color: "var(--text-muted)" }}>⤢</button>
                 <button type="button" onClick={() => onDeleteRow(row.id)} aria-label="Delete row"
                   className="opacity-0 group-hover/row:opacity-100" style={{ color: "var(--text-faint)" }}><Trash2 size={13} /></button>
               </td>
@@ -370,9 +381,10 @@ function groupPropFor(db: DB, view: DBView): DBProperty | undefined {
   return db.properties.find((p) => p.id === view.groupBy) ?? db.properties.find((p) => isSelectType(p.type));
 }
 
-function BoardView({ db, groupProp, titleProp, onCell, onAddRow }: {
+function BoardView({ db, groupProp, titleProp, onCell, onAddRow, onOpenRow }: {
   db: DB; groupProp?: DBProperty; titleProp?: DBProperty;
   onCell: (rowId: string, cells: Record<string, unknown>) => void; onAddRow: (seed?: Record<string, unknown>) => void;
+  onOpenRow: (id: string) => void;
 }) {
   const groups = groupRowsByProperty(db.rows, groupProp);
   const [overKey, setOverKey] = useState<string | null>(null);
@@ -401,7 +413,8 @@ function BoardView({ db, groupProp, titleProp, onCell, onAddRow }: {
               <div key={row.id}
                 draggable={!!groupProp}
                 onDragStart={(e) => e.dataTransfer.setData("text/plain", row.id)}
-                className="rounded-md border px-2.5 py-2 text-[13px] cursor-grab active:cursor-grabbing" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)", color: "var(--text-primary)" }}>
+                onClick={() => onOpenRow(row.id)}
+                className="rounded-md border px-2.5 py-2 text-[13px] cursor-pointer hover:border-[var(--border-default)]" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)", color: "var(--text-primary)" }}>
                 <div className="font-medium">{rowTitle(row, titleProp)}</div>
                 <CardProps properties={db.properties.filter((p) => p.id !== groupProp?.id)} row={row} />
               </div>
@@ -418,14 +431,14 @@ function BoardView({ db, groupProp, titleProp, onCell, onAddRow }: {
   );
 }
 
-function GalleryView({ db, coverProp, titleProp, onAddRow }: { db: DB; coverProp?: DBProperty; titleProp?: DBProperty; onAddRow: () => void }) {
+function GalleryView({ db, coverProp, titleProp, onAddRow, onOpenRow }: { db: DB; coverProp?: DBProperty; titleProp?: DBProperty; onAddRow: () => void; onOpenRow: (id: string) => void }) {
   // Notion gallery cards lead with a cover image (the first image property).
   return (
     <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
       {db.rows.map((row) => {
         const cover = coverProp ? (row.cells[coverProp.id] as string) : "";
         return (
-        <div key={row.id} className="rounded-lg border text-[13px] overflow-hidden" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
+        <div key={row.id} onClick={() => onOpenRow(row.id)} className="rounded-lg border text-[13px] overflow-hidden cursor-pointer hover:border-[var(--border-default)]" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
           {coverProp && (
             cover
               // eslint-disable-next-line @next/next/no-img-element -- arbitrary user URL; next/image needs configured domains
@@ -446,7 +459,7 @@ function GalleryView({ db, coverProp, titleProp, onAddRow }: { db: DB; coverProp
   );
 }
 
-function ListView({ db, titleProp, onAddRow }: { db: DB; titleProp?: DBProperty; onAddRow: () => void }) {
+function ListView({ db, titleProp, onAddRow, onOpenRow }: { db: DB; titleProp?: DBProperty; onAddRow: () => void; onOpenRow: (id: string) => void }) {
   return (
     <div>
       {db.rows.map((row) => {
@@ -454,7 +467,7 @@ function ListView({ db, titleProp, onAddRow }: { db: DB; titleProp?: DBProperty;
         const sv = statusProp ? row.cells[statusProp.id] : undefined;
         const opt = statusProp?.options?.find((o) => o.label === (Array.isArray(sv) ? sv[0] : sv));
         return (
-          <div key={row.id} className="flex items-center gap-2 px-2 py-1.5 border-b text-[13px]" style={{ borderColor: "var(--border-subtle)" }}>
+          <div key={row.id} onClick={() => onOpenRow(row.id)} className="flex items-center gap-2 px-2 py-1.5 border-b text-[13px] cursor-pointer hover:bg-[var(--surface-raised)]" style={{ borderColor: "var(--border-subtle)" }}>
             <span className="flex-1 truncate" style={{ color: "var(--text-primary)" }}>{rowTitle(row, titleProp)}</span>
             {sv ? <Chip label={String(Array.isArray(sv) ? sv[0] : sv)} color={opt?.color ?? "default"} /> : null}
           </div>
