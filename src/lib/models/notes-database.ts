@@ -28,12 +28,18 @@ export interface DBProperty {
   rollupFn?: RollupFn;      // for rollup: how to aggregate
 }
 
+export interface DBSort {
+  prop: string; // property id
+  dir: "asc" | "desc";
+}
+
 export interface DBView {
   id: string;
   name: string;
   type: ViewType;
   groupBy?: string; // property id, for board
   hidden?: string[]; // hidden property ids
+  sorts?: DBSort[]; // applied in order
 }
 
 export interface DBRow {

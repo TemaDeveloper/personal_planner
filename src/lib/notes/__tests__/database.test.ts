@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
   isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor, filterRows,
-  migrateCellValue, migrateRowsForTypeChange,
+  migrateCellValue, migrateRowsForTypeChange, applySorts,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -173,6 +173,34 @@ describe("filterRows", () => {
   });
   it("returns empty when nothing matches", () => {
     expect(filterRows(rows, "zzz")).toEqual([]);
+  });
+});
+
+describe("applySorts", () => {
+  const props: DBProperty[] = [
+    { id: "t", name: "Name", type: "title" },
+    { id: "n", name: "Pri", type: "number" },
+  ];
+  const rows: DBRow[] = [
+    { id: "1", cells: { t: "Banana", n: 2 } },
+    { id: "2", cells: { t: "apple", n: 10 } },
+    { id: "3", cells: { t: "Cherry", n: 2 } },
+    { id: "4", cells: { t: "Date" } }, // empty n
+  ];
+  it("returns input unchanged with no sorts", () => {
+    expect(applySorts(rows, undefined, props)).toBe(rows);
+  });
+  it("sorts numbers numerically and empties last; stable within ties", () => {
+    const out = applySorts(rows, [{ prop: "n", dir: "asc" }], props);
+    expect(out.map((r) => r.id)).toEqual(["1", "3", "2", "4"]); // 2,2,10,empty
+  });
+  it("sorts descending", () => {
+    const out = applySorts(rows, [{ prop: "n", dir: "desc" }], props);
+    expect(out.map((r) => r.id)).toEqual(["2", "1", "3", "4"]); // 10,2,2,empty
+  });
+  it("sorts text case-insensitively via localeCompare", () => {
+    const out = applySorts(rows, [{ prop: "t", dir: "asc" }], props);
+    expect(out.map((r) => r.cells.t)).toEqual(["apple", "Banana", "Cherry", "Date"]);
   });
 });
 

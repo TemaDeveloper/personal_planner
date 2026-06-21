@@ -181,6 +181,41 @@ export function migrateRowsForTypeChange(
   });
 }
 
+/** Stable multi-key sort of rows by a view's sort spec. Pure; numbers compare
+ * numerically, dates/strings lexically, arrays by their first value; empty
+ * values sort last regardless of direction. */
+export function applySorts(
+  rows: DBRow[],
+  sorts: { prop: string; dir: "asc" | "desc" }[] | undefined,
+  properties: DBProperty[]
+): DBRow[] {
+  if (!sorts || !sorts.length) return rows;
+  const typeOf = new Map(properties.map((p) => [p.id, p.type]));
+  const norm = (v: unknown): string | number | null => {
+    if (v == null || v === "") return null;
+    const x = Array.isArray(v) ? v[0] : v;
+    if (x == null || x === "") return null;
+    return typeof x === "number" ? x : String(x);
+  };
+  // Decorate-sort-undecorate keeps it stable across engines.
+  return rows
+    .map((row, i) => ({ row, i }))
+    .sort((A, B) => {
+      for (const s of sorts) {
+        const na = norm(A.row.cells[s.prop]), nb = norm(B.row.cells[s.prop]);
+        // Empty values always sort last, independent of direction.
+        if (na === null && nb === null) continue;
+        if (na === null) return 1;
+        if (nb === null) return -1;
+        const isNum = typeOf.get(s.prop) === "number";
+        const d = isNum ? Number(na) - Number(nb) : String(na).localeCompare(String(nb));
+        if (d !== 0) return s.dir === "desc" ? -d : d;
+      }
+      return A.i - B.i;
+    })
+    .map((x) => x.row);
+}
+
 /** Filter rows by a free-text query across all cell values (in-view search). */
 export function filterRows(rows: DBRow[], query: string): DBRow[] {
   const q = query.trim().toLowerCase();

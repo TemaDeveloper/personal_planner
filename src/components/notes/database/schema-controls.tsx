@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid, CalendarDays } from "lucide-react";
-import type { DBProperty, PropertyType, RollupFn, ViewType } from "@/lib/models/notes-database";
+import { Plus, ChevronDown, Trash2, Table2, Columns3, List as ListIcon, LayoutGrid, CalendarDays, ArrowUpDown } from "lucide-react";
+import type { DBProperty, DBSort, PropertyType, RollupFn, ViewType } from "@/lib/models/notes-database";
 import { PROPERTY_TYPE_LABELS } from "@/lib/notes/database";
 
 function usePopover() {
@@ -44,6 +44,45 @@ export function AddViewButton({ onAdd }: { onAdd: (type: ViewType) => void }) {
               {v.icon} {v.label}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Sort control: pick a property + direction for the active view (single key). */
+export function SortControl({ properties, sort, onSet }: {
+  properties: DBProperty[]; sort?: DBSort; onSet: (propId: string, dir: "asc" | "desc" | null) => void;
+}) {
+  const { open, setOpen, ref } = usePopover();
+  const sortable = properties.filter((p) => p.type !== "rollup" && p.type !== "image" && p.type !== "relation");
+  const active = !!sort;
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" aria-label="Sort" onClick={() => setOpen((o) => !o)}
+        className="p-1.5 rounded-md hover:bg-[var(--surface-raised)] flex items-center gap-1"
+        style={{ color: active ? "var(--accent-color)" : "var(--text-muted)" }}>
+        <ArrowUpDown size={15} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-50 mt-1 p-1 rounded-lg border min-w-[180px] animate-[notesPop_120ms_ease-out]" style={popoverStyle}>
+          <div className="px-2 py-1 text-[11px] uppercase tracking-wide" style={{ color: "var(--text-faint)" }}>Sort by</div>
+          <select value={sort?.prop ?? ""} onChange={(e) => onSet(e.target.value, e.target.value ? (sort?.dir ?? "asc") : null)}
+            className="w-full mx-1 mb-1 px-1.5 py-1 text-[13px] rounded border outline-none" style={selectStyle}>
+            <option value="">None</option>
+            {sortable.map((p) => <option key={p.id} value={p.id}>{p.name || "Untitled"}</option>)}
+          </select>
+          {sort && (
+            <div className="flex gap-1 px-1 pb-1">
+              {(["asc", "desc"] as const).map((d) => (
+                <button key={d} type="button" onClick={() => onSet(sort.prop, d)}
+                  className="flex-1 px-2 py-1 rounded text-[12px]"
+                  style={{ background: sort.dir === d ? "var(--surface-raised)" : "transparent", color: "var(--text-primary)", fontWeight: sort.dir === d ? 600 : 400 }}>
+                  {d === "asc" ? "Ascending" : "Descending"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
