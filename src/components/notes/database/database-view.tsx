@@ -338,25 +338,42 @@ function BoardView({ db, view, titleProp, onCell, onAddRow }: {
 }) {
   const groupProp = db.properties.find((p) => p.id === view.groupBy) ?? db.properties.find((p) => isSelectType(p.type));
   const groups = groupRowsByProperty(db.rows, groupProp);
+  const [overKey, setOverKey] = useState<string | null>(null);
+
+  // Drop a card into a column → set its group property to that column's label
+  // (or clear it for the "Empty" group). Multi-select replaces with one value.
+  const dropInto = (rowId: string, g: { key: string; label: string }) => {
+    if (!groupProp) return;
+    const empty = g.key === "__empty__";
+    const value = empty ? (groupProp.type === "multi_select" ? [] : "") : (groupProp.type === "multi_select" ? [g.label] : g.label);
+    onCell(rowId, { [groupProp.id]: value });
+  };
+
   return (
     <div className="flex gap-3 overflow-x-auto pb-2">
       {groups.map((g) => (
-        <div key={g.key} className="shrink-0 w-60">
+        <div key={g.key}
+          onDragOver={(e) => { if (groupProp) { e.preventDefault(); setOverKey(g.key); } }}
+          onDragLeave={() => setOverKey((k) => k === g.key ? null : k)}
+          onDrop={(e) => { e.preventDefault(); setOverKey(null); const id = e.dataTransfer.getData("text/plain"); if (id) dropInto(id, g); }}
+          className="shrink-0 w-60 rounded-md"
+          style={{ outline: overKey === g.key ? "2px dashed var(--accent-color)" : "none", outlineOffset: 2 }}>
           <div className="mb-2"><Chip label={`${g.label}  ${g.rows.length}`} color={g.color} /></div>
-          <div className="space-y-2">
+          <div className="space-y-2 min-h-6">
             {g.rows.map((row) => (
-              <div key={row.id} className="rounded-md border px-2.5 py-2 text-[13px]" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)", color: "var(--text-primary)" }}>
+              <div key={row.id}
+                draggable={!!groupProp}
+                onDragStart={(e) => e.dataTransfer.setData("text/plain", row.id)}
+                className="rounded-md border px-2.5 py-2 text-[13px] cursor-grab active:cursor-grabbing" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)", color: "var(--text-primary)" }}>
                 <div className="font-medium">{rowTitle(row, titleProp)}</div>
                 <CardProps properties={db.properties.filter((p) => p.id !== groupProp?.id)} row={row} />
               </div>
             ))}
             <button type="button"
-              onClick={() => onAddRow(groupProp && g.key !== "__empty__" ? { [groupProp.id]: g.label } : {})}
+              onClick={() => onAddRow(groupProp && g.key !== "__empty__" ? { [groupProp.id]: groupProp.type === "multi_select" ? [g.label] : g.label } : {})}
               className="flex items-center gap-1.5 w-full px-1 py-1 text-[12px]" style={{ color: "var(--text-faint)" }}>
               <Plus size={13} /> New
             </button>
-            {/* keep onCell referenced for future drag-between-columns */}
-            <span className="hidden">{typeof onCell}</span>
           </div>
         </div>
       ))}
