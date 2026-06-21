@@ -89,8 +89,12 @@ export function groupRowsByProperty(
   groups.set("__empty__", []);
   for (const row of rows) {
     const v = row.cells[prop.id];
-    const label = Array.isArray(v) ? (v[0] as string) : (v as string);
-    if (label && groups.has(label)) groups.get(label)!.push(row);
+    // multi_select: a row belongs to EVERY one of its values' groups (Notion
+    // shows a multi-value card in each matching column). Single select/status
+    // has one value. Values with no matching option fall through to Empty.
+    const labels = Array.isArray(v) ? (v as string[]) : v ? [v as string] : [];
+    const matched = labels.filter((l) => groups.has(l));
+    if (matched.length) for (const l of matched) groups.get(l)!.push(row);
     else groups.get("__empty__")!.push(row);
   }
   const out: { key: string; label: string; color: string; rows: DBRow[] }[] = [];
@@ -127,6 +131,50 @@ export function relatedRowsFor(cellValue: unknown, targetRows: DBRow[]): DBRow[]
   if (!ids.length) return [];
   const byId = new Map(targetRows.map((r) => [r.id, r]));
   return ids.map((id) => byId.get(id)).filter((r): r is DBRow => !!r);
+}
+
+/** Convert one cell value when a column's type changes, so the stored shape
+ * stays valid for the new type (e.g. text→multi_select must become an array).
+ * Returns the new value, or undefined to clear the cell. */
+export function migrateCellValue(from: PropertyType, to: PropertyType, value: unknown): unknown {
+  if (from === to || value == null || value === "") return value;
+  switch (to) {
+    case "multi_select":
+      return Array.isArray(value) ? value : [String(value)];
+    case "select":
+    case "status":
+      return Array.isArray(value) ? (value[0] != null ? String(value[0]) : undefined) : String(value);
+    case "number": {
+      const n = Number(Array.isArray(value) ? value[0] : value);
+      return Number.isFinite(n) ? n : undefined;
+    }
+    case "checkbox":
+      return !!value && value !== "false" && value !== 0;
+    case "text":
+    case "url":
+      return Array.isArray(value) ? value.join(", ") : String(value);
+    case "relation":
+      return Array.isArray(value) ? value : undefined; // relation holds row ids; otherwise clear
+    case "rollup":
+      return undefined; // computed, never stored
+    default:
+      return value;
+  }
+}
+
+/** Apply migrateCellValue to every row for a changed property. Pure. */
+export function migrateRowsForTypeChange(
+  rows: DBRow[], propId: string, from: PropertyType, to: PropertyType
+): DBRow[] {
+  if (from === to) return rows;
+  return rows.map((r) => {
+    if (!(propId in r.cells)) return r;
+    const next = migrateCellValue(from, to, r.cells[propId]);
+    const cells = { ...r.cells };
+    if (next === undefined) delete cells[propId];
+    else cells[propId] = next;
+    return { ...r, cells };
+  });
 }
 
 /** Filter rows by a free-text query across all cell values (in-view search). */

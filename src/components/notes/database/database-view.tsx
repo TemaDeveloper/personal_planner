@@ -3,12 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays, Search } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
-import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText } from "@/lib/notes/database";
+import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
 import { AddViewButton, ColumnMenu } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
+import { useDebouncedSave } from "@/hooks/use-debounced-save";
 
 type DB = { id: string; title: string; icon: string; properties: DBProperty[]; views: DBView[]; rows: DBRow[] };
+
+/** Collision-resistant client id: time + randomness (Date.now() alone collides
+ * when two columns/options/views are created in the same millisecond). */
+function uid(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
 
 const VIEW_ICON: Record<ViewType, React.ReactNode> = {
   table: <Table2 size={14} />, board: <Columns3 size={14} />, list: <ListIcon size={14} />,
@@ -24,6 +31,19 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   const [relatedDbs, setRelatedDbs] = useState<RelatedDbs>({});
+
+  // Latest db in a ref so the debounced meta-flush always sends current state
+  // (never a stale snapshot that could clobber a concurrent menu edit).
+  const dbRef = useRef<DB | null>(null);
+  useEffect(() => { dbRef.current = db; });
+  const flushMeta = useDebouncedSave<void>(() => {
+    const cur = dbRef.current;
+    if (!cur) return;
+    fetch(`/api/notes/databases/${databaseId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: cur.title, properties: cur.properties }),
+    });
+  }, 500);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/notes/databases/${databaseId}`);
@@ -84,14 +104,23 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   };
   const addColumn = () => {
     if (!db) return;
-    const id = `p_${Date.now().toString(36)}`;
+    const id = uid("p");
     saveSchema([...db.properties, { id, name: "New", type: "text" }]);
   };
   const changeColumnType = (propId: string, type: PropertyType) => {
     if (!db) return;
-    saveSchema(db.properties.map((p) => p.id === propId
+    const prev = db.properties.find((p) => p.id === propId);
+    if (!prev || prev.type === type) return;
+    const properties = db.properties.map((p) => p.id === propId
       ? { ...p, type, options: isSelectType(type) ? (p.options ?? []) : p.options }
-      : p));
+      : p);
+    // Migrate every row's value for this column so the stored shape stays valid
+    // for the new type (e.g. text→multi_select must become an array).
+    const rows = migrateRowsForTypeChange(db.rows, propId, prev.type, type);
+    setDb((d) => d ? { ...d, properties, rows } : d);
+    fetch(`/api/notes/databases/${databaseId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ properties, rows }),
+    });
   };
   const deleteColumn = (propId: string) => {
     if (!db) return;
@@ -103,7 +132,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       if (!d) return d;
       const properties = d.properties.map((p) => {
         if (p.id !== propId || (p.options ?? []).some((o) => o.label === label)) return p;
-        const opt = { id: `o_${Date.now().toString(36)}`, label, color: colorForLabel(label) };
+        const opt = { id: uid("o"), label, color: colorForLabel(label) };
         return { ...p, options: [...(p.options ?? []), opt] };
       });
       fetch(`/api/notes/databases/${databaseId}`, {
@@ -115,7 +144,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   const addView = (type: ViewType) => {
     if (!db) return;
     const groupBy = type === "board" ? db.properties.find((p) => isSelectType(p.type))?.id : undefined;
-    const view: DBView = { id: `v_${Date.now().toString(36)}`, name: type[0].toUpperCase() + type.slice(1), type, groupBy };
+    const view: DBView = { id: uid("v"), name: type[0].toUpperCase() + type.slice(1), type, groupBy };
     saveViews([...db.views, view]);
     setActiveView(db.views.length);
   };
@@ -127,11 +156,15 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   // In-view search filters the rows shown (edits still patch by row id).
   const viewDb = { ...db, rows: filterRows(db.rows, query) };
 
+  // Title + column-name typing update locally and debounce the PATCH (was one
+  // network write per keystroke → out-of-order races / last-write-wins).
   const saveTitle = (title: string) => {
     setDb((d) => d ? { ...d, title } : d);
-    fetch(`/api/notes/databases/${databaseId}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title }),
-    });
+    flushMeta();
+  };
+  const renameColumn = (propId: string, name: string) => {
+    setDb((d) => d ? { ...d, properties: d.properties.map((p) => p.id === propId ? { ...p, name } : p) } : d);
+    flushMeta();
   };
 
   return (
@@ -170,7 +203,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       </div>
 
       {view?.type === "table" && (
-        <TableView db={viewDb} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onSaveSchema={saveSchema} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
+        <TableView db={viewDb} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} />
       )}
       {view?.type === "board" && (
         <BoardView db={viewDb} view={view} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} />
@@ -193,10 +226,10 @@ function Chip({ label, color }: { label: string; color: string }) {
   return <span className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none" style={{ background: c.bg, color: c.text }}>{label}</span>;
 }
 
-function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onSaveSchema, onChangeType, onDeleteColumn, onAddOption, onConfigProp }: {
+function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onRenameColumn, onChangeType, onDeleteColumn, onAddOption, onConfigProp }: {
   db: DB; relatedDbs: RelatedDbs; onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddRow: () => void; onAddColumn: () => void; onDeleteRow: (id: string) => void;
-  onSaveSchema: (p: DBProperty[]) => void;
+  onRenameColumn: (propId: string, name: string) => void;
   onChangeType: (propId: string, t: import("@/lib/models/notes-database").PropertyType) => void;
   onDeleteColumn: (propId: string) => void;
   onAddOption: (propId: string, label: string) => void;
@@ -211,7 +244,7 @@ function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow,
               <th key={p.id} className="text-left font-normal px-2 py-1.5 border-b border-r whitespace-nowrap"
                 style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)", minWidth: p.type === "title" ? 200 : 120 }}>
                 <span className="flex items-center gap-1">
-                  <input value={p.name} onChange={(e) => onSaveSchema(db.properties.map((q) => q.id === p.id ? { ...q, name: e.target.value } : q))}
+                  <input value={p.name} onChange={(e) => onRenameColumn(p.id, e.target.value)}
                     className="bg-transparent outline-none w-full" style={{ color: "var(--text-muted)" }} />
                   <ColumnMenu prop={p} properties={db.properties} onChangeType={(t) => onChangeType(p.id, t)} onDelete={() => onDeleteColumn(p.id)}
                     onConfig={(patch) => onConfigProp(db.properties.map((q) => q.id === p.id ? { ...q, ...patch } : q))} />

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
 import { Link2 } from "lucide-react";
+import { isSafeLinkUrl } from "@/lib/notes/safe-url";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ButtonView({ block, editor, contentRef }: { block: any; editor: any; contentRef: (el: HTMLElement | null) => void }) {
@@ -23,7 +24,7 @@ function ButtonView({ block, editor, contentRef }: { block: any; editor: any; co
       <span
         className="inline-flex items-center rounded-md px-3 py-1.5 text-[14px] font-medium cursor-pointer"
         style={{ background: "var(--surface-raised)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }}
-        onClick={() => { if (url) window.open(url, "_blank", "noopener"); }}
+        onClick={() => { if (url && isSafeLinkUrl(url)) window.open(url, "_blank", "noopener,noreferrer"); }}
       >
         <span ref={contentRef} />
       </span>
@@ -38,9 +39,15 @@ function ButtonView({ block, editor, contentRef }: { block: any; editor: any; co
             style={{ background: "var(--surface-1)", borderColor: "var(--border-default)", boxShadow: "0 8px 24px rgba(0,0,0,.14)" }}>
             <input autoFocus value={draft} placeholder="https://…  (opens on click)"
               onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { editor.updateBlock(block, { props: { url: draft.trim() } }); setOpen(false); } }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                const next = draft.trim();
+                // Only persist safe http/https/mailto links; reject javascript:/data: etc.
+                editor.updateBlock(block, { props: { url: next && isSafeLinkUrl(next) ? next : "" } });
+                setOpen(false);
+              }}
               className="w-full px-2 py-1 text-[13px] bg-transparent outline-none rounded border"
-              style={{ color: "var(--text-primary)", borderColor: "var(--border-subtle)" }} />
+              style={{ color: "var(--text-primary)", borderColor: draft && !isSafeLinkUrl(draft) ? "var(--alert)" : "var(--border-subtle)" }} />
           </div>
         )}
       </span>

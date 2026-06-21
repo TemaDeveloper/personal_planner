@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
   isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor, filterRows,
+  migrateCellValue, migrateRowsForTypeChange,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -74,6 +75,50 @@ describe("groupRowsByProperty", () => {
     const g = groupRowsByProperty(rows, { id: "t", name: "T", type: "text" });
     expect(g).toHaveLength(1);
     expect(g[0].rows).toHaveLength(4);
+  });
+  it("places multi_select rows in every matching group", () => {
+    const ms: DBProperty = {
+      id: "m", name: "Tags", type: "multi_select",
+      options: [
+        { id: "a", label: "A", color: "blue" },
+        { id: "b", label: "B", color: "green" },
+      ],
+    };
+    const rs: DBRow[] = [
+      { id: "1", cells: { m: ["A", "B"] } },
+      { id: "2", cells: { m: ["B"] } },
+      { id: "3", cells: { m: ["gone"] } }, // option removed → Empty
+    ];
+    const g = groupRowsByProperty(rs, ms);
+    expect(g[0].label).toBe("A"); expect(g[0].rows.map((r) => r.id)).toEqual(["1"]);
+    expect(g[1].label).toBe("B"); expect(g[1].rows.map((r) => r.id)).toEqual(["1", "2"]);
+    expect(g[2].rows.map((r) => r.id)).toEqual(["3"]); // empty group
+  });
+});
+
+describe("migrateCellValue / migrateRowsForTypeChange", () => {
+  it("wraps to array for multi_select and unwraps from it", () => {
+    expect(migrateCellValue("text", "multi_select", "x")).toEqual(["x"]);
+    expect(migrateCellValue("multi_select", "select", ["a", "b"])).toBe("a");
+  });
+  it("coerces number and checkbox, clears bad number", () => {
+    expect(migrateCellValue("text", "number", "42")).toBe(42);
+    expect(migrateCellValue("text", "number", "nope")).toBeUndefined();
+    expect(migrateCellValue("text", "checkbox", "x")).toBe(true);
+  });
+  it("clears rollup (computed) and keeps same-type values", () => {
+    expect(migrateCellValue("number", "rollup", 5)).toBeUndefined();
+    expect(migrateCellValue("text", "text", "keep")).toBe("keep");
+  });
+  it("migrates all rows and deletes cleared cells", () => {
+    const rs: DBRow[] = [
+      { id: "1", cells: { c: "5", other: "x" } },
+      { id: "2", cells: { c: "bad" } },
+    ];
+    const out = migrateRowsForTypeChange(rs, "c", "text", "number");
+    expect(out[0].cells.c).toBe(5);
+    expect(out[0].cells.other).toBe("x");
+    expect("c" in out[1].cells).toBe(false); // "bad" → cleared
   });
 });
 

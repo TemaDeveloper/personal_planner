@@ -1,5 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { isPublicHttpUrl } from "@/lib/notes/safe-url";
+import { isPublicHttpUrl, isSafeLinkUrl } from "@/lib/notes/safe-url";
+
+describe("isSafeLinkUrl", () => {
+  it("allows http/https/mailto", () => {
+    expect(isSafeLinkUrl("https://example.com")).toBe(true);
+    expect(isSafeLinkUrl("http://localhost:3000/x")).toBe(true); // any host ok for click-open
+    expect(isSafeLinkUrl("mailto:a@b.com")).toBe(true);
+  });
+  it("blocks XSS-capable and other schemes", () => {
+    expect(isSafeLinkUrl("javascript:alert(1)")).toBe(false);
+    expect(isSafeLinkUrl("data:text/html,<script>1</script>")).toBe(false);
+    expect(isSafeLinkUrl("vbscript:msgbox(1)")).toBe(false);
+    expect(isSafeLinkUrl("file:///etc/passwd")).toBe(false);
+  });
+  it("rejects whitespace-smuggled schemes, blanks, and bare hosts", () => {
+    expect(isSafeLinkUrl("java\tscript:alert(1)")).toBe(false);
+    expect(isSafeLinkUrl("  ")).toBe(false);
+    expect(isSafeLinkUrl("example.com")).toBe(false);
+  });
+});
 
 describe("isPublicHttpUrl", () => {
   it("allows public http(s) URLs", () => {

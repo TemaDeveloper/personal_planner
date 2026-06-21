@@ -31,7 +31,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!body) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const update: Record<string, unknown> = {};
-  for (const key of ["title", "icon", "properties", "views"] as const) {
+  // `rows` is accepted for deliberate bulk ops (e.g. migrating cells when a
+  // column's type changes); per-cell edits should use the row endpoints.
+  for (const key of ["title", "icon", "properties", "views", "rows"] as const) {
     if (key in body) update[key] = body[key];
   }
   await connectDB();

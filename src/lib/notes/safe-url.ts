@@ -1,5 +1,25 @@
 export type SafeUrlResult = { ok: true; url: string } | { ok: false; reason: string };
 
+/** True if a URL is safe to open from a click (http/https/mailto only).
+ * Blocks XSS-capable schemes like javascript:, data:, vbscript:, file:.
+ * Unlike isPublicHttpUrl this allows any host (user opening their own link) —
+ * it only guards the scheme. A bare "example.com" (no scheme) is rejected;
+ * callers should normalize before validating if they want to allow that. */
+export function isSafeLinkUrl(input: string): boolean {
+  const s = (input ?? "").trim();
+  if (!s) return false;
+  // Reject control chars / whitespace that can smuggle a scheme past the parser
+  // (e.g. a tab inside "java\tscript:"). Covers \x00-\x1F, space and \x7F.
+  if (/[\x00-\x20\x7f]/.test(s)) return false;
+  let u: URL;
+  try {
+    u = new URL(s);
+  } catch {
+    return false;
+  }
+  return u.protocol === "http:" || u.protocol === "https:" || u.protocol === "mailto:";
+}
+
 /** True if a bare IPv4 literal falls in a private / loopback / link-local / reserved range. */
 function isPrivateIpv4(host: string): boolean {
   const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
