@@ -115,6 +115,36 @@ function readingListDB(): TemplateDatabase {
   };
 }
 
+/** Content calendar — a calendar (by publish date) + table: Title/Status/
+ * Date/Channel. Exercises the calendar view with status-colored event pills. */
+function contentCalendarDB(): TemplateDatabase {
+  const title = genId("c", 1), status = genId("c", 2), date = genId("c", 3), channel = genId("c", 4);
+  const opt = (s: number, label: string, color: string) => ({ id: genId("k", s), label, color });
+  const idea = opt(1, "Idea", "gray"), draft = opt(2, "Draft", "yellow"), scheduled = opt(3, "Scheduled", "blue"), published = opt(4, "Published", "green");
+  const blog = opt(10, "Blog", "purple"), x = opt(11, "Twitter/X", "blue"), news = opt(12, "Newsletter", "orange");
+  const row = (s: number, t: string, st: string, ch: string[]): DBRow =>
+    ({ id: genId("d", s), cells: { [title]: t, [status]: st, [channel]: ch } });
+  return {
+    title: "Content calendar", icon: "🗓️",
+    properties: [
+      { id: title, name: "Title", type: "title" },
+      { id: status, name: "Status", type: "status", options: [idea, draft, scheduled, published] },
+      { id: date, name: "Publish date", type: "date" },
+      { id: channel, name: "Channel", type: "multi_select", options: [blog, x, news] },
+    ],
+    views: [
+      { id: genId("e", 1), name: "Calendar", type: "calendar" },
+      { id: genId("e", 2), name: "Board", type: "board", groupBy: status },
+      { id: genId("e", 3), name: "Table", type: "table" },
+    ],
+    rows: [
+      row(1, "Launch announcement", "Scheduled", ["Blog", "Newsletter"]),
+      row(2, "Weekly tips thread", "Draft", ["Twitter/X"]),
+      row(3, "Case study", "Idea", ["Blog"]),
+    ],
+  };
+}
+
 export const TEMPLATES: NotesTemplate[] = [
   // ─────────────── Basic ───────────────
   { key: "blank", category: "Basic", label: "Blank page", description: "Start from scratch", icon: "📄",
@@ -245,6 +275,13 @@ export const TEMPLATES: NotesTemplate[] = [
       dbBlock(),
     ],
     database: taskTrackerDB },
+  { key: "content-calendar", category: "Work & Productivity", label: "Content calendar", description: "Plan posts on a calendar by publish date", icon: "🗓️",
+    build: () => [
+      h1("🗓️ Content calendar"),
+      callout("📣", "Switch between Calendar, Board, and Table to plan your content."),
+      dbBlock(),
+    ],
+    database: contentCalendarDB },
   { key: "work-meeting", category: "Work & Productivity", label: "Meeting notes", description: "Agenda, decisions, action items", icon: "🧑‍💼",
     build: () => [
       h1("🧑‍💼 Meeting"),
