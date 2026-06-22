@@ -1,5 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { TEMPLATES, TEMPLATE_CATEGORIES, buildTemplate } from "@/lib/notes/templates";
+import { TEMPLATES, TEMPLATE_CATEGORIES, buildTemplate, templateDatabases, type PresetBlock } from "@/lib/notes/templates";
+
+/** Collect every database-block sentinel id in a template's content (incl. nested). */
+function dbSentinels(blocks: PresetBlock[]): string[] {
+  const out: string[] = [];
+  const walk = (bs: PresetBlock[]) => {
+    for (const b of bs) {
+      if (b.type === "database" && typeof b.props?.databaseId === "string") out.push(b.props.databaseId as string);
+      if (b.children) walk(b.children);
+    }
+  };
+  walk(blocks);
+  return out;
+}
 
 describe("templates", () => {
   it("lists all 5 categories in order", () => {
@@ -50,5 +63,36 @@ describe("templates", () => {
     const callouts = buildTemplate("meeting").filter((b) => b.type === "callout");
     expect(callouts.length).toBeGreaterThan(0);
     expect(typeof callouts[0].props?.emoji).toBe("string");
+  });
+
+  it("every database-block placeholder has a matching database definition (and vice versa)", () => {
+    for (const t of TEMPLATES) {
+      const sentinels = dbSentinels(buildTemplate(t.key));
+      const defs = templateDatabases(t.key);
+      const defKeys = Object.keys(defs);
+      // every dbBlock(sentinel) in the content must have a database def...
+      for (const s of sentinels) {
+        expect(defKeys, `${t.key}: dbBlock "${s}" has no database definition`).toContain(s);
+      }
+      // ...and every defined database must be placed by a dbBlock.
+      for (const k of defKeys) {
+        expect(sentinels, `${t.key}: database "${k}" is defined but never placed`).toContain(k);
+      }
+    }
+  });
+
+  it("database-template definitions are internally valid (title prop + ≥1 view)", () => {
+    for (const t of TEMPLATES) {
+      for (const [, def] of Object.entries(templateDatabases(t.key))) {
+        expect(def.properties.some((p) => p.type === "title"), `${t.key} db needs a title property`).toBe(true);
+        expect(def.views.length, `${t.key} db needs a view`).toBeGreaterThan(0);
+        // board views must group by a real property id
+        for (const v of def.views) {
+          if (v.type === "board" && v.groupBy) {
+            expect(def.properties.some((p) => p.id === v.groupBy), `${t.key} board groupBy must be a real prop`).toBe(true);
+          }
+        }
+      }
+    }
   });
 });
