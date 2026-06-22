@@ -278,7 +278,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       )}
 
       {peekRow && (
-        <RowPeek properties={db.properties} row={peekRow} relatedDbs={relatedDbs}
+        <RowPeek databaseId={databaseId} properties={db.properties} row={peekRow} relatedDbs={relatedDbs}
           onCell={patchRow} onAddOption={addOption}
           onDuplicate={() => { duplicateRow(peekRow.id); setPeekRowId(null); }}
           onDelete={() => { deleteRow(peekRow.id); setPeekRowId(null); }}

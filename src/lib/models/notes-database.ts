@@ -54,6 +54,7 @@ export interface DBView {
 export interface DBRow {
   id: string;
   cells: Record<string, unknown>; // propertyId -> value (string | number | boolean | string[] | dateISO)
+  content?: unknown; // optional free-form page body (BlockNote JSON), shown in row peek
 }
 
 export interface INotesDatabase extends Document {

@@ -69,7 +69,9 @@ function useIsDark(): boolean {
   return dark;
 }
 
-export function NotesEditor({ pageId, initialContent }: { pageId: string; initialContent: unknown }) {
+export function NotesEditor({ pageId, initialContent, onPersist }: {
+  pageId?: string; initialContent: unknown; onPersist?: (content: unknown) => Promise<void>;
+}) {
   const isDark = useIsDark();
   const refresh = useNotesRefresh();
   const pages = useNotesPages();
@@ -173,7 +175,7 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
       const res = await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ parentId: pageId, template: "blank" }),
+        body: JSON.stringify({ parentId: pageId ?? null, template: "blank" }),
       });
       if (!res.ok) return;
       const { page } = await res.json();
@@ -204,11 +206,17 @@ export function NotesEditor({ pageId, initialContent }: { pageId: string; initia
   useLayoutEffect(() => {
     persist.current = async (content: unknown) => {
       setStatus("saving");
-      await fetch(`/api/notes/${pageId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
+      // onPersist lets the same editor save anywhere (e.g. a database row body);
+      // default is the notes-page PATCH.
+      if (onPersist) {
+        await onPersist(content);
+      } else if (pageId) {
+        await fetch(`/api/notes/${pageId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        });
+      }
       setStatus("saved");
     };
   });

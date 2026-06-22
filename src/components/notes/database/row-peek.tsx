@@ -5,17 +5,23 @@ import { X, Copy, Trash2 } from "lucide-react";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 import { PROPERTY_TYPE_LABELS } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
+import { NotesEditorLoader } from "@/components/notes/notes-editor-loader";
 
 /** Notion-style row peek: a side panel showing every property of a database row
- * as an editable field. Edits persist through the same onCell used by the grid. */
-export function RowPeek({ properties, row, relatedDbs, onCell, onAddOption, onDuplicate, onDelete, onClose }: {
-  properties: DBProperty[]; row: DBRow; relatedDbs: RelatedDbs;
+ * as an editable field, plus a free-form page body (like opening a Notion row). */
+export function RowPeek({ databaseId, properties, row, relatedDbs, onCell, onAddOption, onDuplicate, onDelete, onClose }: {
+  databaseId: string; properties: DBProperty[]; row: DBRow; relatedDbs: RelatedDbs;
   onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddOption: (propId: string, label: string) => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const saveContent = async (content: unknown) => {
+    await fetch(`/api/notes/databases/${databaseId}/rows/${row.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }),
+    });
+  };
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onEsc);
@@ -54,6 +60,9 @@ export function RowPeek({ properties, row, relatedDbs, onCell, onAddOption, onDu
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-5 pt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+          <NotesEditorLoader key={row.id} initialContent={row.content} onPersist={saveContent} />
         </div>
       </div>
     </div>
