@@ -339,7 +339,13 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("🎯 Project name"),
       callout("🚀", "What is this project and why does it matter?"),
-      h2("Overview"), p("👤 Owner: "), p("📅 Timeline: "), p("📊 Status: Not started"),
+      h2("Overview"),
+      // 3-column header of stat cards (Notion-style).
+      columns(
+        [calloutCard("👤", [h3("Owner"), p("")])],
+        [calloutCard("📅", [h3("Timeline"), p("")])],
+        [calloutCard("📊", [h3("Status"), p("Not started")])],
+      ),
       divider(),
       // Two-column layout (Notion-style): Risks & Notes on the left, Goals &
       // Milestones on the right.
@@ -599,15 +605,15 @@ export const TEMPLATES: NotesTemplate[] = [
       check(""), check(""), check(""),
       divider(),
       h2("📆 Schedule"),
+      // A column per weekday (Notion weekly-planner layout — 5 columns).
       columns(
-        [
-          h3("Mon"), p(), h3("Tue"), p(), h3("Wed"), p(),
-        ],
-        [
-          h3("Thu"), p(), h3("Fri"), p(),
-          h2("🔁 Weekly review"), quote("Wins, lessons, and what to carry into next week."), p(),
-        ],
+        [h3("Mon"), check(""), check("")],
+        [h3("Tue"), check(""), check("")],
+        [h3("Wed"), check(""), check("")],
+        [h3("Thu"), check(""), check("")],
+        [h3("Fri"), check(""), check("")],
       ),
+      divider(), h2("🔁 Weekly review"), quote("Wins, lessons, and what to carry into next week."), p(),
     ] },
 
   // ─────────────── Personal & Health ───────────────
