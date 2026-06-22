@@ -303,20 +303,32 @@ export const TEMPLATES: NotesTemplate[] = [
       callout("📌", "One-line summary of the meeting (fill in after)."),
       h2("Details"), p("📅 Date: "), p("👥 Attendees: "), p("🎯 Goal: "),
       divider(),
-      h2("🗂 Agenda"), bullet("Topic 1"), bullet("Topic 2"), bullet("Topic 3"),
-      h2("🗒 Notes"), p(),
-      h2("✅ Decisions"), bullet(""),
-      h2("📋 Action items"), check("Owner — task — due"), check(""),
+      columns(
+        [
+          h2("🗂 Agenda"), bullet("Topic 1"), bullet("Topic 2"), bullet("Topic 3"),
+          h2("🗒 Notes"), p(),
+        ],
+        [
+          h2("✅ Decisions"), bullet(""),
+          h2("📋 Action items"), check("Owner — task — due"), check(""),
+        ],
+      ),
       divider(), h3("🔗 Resources"), bullet(""),
     ] },
   { key: "journal", category: "Basic", label: "Daily journal", description: "Reflect, prioritise, be grateful", icon: "📔",
     build: () => [
       h1("📔 Journal"), p("📅 Date: "),
       callout("🌤", "How am I feeling today?"),
-      h2("✨ Highlights"), bullet(""),
-      h2("🎯 Top 3 priorities"), check(""), check(""), check(""),
-      h2("🙏 Grateful for"), bullet(""), bullet(""),
-      divider(), h2("🌙 Reflection"), quote("What went well, and what would I do differently?"), p(),
+      columns(
+        [
+          h2("✨ Highlights"), bullet(""),
+          h2("🎯 Top 3 priorities"), check(""), check(""), check(""),
+        ],
+        [
+          h2("🙏 Grateful for"), bullet(""), bullet(""),
+          h2("🌙 Reflection"), quote("What went well, and what would I do differently?"), p(),
+        ],
+      ),
     ] },
   { key: "project", category: "Basic", label: "Project tracker", description: "Goals, milestones, status", icon: "🎯",
     build: () => [
@@ -376,34 +388,58 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("📚 Study planner"), p("🗓 Week of: "),
       callout("🎯", "Goal for this week: "),
-      h2("Subjects"), check("Subject 1 — chapters / topics"), check("Subject 2 — "), check(""),
-      h2("⏰ Today's focus"), numbered(""), numbered(""),
-      divider(), h2("📝 Notes & reminders"), p(),
+      columns(
+        [
+          h2("Subjects"), check("Subject 1 — chapters / topics"), check("Subject 2 — "), check(""),
+        ],
+        [
+          h2("⏰ Today's focus"), numbered(""), numbered(""),
+          h2("📝 Notes & reminders"), p(),
+        ],
+      ),
     ] },
   { key: "lecture-notes", category: "Students", label: "Course / lecture notes", description: "Cornell-style structured notes", icon: "🎓",
     build: () => [
       h1("🎓 Lecture notes"), p("📘 Course: "), p("📅 Date: "), p("🧑‍🏫 Topic: "),
       callout("💡", "Key question this lecture answers: "),
-      h2("📌 Key points"), bullet(""), bullet(""), bullet(""),
-      h2("❓ Questions"), bullet(""),
-      h2("🔑 Vocabulary"), bullet("Term — definition"),
+      columns(
+        [
+          h2("📌 Key points"), bullet(""), bullet(""), bullet(""),
+        ],
+        [
+          h2("❓ Questions"), bullet(""),
+          h2("🔑 Vocabulary"), bullet("Term — definition"),
+        ],
+      ),
       divider(), h2("🧠 Summary"), quote("Summarise the lecture in 2–3 sentences."), p(),
     ] },
   { key: "assignment-tracker", category: "Students", label: "Assignment & exam tracker", description: "Track due dates and grades", icon: "🗓️",
     build: () => [
       h1("🗓️ Assignments & exams"),
       callout("⏰", "Next deadline: "),
-      h2("📥 Upcoming"), check("Assignment — course — due "), check("Exam — course — date "), check(""),
-      h2("🔄 In progress"), check(""),
-      divider(), h2("✅ Completed"), check("Example — grade: "),
+      columns(
+        [
+          h2("📥 Upcoming"), check("Assignment — course — due "), check("Exam — course — date "), check(""),
+        ],
+        [
+          h2("🔄 In progress"), check(""),
+          h2("✅ Completed"), check("Example — grade: "),
+        ],
+      ),
     ] },
   { key: "reading-notes", category: "Students", label: "Reading notes", description: "Capture takeaways from a text", icon: "📖",
     build: () => [
       h1("📖 Reading notes"), p("📕 Title: "), p("✍️ Author: "), p("📄 Pages / chapter: "),
       callout("💡", "Why am I reading this?"),
-      h2("🔑 Key takeaways"), bullet(""), bullet(""), bullet(""),
-      h2("📝 Favourite quotes"), quote(""),
-      divider(), h2("🧠 My thoughts"), p(),
+      columns(
+        [
+          h2("🔑 Key takeaways"), bullet(""), bullet(""), bullet(""),
+        ],
+        [
+          h2("📝 Favourite quotes"), quote(""),
+          h2("🧠 My thoughts"), p(),
+        ],
+      ),
     ] },
 
   // ─────────────── Hobbies ───────────────
@@ -418,25 +454,43 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("🎨 Hobby tracker"), p("🎭 Hobby: "),
       callout("🎯", "What do I want to get better at?"),
-      h2("🗓 Sessions"), check("Session — date — what I did"), check(""),
-      h2("📈 Progress"), bullet(""),
-      divider(), h2("🏆 Goals"), check(""), check(""),
+      columns(
+        [
+          h2("🗓 Sessions"), check("Session — date — what I did"), check(""),
+        ],
+        [
+          h2("📈 Progress"), bullet(""),
+          h2("🏆 Goals"), check(""), check(""),
+        ],
+      ),
     ] },
   { key: "project-log", category: "Hobbies", label: "Project log", description: "Log progress on a personal project", icon: "🛠️",
     build: () => [
       h1("🛠️ Project log"), p("📦 Project: "), p("📅 Started: "),
       callout("✨", "The vision in one sentence: "),
-      h2("📓 Log"), p("— "), p("— "),
-      h2("👉 Next steps"), check(""), check(""),
-      divider(), h2("💭 Ideas / backlog"), bullet(""),
+      columns(
+        [
+          h2("📓 Log"), p("— "), p("— "),
+        ],
+        [
+          h2("👉 Next steps"), check(""), check(""),
+          h2("💭 Ideas / backlog"), bullet(""),
+        ],
+      ),
     ] },
   { key: "practice-journal", category: "Hobbies", label: "Practice journal", description: "Track practice and improvement", icon: "🎸",
     build: () => [
       h1("🎸 Practice journal"), p("📅 Date: "), p("⏱ Time: "),
-      h2("🎯 What I practised"), bullet(""), bullet(""),
       callout("✅", "Win of the day: "),
-      h2("📈 To improve"), bullet(""),
-      divider(), h2("🗒 Notes"), p(),
+      columns(
+        [
+          h2("🎯 What I practised"), bullet(""), bullet(""),
+        ],
+        [
+          h2("📈 To improve"), bullet(""),
+          h2("🗒 Notes"), p(),
+        ],
+      ),
     ] },
   { key: "collection", category: "Hobbies", label: "Collection list", description: "Catalogue a collection or wishlist", icon: "🗂️",
     build: () => [

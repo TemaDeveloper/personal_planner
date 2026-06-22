@@ -46,15 +46,18 @@ describe("templates", () => {
   it("non-blank templates are rich (multi-section, with callouts/dividers)", () => {
     for (const t of TEMPLATES) {
       if (t.key === "blank") continue;
-      const blocks = buildTemplate(t.key);
-      const types = new Set(blocks.map((b) => b.type));
+      // Flatten so sections nested inside columns() count toward richness.
+      const flat: PresetBlock[] = [];
+      const walk = (bs: PresetBlock[]) => bs.forEach((b) => { flat.push(b); if (b.children) walk(b.children); });
+      walk(buildTemplate(t.key));
+      const types = new Set(flat.map((b) => b.type));
       // Database-backed templates are intentionally short — the database itself
       // is the content — so they're exempt from the block-count/divider rule.
       if (t.database) {
         expect(types.has("database"), `${t.key} embeds its database`).toBe(true);
         continue;
       }
-      expect(blocks.length, t.key).toBeGreaterThanOrEqual(6);
+      expect(flat.length, t.key).toBeGreaterThanOrEqual(6);
       expect(types.has("heading"), `${t.key} has headings`).toBe(true);
       expect(types.has("callout") || types.has("divider"), `${t.key} uses callout/divider`).toBe(true);
     }
