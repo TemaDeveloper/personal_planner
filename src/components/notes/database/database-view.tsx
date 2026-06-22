@@ -200,8 +200,10 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     const rows = reorderRows(db.rows, fromId, toId);
     if (rows === db.rows) return;
     setDb((d) => d ? { ...d, rows } : d);
+    // Send only the id order — the server reorders its authoritative rows so a
+    // concurrent cell edit isn't clobbered by a stale full-rows snapshot.
     fetch(`/api/notes/databases/${databaseId}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }),
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rowOrder: rows.map((r) => r.id) }),
     });
   };
 
@@ -255,7 +257,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       </div>
 
       {view?.type === "table" && (
-        <TableView db={{ ...viewDb, properties: visibleProps }} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} onMoveRow={canReorder ? moveRow : undefined} onOpenRow={setPeekRowId} />
+        <TableView db={{ ...viewDb, properties: visibleProps }} schema={db.properties} relatedDbs={relatedDbs} onCell={patchRow} onAddRow={() => addRow()} onAddColumn={addColumn} onDeleteRow={deleteRow} onRenameColumn={renameColumn} onChangeType={changeColumnType} onDeleteColumn={deleteColumn} onAddOption={addOption} onConfigProp={saveSchema} onMoveRow={canReorder ? moveRow : undefined} onOpenRow={setPeekRowId} />
       )}
       {view?.type === "board" && (
         <BoardView db={{ ...viewDb, properties: visibleProps }} groupProp={groupPropFor(db, view)} titleProp={titleProp} onCell={patchRow} onAddRow={addRow} onOpenRow={setPeekRowId} />
@@ -286,8 +288,8 @@ function Chip({ label, color }: { label: string; color: string }) {
   return <span className="inline-block px-1.5 py-0.5 rounded text-[12px] leading-none" style={{ background: c.bg, color: c.text }}>{label}</span>;
 }
 
-function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onRenameColumn, onChangeType, onDeleteColumn, onAddOption, onConfigProp, onMoveRow, onOpenRow }: {
-  db: DB; relatedDbs: RelatedDbs; onCell: (rowId: string, cells: Record<string, unknown>) => void;
+function TableView({ db, schema, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow, onRenameColumn, onChangeType, onDeleteColumn, onAddOption, onConfigProp, onMoveRow, onOpenRow }: {
+  db: DB; schema: DBProperty[]; relatedDbs: RelatedDbs; onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddRow: () => void; onAddColumn: () => void; onDeleteRow: (id: string) => void;
   onRenameColumn: (propId: string, name: string) => void;
   onChangeType: (propId: string, t: import("@/lib/models/notes-database").PropertyType) => void;
@@ -333,7 +335,8 @@ function TableView({ db, relatedDbs, onCell, onAddRow, onAddColumn, onDeleteRow,
               )}
               {db.properties.map((p) => (
                 <td key={p.id} className="px-2 py-1 border-b border-r align-top" style={{ borderColor: "var(--border-subtle)" }}>
-                  <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} onAddOption={(label) => onAddOption(p.id, label)} ctx={{ properties: db.properties, row, relatedDbs }} />
+                  {/* ctx uses the full schema (not visible-only) so relation/rollup resolution works even when a column is hidden */}
+                  <CellEditor prop={p} value={row.cells[p.id]} onChange={(v) => onCell(row.id, { [p.id]: v })} onAddOption={(label) => onAddOption(p.id, label)} ctx={{ properties: schema, row, relatedDbs }} />
                 </td>
               ))}
               <td className="px-1 py-1 border-b text-center whitespace-nowrap" style={{ borderColor: "var(--border-subtle)" }}>

@@ -30,14 +30,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
+  await connectDB();
+  const { id } = await params;
+
+  // `rowOrder` (array of row ids) reorders the AUTHORITATIVE stored rows without
+  // replacing them — avoids clobbering a concurrent in-flight cell edit (which
+  // a full `rows` snapshot would). Ids missing from the order keep their tail.
+  if (Array.isArray(body.rowOrder)) {
+    const doc = await NotesDatabase.findOne({ _id: id, userId });
+    if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const rank = new Map<string, number>(body.rowOrder.map((rid: string, i: number) => [rid, i]));
+    doc.rows = doc.rows.slice().sort((a, b) =>
+      (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+    doc.markModified("rows");
+    await doc.save();
+    return NextResponse.json({ ok: true });
+  }
+
   const update: Record<string, unknown> = {};
   // `rows` is accepted for deliberate bulk ops (e.g. migrating cells when a
   // column's type changes); per-cell edits should use the row endpoints.
   for (const key of ["title", "icon", "properties", "views", "rows"] as const) {
     if (key in body) update[key] = body[key];
   }
-  await connectDB();
-  const { id } = await params;
   const db = await NotesDatabase.findOneAndUpdate({ _id: id, userId }, update, { new: true }).lean();
   if (!db) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
