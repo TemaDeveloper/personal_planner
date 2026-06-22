@@ -411,7 +411,12 @@ export const TEMPLATES: NotesTemplate[] = [
     ] },
   { key: "lecture-notes", category: "Students", label: "Course / lecture notes", description: "Cornell-style structured notes", icon: "🎓",
     build: () => [
-      h1("🎓 Lecture notes"), p("📘 Course: "), p("📅 Date: "), p("🧑‍🏫 Topic: "),
+      h1("🎓 Lecture notes"),
+      columns(
+        [calloutCard("📘", [h3("Course"), p("")])],
+        [calloutCard("📅", [h3("Date"), p("")])],
+        [calloutCard("🧑‍🏫", [h3("Topic"), p("")])],
+      ),
       callout("💡", "Key question this lecture answers: "),
       columns(
         [
@@ -440,7 +445,12 @@ export const TEMPLATES: NotesTemplate[] = [
     ] },
   { key: "reading-notes", category: "Students", label: "Reading notes", description: "Capture takeaways from a text", icon: "📖",
     build: () => [
-      h1("📖 Reading notes"), p("📕 Title: "), p("✍️ Author: "), p("📄 Pages / chapter: "),
+      h1("📖 Reading notes"),
+      columns(
+        [calloutCard("📕", [h3("Title"), p("")])],
+        [calloutCard("✍️", [h3("Author"), p("")])],
+        [calloutCard("📄", [h3("Pages / chapter"), p("")])],
+      ),
       callout("💡", "Why am I reading this?"),
       columns(
         [
@@ -569,7 +579,13 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("📊 Project brief"),
       callout("🎯", "Objective: what success looks like."),
-      p("👤 Owner: "), p("👥 Team: "), p("📅 Timeline: "), p("📈 Status: "),
+      // 4-column header of property cards (Notion-style).
+      columns(
+        [calloutCard("👤", [h3("Owner"), p("")])],
+        [calloutCard("👥", [h3("Team"), p("")])],
+        [calloutCard("📅", [h3("Timeline"), p("")])],
+        [calloutCard("📈", [h3("Status"), p("")])],
+      ),
       divider(),
       h2("🧱 Background"), p(),
       // Side-by-side: Scope on the left, Milestones & Risks on the right.
@@ -668,7 +684,12 @@ export const TEMPLATES: NotesTemplate[] = [
     ] },
   { key: "travel-plan", category: "Personal & Health", label: "Travel plan", description: "Plan a trip end to end", icon: "✈️",
     build: () => [
-      h1("✈️ Travel plan"), p("📍 Destination: "), p("🗓 Dates: "), p("💰 Budget: "),
+      h1("✈️ Travel plan"),
+      columns(
+        [calloutCard("📍", [h3("Destination"), p("")])],
+        [calloutCard("🗓", [h3("Dates"), p("")])],
+        [calloutCard("💰", [h3("Budget"), p("")])],
+      ),
       callout("🌟", "What do I most want from this trip?"),
       divider(),
       columns(
