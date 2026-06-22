@@ -222,6 +222,28 @@ function scheduleDB(): TemplateDatabase {
   };
 }
 
+/** Habit tracker database — habits as a table + board (by category): Habit/
+ * Category/Frequency/Done today/Streak. */
+function habitDB(): TemplateDatabase {
+  const habit = genId("ha", 1), cat = genId("ha", 2), freq = genId("ha", 3), done = genId("ha", 4), streak = genId("ha", 5);
+  const o = (s: number, l: string, c: string) => ({ id: genId("hb", s), label: l, color: c });
+  const cats = [o(1, "Health", "green"), o(2, "Mind", "purple"), o(3, "Work", "blue")];
+  const freqs = [o(10, "Daily", "blue"), o(11, "Weekly", "orange")];
+  const row = (s: number, h: string, c: string, f: string): DBRow => ({ id: genId("hc", s), cells: { [habit]: h, [cat]: c, [freq]: f } });
+  return {
+    title: "Habits", icon: "🔁",
+    properties: [
+      { id: habit, name: "Habit", type: "title" },
+      { id: cat, name: "Category", type: "select", options: cats },
+      { id: freq, name: "Frequency", type: "select", options: freqs },
+      { id: done, name: "Done today", type: "checkbox" },
+      { id: streak, name: "Streak", type: "number" },
+    ],
+    views: [{ id: genId("hd", 1), name: "Table", type: "table" }, { id: genId("hd", 2), name: "By category", type: "board", groupBy: cat }],
+    rows: [row(1, "💧 Drink water", "Health", "Daily"), row(2, "🧘 Meditate", "Mind", "Daily"), row(3, "📖 Read", "Mind", "Daily"), row(4, "🏃 Exercise", "Health", "Weekly")],
+  };
+}
+
 export const TEMPLATES: NotesTemplate[] = [
   // ─────────────── Basic ───────────────
   { key: "blank", category: "Basic", label: "Blank page", description: "Start from scratch", icon: "📄",
@@ -457,6 +479,13 @@ export const TEMPLATES: NotesTemplate[] = [
       h2("Daily habits"), check("💧 Drink water"), check("🏃 Move 30 min"), check("📖 Read"), check("🧘 Meditate"), check(""),
       divider(), h2("📈 Reflection"), p("Streak: "), p("What helped / what got in the way: "),
     ] },
+  { key: "habit-db", category: "Personal & Health", label: "Habit tracker (database)", description: "Habits in a table + board by category", icon: "🔁",
+    build: () => [
+      h1("🔁 Habit tracker"),
+      callout("🌱", "Check off habits as you do them; group by category on the board."),
+      dbBlock(),
+    ],
+    database: habitDB },
   { key: "workout-log", category: "Personal & Health", label: "Workout log", description: "Log workouts, sets, and progress", icon: "💪",
     build: () => [
       h1("💪 Workout log"), p("📅 Date: "), p("🎯 Focus: "),
