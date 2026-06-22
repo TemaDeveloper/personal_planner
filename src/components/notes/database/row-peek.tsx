@@ -9,10 +9,11 @@ import { NotesEditorLoader } from "@/components/notes/notes-editor-loader";
 
 /** Notion-style row peek: a side panel showing every property of a database row
  * as an editable field, plus a free-form page body (like opening a Notion row). */
-export function RowPeek({ databaseId, properties, row, relatedDbs, onCell, onAddOption, onDuplicate, onDelete, onClose }: {
+export function RowPeek({ databaseId, properties, row, relatedDbs, onCell, onAddOption, onContentSaved, onDuplicate, onDelete, onClose }: {
   databaseId: string; properties: DBProperty[]; row: DBRow; relatedDbs: RelatedDbs;
   onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddOption: (propId: string, label: string) => void;
+  onContentSaved: (content: unknown) => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -21,6 +22,8 @@ export function RowPeek({ databaseId, properties, row, relatedDbs, onCell, onAdd
     await fetch(`/api/notes/databases/${databaseId}/rows/${row.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }),
     });
+    // Keep local grid state in sync so reopening the row shows the latest body.
+    onContentSaved(content);
   };
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };

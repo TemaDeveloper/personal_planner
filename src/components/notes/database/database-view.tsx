@@ -280,6 +280,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       {peekRow && (
         <RowPeek databaseId={databaseId} properties={db.properties} row={peekRow} relatedDbs={relatedDbs}
           onCell={patchRow} onAddOption={addOption}
+          onContentSaved={(content) => setDb((d) => d ? { ...d, rows: d.rows.map((r) => r.id === peekRow.id ? { ...r, content } : r) } : d)}
           onDuplicate={() => { duplicateRow(peekRow.id); setPeekRowId(null); }}
           onDelete={() => { deleteRow(peekRow.id); setPeekRowId(null); }}
           onClose={() => setPeekRowId(null)} />
