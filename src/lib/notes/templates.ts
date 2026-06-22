@@ -145,6 +145,35 @@ function contentCalendarDB(): TemplateDatabase {
   };
 }
 
+/** Simple CRM — contacts as a board (by stage) + table: Name/Company/Email/
+ * Stage/Last contact. A classic Notion database template. */
+function crmDB(): TemplateDatabase {
+  const name = genId("m", 1), company = genId("m", 2), email = genId("m", 3), stage = genId("m", 4), last = genId("m", 5);
+  const opt = (s: number, label: string, color: string) => ({ id: genId("g", s), label, color });
+  const lead = opt(1, "Lead", "gray"), contacted = opt(2, "Contacted", "yellow"), active = opt(3, "Active", "blue"), won = opt(4, "Won", "green"), lost = opt(5, "Lost", "red");
+  const row = (s: number, n: string, co: string, st: string): DBRow =>
+    ({ id: genId("h", s), cells: { [name]: n, [company]: co, [stage]: st } });
+  return {
+    title: "Contacts", icon: "🤝",
+    properties: [
+      { id: name, name: "Name", type: "title" },
+      { id: company, name: "Company", type: "text" },
+      { id: email, name: "Email", type: "url" },
+      { id: stage, name: "Stage", type: "status", options: [lead, contacted, active, won, lost] },
+      { id: last, name: "Last contact", type: "date" },
+    ],
+    views: [
+      { id: genId("i", 1), name: "Board", type: "board", groupBy: stage },
+      { id: genId("i", 2), name: "Table", type: "table" },
+    ],
+    rows: [
+      row(1, "Alex Rivera", "Acme Inc.", "Lead"),
+      row(2, "Sam Chen", "Globex", "Active"),
+      row(3, "Jordan Lee", "Initech", "Contacted"),
+    ],
+  };
+}
+
 export const TEMPLATES: NotesTemplate[] = [
   // ─────────────── Basic ───────────────
   { key: "blank", category: "Basic", label: "Blank page", description: "Start from scratch", icon: "📄",
@@ -282,6 +311,13 @@ export const TEMPLATES: NotesTemplate[] = [
       dbBlock(),
     ],
     database: contentCalendarDB },
+  { key: "crm", category: "Work & Productivity", label: "Simple CRM", description: "Track contacts & deals by stage (board + table)", icon: "🤝",
+    build: () => [
+      h1("🤝 Contacts"),
+      callout("📇", "Move contacts across stages as deals progress."),
+      dbBlock(),
+    ],
+    database: crmDB },
   { key: "work-meeting", category: "Work & Productivity", label: "Meeting notes", description: "Agenda, decisions, action items", icon: "🧑‍💼",
     build: () => [
       h1("🧑‍💼 Meeting"),
