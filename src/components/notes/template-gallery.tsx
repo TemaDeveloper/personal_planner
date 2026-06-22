@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TEMPLATES, TEMPLATE_CATEGORIES, type TemplateCategory } from "@/lib/notes/templates";
+import { TEMPLATES, TEMPLATE_CATEGORIES, templateCover, type TemplateCategory } from "@/lib/notes/templates";
 
 type Filter = "All" | TemplateCategory;
 
@@ -75,18 +75,18 @@ export function TemplateGallery({
             return (
               <div key={cat} className="mb-5">
                 <p className="stat-label mb-2" style={{ color: "var(--text-faint)" }}>{cat}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {items.map((t) => (
                     <button key={t.key} type="button" disabled={busy} onClick={() => create(t.key)}
-                      className="group flex items-start gap-3 text-left rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(0,0,0,.08)] disabled:opacity-60"
+                      className="group text-left rounded-xl border overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(0,0,0,.1)] disabled:opacity-60"
                       style={{ borderColor: "var(--border-subtle)", background: "var(--surface-raised)" }}>
-                      <span className="flex items-center justify-center w-9 h-9 rounded-lg text-[18px] shrink-0"
-                        style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}>
-                        {t.icon}
+                      {/* Cover — representative gradient + the template's icon (Notion-style) */}
+                      <span className="flex items-center justify-center h-20 w-full" style={{ background: templateCover(t.key) }}>
+                        <span className="text-[30px] drop-shadow-sm">{t.icon}</span>
                       </span>
-                      <span className="min-w-0 pt-0.5">
+                      <span className="block p-2.5">
                         <span className="block text-[13px] font-medium truncate" style={{ color: "var(--text-primary)" }}>{t.label}</span>
-                        <span className="block text-[11.5px] leading-snug" style={{ color: "var(--text-faint)" }}>{t.description}</span>
+                        <span className="block text-[11.5px] leading-snug line-clamp-2" style={{ color: "var(--text-faint)" }}>{t.description}</span>
                       </span>
                     </button>
                   ))}

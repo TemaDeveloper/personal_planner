@@ -239,3 +239,14 @@ export function buildTemplate(key: string): PresetBlock[] {
 export function templateIcon(key: string): string {
   return BY_KEY.get(key)?.icon ?? "📄";
 }
+
+/** A deterministic, representative gradient cover for a template card (Notion's
+ * gallery shows a cover illustration per template; we derive a distinct two-hue
+ * gradient from the key so each template has its own recognizable cover). */
+export function templateCover(key: string): string {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  const hue2 = (hue + 38) % 360;
+  return `linear-gradient(135deg, hsl(${hue} 62% 64%), hsl(${hue2} 58% 52%))`;
+}
