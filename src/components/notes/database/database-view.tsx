@@ -224,7 +224,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   };
 
   return (
-    <div contentEditable={false} className="my-2 select-none">
+    <div contentEditable={false} className="my-2 select-none w-full">
       {/* Database title (Notion shows the collection name above its views) */}
       <input value={db.title} onChange={(e) => saveTitle(e.target.value)} placeholder="Untitled"
         className="block bg-transparent outline-none text-[18px] font-semibold mb-1.5"
@@ -450,7 +450,7 @@ function BoardView({ db, groupProp, titleProp, onCell, onAddRow, onOpenRow }: {
 function GalleryView({ db, coverProp, titleProp, onAddRow, onOpenRow }: { db: DB; coverProp?: DBProperty; titleProp?: DBProperty; onAddRow: () => void; onOpenRow: (id: string) => void }) {
   // Notion gallery cards lead with a cover image (the first image property).
   return (
-    <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
+    <div className="grid gap-3 w-full" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}>
       {db.rows.map((row) => {
         const cover = coverProp ? String(row.cells[coverProp.id] ?? "").trim() : "";
         return (

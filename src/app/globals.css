@@ -640,6 +640,11 @@
   border: none !important;
   box-shadow: none !important;
 }
+/* Custom React blocks (database, callout, bookmark…) must span the full content
+   width — otherwise the node-view shrinks to content and the database's
+   auto-fill gallery collapses to a single column. */
+.notes-page .bn-react-node-view-renderer { width: 100%; }
+.notes-page .bn-block-content > .bn-react-node-view-renderer { display: block; width: 100%; }
 
 /* ── Notes (Notion parity) — Phase 0 ───────────────────────────────── */
 /* Notion uses the system UI font stack on its content surface (not Inter).
