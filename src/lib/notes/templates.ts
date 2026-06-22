@@ -7,6 +7,7 @@ export interface PresetBlock {
   type: string;
   props?: Record<string, unknown>;
   content?: string;
+  children?: PresetBlock[];
 }
 
 /** Sentinel databaseId the server swaps for a freshly-created database when a
@@ -37,6 +38,12 @@ const quote = (text: string): PresetBlock => ({ type: "quote", content: text });
 const callout = (emoji: string, text: string): PresetBlock => ({ type: "callout", props: { emoji }, content: text });
 const divider = (): PresetBlock => ({ type: "divider" });
 const toc = (): PresetBlock => ({ type: "tableOfContents" });
+/** A multi-column row (Notion's side-by-side layout). Each arg is one column's blocks. */
+const columns = (...cols: PresetBlock[][]): PresetBlock =>
+  ({ type: "columnList", children: cols.map((blocks) => ({ type: "column", children: blocks })) });
+/** A callout with nested blocks inside (icon + a mini-section), like Notion's cards. */
+const calloutCard = (emoji: string, children: PresetBlock[]): PresetBlock =>
+  ({ type: "callout", props: { emoji }, content: "", children });
 
 export type TemplateCategory =
   | "Basic" | "Students" | "Hobbies" | "Work & Productivity" | "Personal & Health";
@@ -221,6 +228,30 @@ export const TEMPLATES: NotesTemplate[] = [
     ] },
 
   // ─────────────── Students ───────────────
+  { key: "language-tracker", category: "Students", label: "Language tracker", description: "Vocabulary, grammar & goals in a card layout", icon: "🗣️",
+    build: () => [
+      h1("🗣️ Language tracker"),
+      columns(
+        [callout("👋", "Welcome! Track vocabulary, grammar, and daily practice — all in one place.")],
+        [p("Set a weekly goal, log new words, and review your progress over time.")],
+      ),
+      divider(),
+      h2("📦 Trackers"),
+      columns(
+        [
+          calloutCard("📖", [h3("Vocabulary"), p("Log new words and review them."), check("Add today's words")]),
+          calloutCard("✍️", [h3("Grammar"), p("Notes on key patterns and rules."), bullet("")]),
+        ],
+        [
+          calloutCard("🔤", [h3("Kanji / Characters"), p("Track characters you've learned."), check("")]),
+          calloutCard("🎯", [h3("Daily goals"), p("Small daily targets keep momentum."), check("10 min review"), check("3 new words")]),
+        ],
+      ),
+      divider(),
+      h2("📈 Progress"),
+      callout("🏆", "Milestones reached and next targets."),
+      bullet(""),
+    ] },
   { key: "study-planner", category: "Students", label: "Study planner", description: "Plan study sessions by subject", icon: "📚",
     build: () => [
       h1("📚 Study planner"), p("🗓 Week of: "),
