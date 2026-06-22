@@ -39,7 +39,6 @@ const numbered = (text = ""): PresetBlock => ({ type: "numberedListItem", conten
 const quote = (text: string): PresetBlock => ({ type: "quote", content: text });
 const callout = (emoji: string, text: string): PresetBlock => ({ type: "callout", props: { emoji }, content: text });
 const divider = (): PresetBlock => ({ type: "divider" });
-const toc = (): PresetBlock => ({ type: "tableOfContents" });
 /** A multi-column row (Notion's side-by-side layout). Each arg is one column's blocks. */
 const columns = (...cols: PresetBlock[][]): PresetBlock =>
   ({ type: "columnList", children: cols.map((blocks) => ({ type: "column", children: blocks })) });
@@ -496,9 +495,15 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("🗂️ Collection"),
       callout("📦", "What am I collecting?"),
-      h2("✅ Owned"), check("Item 1"), check("Item 2"), check(""),
-      h2("⭐ Wishlist"), check(""), check(""),
-      divider(), h2("🗒 Notes"), p(),
+      columns(
+        [
+          h2("✅ Owned"), check("Item 1"), check("Item 2"), check(""),
+        ],
+        [
+          h2("⭐ Wishlist"), check(""), check(""),
+          h2("🗒 Notes"), p(),
+        ],
+      ),
     ] },
 
   // ─────────────── Work & Productivity ───────────────
@@ -537,10 +542,16 @@ export const TEMPLATES: NotesTemplate[] = [
       callout("📌", "TL;DR — the one thing to remember."),
       p("📅 Date: "), p("👥 Attendees: "),
       divider(),
-      h2("🗂 Agenda"), bullet(""), bullet(""),
-      h2("✅ Decisions"), bullet(""),
-      h2("📋 Action items"), check("Owner — task — due"), check(""),
-      h2("⏭ Follow-ups"), bullet(""),
+      columns(
+        [
+          h2("🗂 Agenda"), bullet(""), bullet(""),
+          h2("✅ Decisions"), bullet(""),
+        ],
+        [
+          h2("📋 Action items"), check("Owner — task — due"), check(""),
+          h2("⏭ Follow-ups"), bullet(""),
+        ],
+      ),
     ] },
   { key: "work-project", category: "Work & Productivity", label: "Project brief", description: "Scope, milestones, status", icon: "📊",
     build: () => [
@@ -564,10 +575,16 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("🏆 OKRs"), p("📅 Quarter: "),
       callout("🧭", "Our focus this quarter, in one line."),
-      h2("🎯 Objective 1"), p("Why it matters: "),
-      bullet("KR — metric, from → to"), bullet("KR — "),
-      h2("🎯 Objective 2"), bullet("KR — "),
-      divider(), h2("📈 Weekly check-in"), p(),
+      columns(
+        [
+          h2("🎯 Objective 1"), p("Why it matters: "),
+          bullet("KR — metric, from → to"), bullet("KR — "),
+        ],
+        [
+          h2("🎯 Objective 2"), bullet("KR — "),
+          h2("📈 Weekly check-in"), p(),
+        ],
+      ),
     ] },
   { key: "weekly-planner", category: "Work & Productivity", label: "Weekly planner", description: "Plan, schedule, and review the week", icon: "📅",
     build: () => [
@@ -575,8 +592,16 @@ export const TEMPLATES: NotesTemplate[] = [
       callout("🎯", "Top 3 outcomes for the week:"),
       check(""), check(""), check(""),
       divider(),
-      h2("📆 Schedule"), h3("Mon"), p(), h3("Tue"), p(), h3("Wed"), p(), h3("Thu"), p(), h3("Fri"), p(),
-      divider(), h2("🔁 Weekly review"), quote("Wins, lessons, and what to carry into next week."), p(),
+      h2("📆 Schedule"),
+      columns(
+        [
+          h3("Mon"), p(), h3("Tue"), p(), h3("Wed"), p(),
+        ],
+        [
+          h3("Thu"), p(), h3("Fri"), p(),
+          h2("🔁 Weekly review"), quote("Wins, lessons, and what to carry into next week."), p(),
+        ],
+      ),
     ] },
 
   // ─────────────── Personal & Health ───────────────
@@ -584,10 +609,16 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("🌅 Daily journal"), p("📅 Date: "),
       callout("🧘", "How am I feeling, in one word?"),
-      h2("✨ Highlights"), bullet(""),
-      h2("🙏 Grateful for"), bullet(""), bullet(""),
-      h2("🎯 Tomorrow's focus"), check(""),
-      divider(), h2("💭 Free write"), p(),
+      columns(
+        [
+          h2("✨ Highlights"), bullet(""),
+          h2("🙏 Grateful for"), bullet(""), bullet(""),
+        ],
+        [
+          h2("🎯 Tomorrow's focus"), check(""),
+          h2("💭 Free write"), p(),
+        ],
+      ),
     ] },
   { key: "habit-tracker", category: "Personal & Health", label: "Habit tracker", description: "Build and track daily habits", icon: "🔁",
     build: () => [
@@ -607,19 +638,31 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("💪 Workout log"), p("📅 Date: "), p("🎯 Focus: "),
       callout("🔥", "Goal for this session: "),
-      h2("🏋️ Exercises"), check("Exercise — sets × reps × weight"), check(""), check(""),
-      h2("🤸 Warm-up / mobility"), bullet(""),
-      divider(), h2("🗒 How it felt"), p(),
+      columns(
+        [
+          h2("🏋️ Exercises"), check("Exercise — sets × reps × weight"), check(""), check(""),
+        ],
+        [
+          h2("🤸 Warm-up / mobility"), bullet(""),
+          h2("🗒 How it felt"), p(),
+        ],
+      ),
     ] },
   { key: "travel-plan", category: "Personal & Health", label: "Travel plan", description: "Plan a trip end to end", icon: "✈️",
     build: () => [
       h1("✈️ Travel plan"), p("📍 Destination: "), p("🗓 Dates: "), p("💰 Budget: "),
       callout("🌟", "What do I most want from this trip?"),
-      toc(), divider(),
-      h2("🗺 Itinerary"), h3("Day 1"), bullet(""), h3("Day 2"), bullet(""),
-      h2("🧳 Packing list"), check(""), check(""),
-      h2("📌 Bookings"), bullet("Flights — "), bullet("Stay — "),
-      divider(), h2("🍽 Places to try"), bullet(""),
+      divider(),
+      columns(
+        [
+          h2("🗺 Itinerary"), h3("Day 1"), bullet(""), h3("Day 2"), bullet(""),
+          h2("🍽 Places to try"), bullet(""),
+        ],
+        [
+          h2("🧳 Packing list"), check(""), check(""),
+          h2("📌 Bookings"), bullet("Flights — "), bullet("Stay — "),
+        ],
+      ),
     ] },
 ];
 
