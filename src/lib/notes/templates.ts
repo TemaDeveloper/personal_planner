@@ -292,8 +292,14 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("✅ To-do list"),
       callout("🎯", "Today's top priority: "),
-      h2("Today"), check("First task"), check("Second task"), check(""),
-      h2("Later"), check(""), check(""),
+      columns(
+        [
+          h2("Today"), check("First task"), check("Second task"), check(""),
+        ],
+        [
+          h2("Later"), check(""), check(""),
+        ],
+      ),
       divider(), h3("✔️ Done"), check("Example completed task"),
     ] },
   { key: "meeting", category: "Basic", label: "Meeting notes", description: "Agenda, decisions, action items", icon: "📝",
@@ -624,8 +630,14 @@ export const TEMPLATES: NotesTemplate[] = [
     build: () => [
       h1("🔁 Habit tracker"), p("🗓 Week of: "),
       callout("🌱", "The habit I'm building and why: "),
-      h2("Daily habits"), check("💧 Drink water"), check("🏃 Move 30 min"), check("📖 Read"), check("🧘 Meditate"), check(""),
-      divider(), h2("📈 Reflection"), p("Streak: "), p("What helped / what got in the way: "),
+      columns(
+        [
+          h2("Daily habits"), check("💧 Drink water"), check("🏃 Move 30 min"), check("📖 Read"), check("🧘 Meditate"), check(""),
+        ],
+        [
+          h2("📈 Reflection"), p("Streak: "), p("What helped / what got in the way: "),
+        ],
+      ),
     ] },
   { key: "habit-db", category: "Personal & Health", label: "Habit tracker (database)", description: "Habits in a table + board by category", icon: "🔁",
     build: () => [
