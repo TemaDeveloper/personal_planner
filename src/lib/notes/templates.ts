@@ -85,6 +85,36 @@ function taskTrackerDB(): TemplateDatabase {
   };
 }
 
+/** Reading list — a gallery (with cover images) + table: Title/Author/Status/
+ * Rating/Cover. Showcases the gallery cover-image view. */
+function readingListDB(): TemplateDatabase {
+  const title = genId("q", 1), author = genId("q", 2), status = genId("q", 3), rating = genId("q", 4), cover = genId("q", 5);
+  const opt = (s: number, label: string, color: string) => ({ id: genId("u", s), label, color });
+  const toRead = opt(1, "To Read", "gray"), reading = opt(2, "Reading", "blue"), done = opt(3, "Finished", "green");
+  const r5 = opt(5, "★★★★★", "yellow"), r4 = opt(4, "★★★★", "yellow");
+  const row = (s: number, t: string, a: string, st: string): DBRow =>
+    ({ id: genId("s", s), cells: { [title]: t, [author]: a, [status]: st } });
+  return {
+    title: "Reading list", icon: "📚",
+    properties: [
+      { id: title, name: "Title", type: "title" },
+      { id: author, name: "Author", type: "text" },
+      { id: status, name: "Status", type: "status", options: [toRead, reading, done] },
+      { id: rating, name: "Rating", type: "select", options: [r4, r5] },
+      { id: cover, name: "Cover", type: "image" },
+    ],
+    views: [
+      { id: genId("w", 1), name: "Gallery", type: "gallery" },
+      { id: genId("w", 2), name: "Table", type: "table" },
+    ],
+    rows: [
+      row(1, "Atomic Habits", "James Clear", "Finished"),
+      row(2, "Deep Work", "Cal Newport", "Reading"),
+      row(3, "The Pragmatic Programmer", "Hunt & Thomas", "To Read"),
+    ],
+  };
+}
+
 export const TEMPLATES: NotesTemplate[] = [
   // ─────────────── Basic ───────────────
   { key: "blank", category: "Basic", label: "Blank page", description: "Start from scratch", icon: "📄",
@@ -167,6 +197,13 @@ export const TEMPLATES: NotesTemplate[] = [
     ] },
 
   // ─────────────── Hobbies ───────────────
+  { key: "reading-list", category: "Hobbies", label: "Reading list", description: "A gallery of books with covers, status & rating", icon: "📚",
+    build: () => [
+      h1("📚 Reading list"),
+      callout("💡", "Add a cover image to each book to make the gallery shine."),
+      dbBlock(),
+    ],
+    database: readingListDB },
   { key: "hobby-tracker", category: "Hobbies", label: "Hobby tracker", description: "Track time & progress on a hobby", icon: "🎨",
     build: () => [
       h1("🎨 Hobby tracker"), p("🎭 Hobby: "),
