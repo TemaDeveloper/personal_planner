@@ -323,12 +323,19 @@ export const TEMPLATES: NotesTemplate[] = [
       h1("🎯 Project name"),
       callout("🚀", "What is this project and why does it matter?"),
       h2("Overview"), p("👤 Owner: "), p("📅 Timeline: "), p("📊 Status: Not started"),
-      toc(),
       divider(),
-      h2("🎯 Goals"), bullet(""), bullet(""),
-      h2("🪧 Milestones"), check("Milestone 1"), check("Milestone 2"), check(""),
-      h2("📝 Notes"), p(),
-      h2("⚠️ Risks / blockers"), bullet(""),
+      // Two-column layout (Notion-style): Risks & Notes on the left, Goals &
+      // Milestones on the right.
+      columns(
+        [
+          h2("⚠️ Risks / blockers"), bullet(""), bullet(""),
+          h2("📝 Notes"), p(),
+        ],
+        [
+          h2("🎯 Goals"), bullet(""), bullet(""),
+          h2("🪧 Milestones"), check("Milestone 1"), check("Milestone 2"), check(""),
+        ],
+      ),
     ] },
 
   // ─────────────── Students ───────────────
@@ -486,11 +493,18 @@ export const TEMPLATES: NotesTemplate[] = [
       h1("📊 Project brief"),
       callout("🎯", "Objective: what success looks like."),
       p("👤 Owner: "), p("👥 Team: "), p("📅 Timeline: "), p("📈 Status: "),
-      toc(), divider(),
+      divider(),
       h2("🧱 Background"), p(),
-      h2("🧭 Scope"), h3("In scope"), bullet(""), h3("Out of scope"), bullet(""),
-      h2("🪧 Milestones"), check(""), check(""),
-      h2("⚠️ Risks"), bullet(""),
+      // Side-by-side: Scope on the left, Milestones & Risks on the right.
+      columns(
+        [
+          h2("🧭 Scope"), h3("In scope"), bullet(""), h3("Out of scope"), bullet(""),
+        ],
+        [
+          h2("🪧 Milestones"), check(""), check(""),
+          h2("⚠️ Risks"), bullet(""),
+        ],
+      ),
     ] },
   { key: "okrs", category: "Work & Productivity", label: "OKRs / goals", description: "Objectives and measurable key results", icon: "🏆",
     build: () => [
