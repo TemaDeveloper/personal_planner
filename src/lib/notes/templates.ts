@@ -1,9 +1,28 @@
+import type { DBProperty, DBView, DBRow } from "@/lib/models/notes-database";
+import { genId } from "@/lib/notes/database";
+
 /** A partial BlockNote block used to seed a page from a template.
  * Supports props (e.g. heading level, callout emoji) — BlockNote fills the rest. */
 export interface PresetBlock {
   type: string;
   props?: Record<string, unknown>;
   content?: string;
+}
+
+/** Sentinel databaseId the server swaps for a freshly-created database when a
+ * template carries a `database` definition (build() is pure, so it can't make
+ * one itself). */
+export const TEMPLATE_DB_SENTINEL = "__TEMPLATE_DB__";
+
+/** A database block placeholder for a template; the server fills in the real id. */
+const dbBlock = (): PresetBlock => ({ type: "database", props: { databaseId: TEMPLATE_DB_SENTINEL } });
+
+export interface TemplateDatabase {
+  title: string;
+  icon: string;
+  properties: DBProperty[];
+  views: DBView[];
+  rows: DBRow[];
 }
 
 // ---- block helpers ----
@@ -33,6 +52,37 @@ export interface NotesTemplate {
   description: string;
   icon: string;
   build: () => PresetBlock[];
+  /** Optional: a database created server-side; its block goes where dbBlock() is. */
+  database?: () => TemplateDatabase;
+}
+
+/** Build a task-tracker database (Notion's signature template): Name/Status/
+ * Priority/Due, shown as a Board (grouped by Status) + Table, with seed rows. */
+function taskTrackerDB(): TemplateDatabase {
+  const name = genId("p", 1), status = genId("p", 2), priority = genId("p", 3), due = genId("p", 4);
+  const opt = (s: number, label: string, color: string) => ({ id: genId("o", s), label, color });
+  const todo = opt(10, "To Do", "gray"), doing = opt(11, "In Progress", "blue"), done = opt(12, "Done", "green");
+  const lo = opt(20, "Low", "gray"), med = opt(21, "Medium", "yellow"), hi = opt(22, "High", "red");
+  const row = (s: number, title: string, st: string, pr: string): DBRow =>
+    ({ id: genId("r", s), cells: { [name]: title, [status]: st, [priority]: pr } });
+  return {
+    title: "Tasks", icon: "✅",
+    properties: [
+      { id: name, name: "Name", type: "title" },
+      { id: status, name: "Status", type: "status", options: [todo, doing, done] },
+      { id: priority, name: "Priority", type: "select", options: [lo, med, hi] },
+      { id: due, name: "Due", type: "date" },
+    ],
+    views: [
+      { id: genId("v", 1), name: "Board", type: "board", groupBy: status },
+      { id: genId("v", 2), name: "Table", type: "table" },
+    ],
+    rows: [
+      row(1, "Plan the week", "To Do", "High"),
+      row(2, "Draft the proposal", "In Progress", "Medium"),
+      row(3, "Review notes", "Done", "Low"),
+    ],
+  };
 }
 
 export const TEMPLATES: NotesTemplate[] = [
@@ -151,6 +201,13 @@ export const TEMPLATES: NotesTemplate[] = [
     ] },
 
   // ─────────────── Work & Productivity ───────────────
+  { key: "task-tracker", category: "Work & Productivity", label: "Task tracker", description: "A board + table database of tasks by status", icon: "✅",
+    build: () => [
+      h1("✅ Task tracker"),
+      callout("🎯", "Drag cards between columns as work moves along."),
+      dbBlock(),
+    ],
+    database: taskTrackerDB },
   { key: "work-meeting", category: "Work & Productivity", label: "Meeting notes", description: "Agenda, decisions, action items", icon: "🧑‍💼",
     build: () => [
       h1("🧑‍💼 Meeting"),
@@ -238,6 +295,11 @@ export function buildTemplate(key: string): PresetBlock[] {
 
 export function templateIcon(key: string): string {
   return BY_KEY.get(key)?.icon ?? "📄";
+}
+
+/** A template's database definition, if it has one (server creates it). */
+export function templateDatabase(key: string): TemplateDatabase | null {
+  return BY_KEY.get(key)?.database?.() ?? null;
 }
 
 /** A deterministic, representative gradient cover for a template card (Notion's

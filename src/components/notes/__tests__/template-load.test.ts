@@ -5,6 +5,7 @@ import { withMultiColumn, locales as multiColumnLocales } from "@blocknote/xl-mu
 import { CalloutBlock } from "@/components/notes/blocks/callout-block";
 import { DividerBlock } from "@/components/notes/blocks/divider-block";
 import { TableOfContentsBlock } from "@/components/notes/blocks/toc-block";
+import { DatabaseBlock } from "@/components/notes/blocks/database-block";
 import { TEMPLATES, buildTemplate } from "@/lib/notes/templates";
 
 // Mirror the block types the templates actually seed (default blocks + our customs).
@@ -15,6 +16,7 @@ const schema = withMultiColumn(
       callout: CalloutBlock(),
       divider: DividerBlock(),
       tableOfContents: TableOfContentsBlock(),
+      database: DatabaseBlock(),
     },
   })
 );

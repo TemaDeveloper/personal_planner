@@ -34,8 +34,14 @@ describe("templates", () => {
     for (const t of TEMPLATES) {
       if (t.key === "blank") continue;
       const blocks = buildTemplate(t.key);
-      expect(blocks.length, t.key).toBeGreaterThanOrEqual(6);
       const types = new Set(blocks.map((b) => b.type));
+      // Database-backed templates are intentionally short — the database itself
+      // is the content — so they're exempt from the block-count/divider rule.
+      if (t.database) {
+        expect(types.has("database"), `${t.key} embeds its database`).toBe(true);
+        continue;
+      }
+      expect(blocks.length, t.key).toBeGreaterThanOrEqual(6);
       expect(types.has("heading"), `${t.key} has headings`).toBe(true);
       expect(types.has("callout") || types.has("divider"), `${t.key} uses callout/divider`).toBe(true);
     }
