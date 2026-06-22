@@ -12,6 +12,7 @@ import {
   defaultInlineContentSpecs,
   filterSuggestionItems,
   insertOrUpdateBlockForSlashMenu,
+  createCodeBlockSpec,
 } from "@blocknote/core";
 import { en as coreEn } from "@blocknote/core/locales";
 import { codeBlockOptions } from "@blocknote/code-block";
@@ -39,6 +40,12 @@ const schema = withMultiColumn(
   BlockNoteSchema.create({
     blockSpecs: {
       ...defaultBlockSpecs,
+      // Syntax highlighting only attaches when the code-block SPEC carries the
+      // Shiki highlighter — the plain defaultBlockSpecs.codeBlock does not, so a
+      // custom schema must build it explicitly (passing `codeBlock` as an editor
+      // option is NOT enough when you supply your own schema). defaultLanguage
+      // "text" so new/pasted code starts plain and auto-detection sets the lang.
+      codeBlock: createCodeBlockSpec({ ...codeBlockOptions, defaultLanguage: "text" }),
       subPage: SubPageBlock(),
       callout: CalloutBlock(),
       divider: DividerBlock(),
@@ -104,10 +111,8 @@ export function NotesEditor({ pageId, initialContent, onPersist }: {
       placeholders: { ...coreEn.placeholders, default: "Write something, or press '/' for commands" },
       multi_column: multiColumnLocales.en,
     },
-    // Syntax highlighting + a language dropdown on code blocks (Shiki, lazy-loaded).
-    // Default to "text" so new/pasted code starts plain and auto-detection can
-    // then set the real language (see autodetectCode below).
-    codeBlock: { ...codeBlockOptions, defaultLanguage: "text" },
+    // Syntax highlighting is configured on the codeBlock SPEC in `schema` above
+    // (createCodeBlockSpec), so no `codeBlock` editor option is needed here.
     // Paste-smart: a bare URL pasted onto an empty line becomes a bookmark card.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pasteHandler: ({ event, editor: ed, defaultPasteHandler }: any) => {
