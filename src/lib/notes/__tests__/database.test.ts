@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildDefaultDatabase, groupRowsByProperty, formatCellText, optionColor,
   isSelectType, genId, OPTION_COLOR_KEYS, colorForLabel, computeRollup, relatedRowsFor, filterRows,
-  migrateCellValue, migrateRowsForTypeChange, applySorts, applyFilters, reorderRows,
+  migrateCellValue, migrateRowsForTypeChange, applySorts, applyFilters, reorderRows, synthesizeOptions,
 } from "@/lib/notes/database";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 
@@ -245,6 +245,27 @@ describe("reorderRows", () => {
   it("is a no-op for same id or missing ids", () => {
     expect(reorderRows(rows, "a", "a")).toBe(rows);
     expect(reorderRows(rows, "z", "b")).toBe(rows);
+  });
+});
+
+describe("synthesizeOptions", () => {
+  it("adds options for orphaned labels, keeps existing, auto-colors new", () => {
+    const prop: DBProperty = { id: "s", name: "S", type: "select", options: [{ id: "o1", label: "Done", color: "green" }] };
+    const rows: DBRow[] = [
+      { id: "1", cells: { s: "Done" } },
+      { id: "2", cells: { s: "Backlog" } },
+      { id: "3", cells: { s: "Backlog" } }, // dupe → one new option
+    ];
+    const opts = synthesizeOptions(prop, rows);
+    expect(opts.map((o) => o.label)).toEqual(["Done", "Backlog"]);
+    expect(opts[0]).toEqual({ id: "o1", label: "Done", color: "green" }); // unchanged
+    expect(opts[1].color).not.toBe("default");
+  });
+  it("handles multi_select arrays and returns existing for non-select", () => {
+    const ms: DBProperty = { id: "m", name: "M", type: "multi_select", options: [] };
+    expect(synthesizeOptions(ms, [{ id: "1", cells: { m: ["a", "b"] } }]).map((o) => o.label)).toEqual(["a", "b"]);
+    const text: DBProperty = { id: "t", name: "T", type: "text", options: [{ id: "x", label: "keep", color: "red" }] };
+    expect(synthesizeOptions(text, [])).toEqual([{ id: "x", label: "keep", color: "red" }]);
   });
 });
 

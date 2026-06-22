@@ -69,9 +69,9 @@ function ImageCell({ value, onChange }: { value: string; onChange: (v: string) =
   return (
     <div className="relative" ref={ref}>
       <button type="button" onClick={() => setOpen((o) => !o)} className="block">
-        {value
+        {value && value.trim()
           // eslint-disable-next-line @next/next/no-img-element -- arbitrary user URL; next/image needs configured domains
-          ? <img src={value} alt="" className="h-8 w-8 rounded object-cover" />
+          ? <img src={value.trim()} alt="" className="h-8 w-8 rounded object-cover" />
           : <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>＋ Image</span>}
       </button>
       {open && (

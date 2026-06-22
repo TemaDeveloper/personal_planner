@@ -1,4 +1,4 @@
-import type { DBProperty, DBRow, DBView, PropertyType, RollupFn } from "@/lib/models/notes-database";
+import type { DBProperty, DBRow, DBView, PropertyType, RollupFn, SelectOption } from "@/lib/models/notes-database";
 
 /** Notion's option color palette → chip background + text (light mode).
  * Functional color tokens used to render select/status chips. */
@@ -164,6 +164,28 @@ export function migrateCellValue(from: PropertyType, to: PropertyType, value: un
     default:
       return value;
   }
+}
+
+/** For a select/status/multi_select property, return its options plus a new
+ * (auto-colored) option for every distinct cell label that has no option yet.
+ * Used after migrating a column to a select type so values aren't orphaned. */
+export function synthesizeOptions(prop: DBProperty, rows: DBRow[]): SelectOption[] {
+  if (!isSelectType(prop.type)) return prop.options ?? [];
+  const existing = prop.options ?? [];
+  const have = new Set(existing.map((o) => o.label));
+  const out = [...existing];
+  let seed = existing.length;
+  for (const r of rows) {
+    const v = r.cells[prop.id];
+    for (const label of Array.isArray(v) ? v : v != null && v !== "" ? [v] : []) {
+      const s = String(label);
+      if (!have.has(s)) {
+        have.add(s);
+        out.push({ id: genId("o", ++seed), label: s, color: colorForLabel(s) });
+      }
+    }
+  }
+  return out;
 }
 
 /** Apply migrateCellValue to every row for a changed property. Pure. */

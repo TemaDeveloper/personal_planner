@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { resolveUserId } from "@/lib/session";
 import { connectDB } from "@/lib/db";
 import NotesDatabase from "@/lib/models/notes-database";
+import { migrateRowsForTypeChange, synthesizeOptions, isSelectType } from "@/lib/notes/database";
+import type { PropertyType } from "@/lib/models/notes-database";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await resolveUserId(await auth());
@@ -43,6 +45,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     doc.rows = doc.rows.slice().sort((a, b) =>
       (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER));
     doc.markModified("rows");
+    await doc.save();
+    return NextResponse.json({ ok: true });
+  }
+
+  // `migrate` changes a column's type against the AUTHORITATIVE rows (so a
+  // concurrent cell edit to OTHER properties isn't clobbered by a stale rows
+  // snapshot), migrating that column's cells and synthesizing select options.
+  if (body.migrate && typeof body.migrate.propId === "string") {
+    const { propId, fromType, toType } = body.migrate as { propId: string; fromType: PropertyType; toType: PropertyType };
+    const doc = await NotesDatabase.findOne({ _id: id, userId });
+    if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    doc.rows = migrateRowsForTypeChange(doc.rows, propId, fromType, toType);
+    doc.properties = doc.properties.map((p) => {
+      if (p.id !== propId) return p;
+      const next = { ...p, type: toType };
+      if (isSelectType(toType)) next.options = synthesizeOptions(next, doc.rows);
+      return next;
+    });
+    doc.markModified("rows");
+    doc.markModified("properties");
     await doc.save();
     return NextResponse.json({ ok: true });
   }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays, Search } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
-import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts, applyFilters, reorderRows } from "@/lib/notes/database";
+import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts, applyFilters, reorderRows, synthesizeOptions } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
 import { AddViewButton, ColumnMenu, SortControl, FilterControl, PropertiesControl } from "./schema-controls";
 import { CalendarView } from "./calendar-view";
@@ -129,15 +129,20 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     if (!db) return;
     const prev = db.properties.find((p) => p.id === propId);
     if (!prev || prev.type === type) return;
-    const properties = db.properties.map((p) => p.id === propId
-      ? { ...p, type, options: isSelectType(type) ? (p.options ?? []) : p.options }
-      : p);
-    // Migrate every row's value for this column so the stored shape stays valid
-    // for the new type (e.g. text→multi_select must become an array).
+    // Optimistic local migrate (+ synthesize options for orphaned select values).
     const rows = migrateRowsForTypeChange(db.rows, propId, prev.type, type);
+    const properties = db.properties.map((p) => {
+      if (p.id !== propId) return p;
+      const next = { ...p, type };
+      if (isSelectType(type)) next.options = synthesizeOptions(next, rows);
+      return next;
+    });
     setDb((d) => d ? { ...d, properties, rows } : d);
+    // Persist via the server-side migrate so it runs against authoritative rows
+    // and won't clobber a concurrent cell edit to other columns.
     fetch(`/api/notes/databases/${databaseId}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ properties, rows }),
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ migrate: { propId, fromType: prev.type, toType: type } }),
     });
   };
   const deleteColumn = (propId: string) => {
@@ -446,7 +451,7 @@ function GalleryView({ db, coverProp, titleProp, onAddRow, onOpenRow }: { db: DB
   return (
     <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
       {db.rows.map((row) => {
-        const cover = coverProp ? (row.cells[coverProp.id] as string) : "";
+        const cover = coverProp ? String(row.cells[coverProp.id] ?? "").trim() : "";
         return (
         <div key={row.id} onClick={() => onOpenRow(row.id)} className="rounded-lg border text-[13px] overflow-hidden cursor-pointer hover:border-[var(--border-default)]" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
           {coverProp && (
