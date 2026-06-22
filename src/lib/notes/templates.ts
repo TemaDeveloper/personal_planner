@@ -12,11 +12,13 @@ export interface PresetBlock {
 
 /** Sentinel databaseId the server swaps for a freshly-created database when a
  * template carries a `database` definition (build() is pure, so it can't make
- * one itself). */
+ * one itself). A template may embed several, each with its own sentinel. */
 export const TEMPLATE_DB_SENTINEL = "__TEMPLATE_DB__";
 
-/** A database block placeholder for a template; the server fills in the real id. */
-const dbBlock = (): PresetBlock => ({ type: "database", props: { databaseId: TEMPLATE_DB_SENTINEL } });
+/** A database block placeholder for a template; the server fills in the real id.
+ * Pass a distinct sentinel when a template has more than one database. */
+const dbBlock = (sentinel: string = TEMPLATE_DB_SENTINEL): PresetBlock =>
+  ({ type: "database", props: { databaseId: sentinel } });
 
 export interface TemplateDatabase {
   title: string;
@@ -61,6 +63,8 @@ export interface NotesTemplate {
   build: () => PresetBlock[];
   /** Optional: a database created server-side; its block goes where dbBlock() is. */
   database?: () => TemplateDatabase;
+  /** Optional: several databases keyed by their dbBlock(sentinel) placeholder. */
+  databases?: () => Record<string, TemplateDatabase>;
 }
 
 /** Build a task-tracker database (Notion's signature template): Name/Status/
@@ -181,6 +185,43 @@ function crmDB(): TemplateDatabase {
   };
 }
 
+/** Student dashboard databases (English-Build style): a Subjects gallery + a
+ * weekly Schedule board, embedded on one page via two sentinels. */
+const DB_SUBJECTS = "__DB_SUBJECTS__";
+const DB_SCHEDULE = "__DB_SCHEDULE__";
+function subjectsDB(): TemplateDatabase {
+  const name = genId("sa", 1), status = genId("sa", 2), cover = genId("sa", 3);
+  const opt = (s: number, l: string, c: string) => ({ id: genId("sb", s), label: l, color: c });
+  const st = [opt(1, "Not started", "gray"), opt(2, "Learning", "blue"), opt(3, "Confident", "green")];
+  const row = (s: number, n: string, v: string): DBRow => ({ id: genId("sc", s), cells: { [name]: n, [status]: v } });
+  return {
+    title: "Subjects", icon: "🎧",
+    properties: [
+      { id: name, name: "Subject", type: "title" },
+      { id: status, name: "Status", type: "status", options: st },
+      { id: cover, name: "Cover", type: "image" },
+    ],
+    views: [{ id: genId("sd", 1), name: "Gallery", type: "gallery" }, { id: genId("sd", 2), name: "Table", type: "table" }],
+    rows: [row(1, "Listening", "Learning"), row(2, "Reading", "Not started"), row(3, "Speaking", "Confident"), row(4, "Writing", "Learning")],
+  };
+}
+function scheduleDB(): TemplateDatabase {
+  const task = genId("ta", 1), day = genId("ta", 2), dur = genId("ta", 3);
+  const opt = (s: number, l: string) => ({ id: genId("tb", s), label: l, color: "default" });
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((d, i) => opt(i + 1, d));
+  const row = (s: number, t: string, d: string, du: string): DBRow => ({ id: genId("tc", s), cells: { [task]: t, [day]: d, [dur]: du } });
+  return {
+    title: "Schedule", icon: "📅",
+    properties: [
+      { id: task, name: "Task", type: "title" },
+      { id: day, name: "Day", type: "select", options: days },
+      { id: dur, name: "Duration", type: "text" },
+    ],
+    views: [{ id: genId("td", 1), name: "By day", type: "board", groupBy: day }, { id: genId("td", 2), name: "Table", type: "table" }],
+    rows: [row(1, "Grammar", "Monday", "30 min"), row(2, "Listening", "Tuesday", "30 min"), row(3, "Vocabulary", "Wednesday", "30 min")],
+  };
+}
+
 export const TEMPLATES: NotesTemplate[] = [
   // ─────────────── Basic ───────────────
   { key: "blank", category: "Basic", label: "Blank page", description: "Start from scratch", icon: "📄",
@@ -228,6 +269,15 @@ export const TEMPLATES: NotesTemplate[] = [
     ] },
 
   // ─────────────── Students ───────────────
+  { key: "student-dashboard", category: "Students", label: "Student dashboard", description: "Goals + a subjects gallery + a weekly schedule board", icon: "🎓",
+    build: () => [
+      h1("🎓 Student dashboard"),
+      calloutCard("🏆", [h3("Goals"), check("Master 5 new words this week"), check("Watch one talk and note 3 phrases"), check("")]),
+      divider(),
+      h2("🎧 Subjects"), dbBlock(DB_SUBJECTS),
+      h2("📅 Weekly schedule"), dbBlock(DB_SCHEDULE),
+    ],
+    databases: () => ({ [DB_SUBJECTS]: subjectsDB(), [DB_SCHEDULE]: scheduleDB() }) },
   { key: "language-tracker", category: "Students", label: "Language tracker", description: "Vocabulary, grammar & goals in a card layout", icon: "🗣️",
     build: () => [
       h1("🗣️ Language tracker"),
@@ -441,6 +491,17 @@ export function templateIcon(key: string): string {
 /** A template's database definition, if it has one (server creates it). */
 export function templateDatabase(key: string): TemplateDatabase | null {
   return BY_KEY.get(key)?.database?.() ?? null;
+}
+
+/** All databases a template embeds, keyed by their dbBlock() sentinel. Unifies
+ * the single `database` (→ default sentinel) and multi `databases` forms. */
+export function templateDatabases(key: string): Record<string, TemplateDatabase> {
+  const t = BY_KEY.get(key);
+  if (!t) return {};
+  const out: Record<string, TemplateDatabase> = {};
+  if (t.database) out[TEMPLATE_DB_SENTINEL] = t.database();
+  if (t.databases) Object.assign(out, t.databases());
+  return out;
 }
 
 /** A deterministic, representative gradient cover for a template card (Notion's

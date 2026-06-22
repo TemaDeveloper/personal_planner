@@ -5,7 +5,7 @@ import { connectDB } from "@/lib/db";
 import NotesPage from "@/lib/models/notes-page";
 import NotesDatabase from "@/lib/models/notes-database";
 import { notesPageCreateSchema } from "@/lib/validations";
-import { buildTemplate, templateIcon, templateDatabase, TEMPLATE_DB_SENTINEL } from "@/lib/notes/templates";
+import { buildTemplate, templateIcon, templateDatabases } from "@/lib/notes/templates";
 
 export async function GET() {
   const userId = await resolveUserId(await auth());
@@ -45,20 +45,25 @@ export async function POST(req: NextRequest) {
     .lean();
   const order = last.length ? last[0].order + 1 : 0;
 
-  // If the template carries a database, create it and swap the sentinel id in
-  // the page content for the real database id.
+  // If the template carries one or more databases, create each and swap its
+  // sentinel id in the page content for the real database id.
   let content: unknown = buildTemplate(template ?? "blank");
-  const dbDef = templateDatabase(template ?? "blank");
-  if (dbDef) {
-    const db = await NotesDatabase.create({
-      userId, title: dbDef.title, icon: dbDef.icon,
-      properties: dbDef.properties, views: dbDef.views, rows: dbDef.rows,
+  const dbDefs = templateDatabases(template ?? "blank");
+  const sentinels = Object.keys(dbDefs);
+  if (sentinels.length) {
+    const idBySentinel: Record<string, string> = {};
+    for (const sentinel of sentinels) {
+      const def = dbDefs[sentinel];
+      const db = await NotesDatabase.create({
+        userId, title: def.title, icon: def.icon,
+        properties: def.properties, views: def.views, rows: def.rows,
+      });
+      idBySentinel[sentinel] = String(db._id);
+    }
+    content = (content as { type?: string; props?: Record<string, unknown> }[]).map((b) => {
+      const sid = b?.type === "database" ? (b.props?.databaseId as string) : undefined;
+      return sid && idBySentinel[sid] ? { ...b, props: { ...b.props, databaseId: idBySentinel[sid] } } : b;
     });
-    const dbId = String(db._id);
-    content = (content as { type?: string; props?: Record<string, unknown> }[]).map((b) =>
-      b?.type === "database" && b.props?.databaseId === TEMPLATE_DB_SENTINEL
-        ? { ...b, props: { ...b.props, databaseId: dbId } }
-        : b);
   }
 
   const page = await NotesPage.create({
