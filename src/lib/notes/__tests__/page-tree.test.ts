@@ -21,4 +21,17 @@ describe("buildPageTree", () => {
     const tree = buildPageTree([p("x", "missing")]);
     expect(tree.map((n) => n.id)).toEqual(["x"]);
   });
+  it("does not loop or drop pages on a parentId cycle (every page still appears)", () => {
+    const tree = buildPageTree([p("a", "b"), p("b", "a"), p("c", null), p("d", "c")]);
+    // Collect every id reachable in the returned tree.
+    const all = new Set<string>();
+    const walk = (ns: typeof tree) => ns.forEach((n) => { all.add(n.id); walk(n.children); });
+    walk(tree);
+    expect(all).toEqual(new Set(["a", "b", "c", "d"])); // none dropped, no infinite loop
+    expect(tree.find((n) => n.id === "c")?.children.map((n) => n.id)).toEqual(["d"]);
+  });
+  it("does not loop on a self-parent cycle", () => {
+    const tree = buildPageTree([p("s", "s"), p("r", null)]);
+    expect(tree.map((n) => n.id).sort()).toEqual(["r", "s"]);
+  });
 });

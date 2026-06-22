@@ -15,7 +15,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const body = await req.json().catch(() => ({}));
   const cells = body && typeof body.cells === "object" && body.cells ? body.cells : {};
-  const row = { id: `r_${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`, cells };
+  const row: { id: string; cells: Record<string, unknown>; content?: unknown } =
+    { id: `r_${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`, cells };
+  if (body && body.content !== undefined) row.content = body.content; // carry page body on duplicate
   db.rows.push(row);
   db.markModified("rows");
   await db.save();

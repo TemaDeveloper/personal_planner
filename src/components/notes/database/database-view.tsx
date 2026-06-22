@@ -94,9 +94,9 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cells }),
     });
   };
-  const addRow = async (seed: Record<string, unknown> = {}) => {
+  const addRow = async (seed: Record<string, unknown> = {}, content?: unknown) => {
     const res = await fetch(`/api/notes/databases/${databaseId}/rows`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cells: seed }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cells: seed, content }),
     });
     if (res.ok) { const { row } = await res.json(); setDb((d) => d ? { ...d, rows: [...d.rows, row] } : d); }
   };
@@ -106,7 +106,7 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   };
   const duplicateRow = (rowId: string) => {
     const src = db?.rows.find((r) => r.id === rowId);
-    if (src) addRow({ ...src.cells });
+    if (src) addRow({ ...src.cells }, src.content); // carry the row's page body too
   };
   const saveSchema = async (properties: DBProperty[]) => {
     setDb((d) => d ? { ...d, properties } : d);

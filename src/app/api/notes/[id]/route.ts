@@ -43,6 +43,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if ("parentId" in parsed.data) update.parentId = parsed.data.parentId ?? null;
   if ("coverUrl" in parsed.data) update.coverUrl = parsed.data.coverUrl ?? "";
 
+  // Reject re-parenting a page under itself or one of its own descendants — a
+  // cycle would otherwise corrupt the sidebar tree.
+  if (update.parentId) {
+    const target = String(update.parentId);
+    if (target === id) return NextResponse.json({ error: "A page cannot be its own parent" }, { status: 400 });
+    const all = await NotesPage.find({ userId, archived: false }).select("_id parentId").lean();
+    const childrenOf = new Map<string, string[]>();
+    for (const p of all) {
+      const key = p.parentId ? String(p.parentId) : "root";
+      (childrenOf.get(key) ?? childrenOf.set(key, []).get(key)!).push(String(p._id));
+    }
+    const subtree = new Set<string>();
+    const stack = [id];
+    while (stack.length) { const cur = stack.pop()!; subtree.add(cur); stack.push(...(childrenOf.get(cur) ?? [])); }
+    if (subtree.has(target)) return NextResponse.json({ error: "Cannot move a page into its own subtree" }, { status: 400 });
+  }
+
   const page = await NotesPage.findOneAndUpdate({ _id: id, userId }, update, { new: true }).lean();
   if (!page) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
