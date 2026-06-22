@@ -195,12 +195,24 @@ export function ColumnMenu({ prop, properties, onChangeType, onConfig, onDelete 
 }) {
   const { open, setOpen, ref } = usePopover();
   const [dbs, setDbs] = useState<{ id: string; title: string }[]>([]);
+  const [targetProps, setTargetProps] = useState<{ id: string; name: string; type: string }[]>([]);
   useEffect(() => {
     if (!open || prop.type !== "relation") return;
     fetch("/api/notes/databases").then((r) => r.ok ? r.json() : { databases: [] }).then((d) => setDbs(d.databases));
   }, [open, prop.type]);
 
   const relationProps = properties.filter((p) => p.type === "relation");
+
+  // For a rollup: load the related database's properties so the target can be a
+  // dropdown (a free-text id silently yields 0 on a typo).
+  const relForRollup = properties.find((p) => p.id === prop.rollupRelation);
+  const rollupTargetDbId = relForRollup?.relationDbId;
+  useEffect(() => {
+    if (!open || prop.type !== "rollup" || !rollupTargetDbId) { setTargetProps([]); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset when not configuring a rollup
+    fetch(`/api/notes/databases/${rollupTargetDbId}`).then((r) => r.ok ? r.json() : null).then((d) => {
+      setTargetProps(d?.database?.properties ?? []);
+    });
+  }, [open, prop.type, rollupTargetDbId]);
 
   return (
     <div className="relative inline-block" ref={ref}>
@@ -242,9 +254,13 @@ export function ColumnMenu({ prop, properties, onChangeType, onConfig, onDelete 
                     </select>
                   </div>
                   <div>
-                    <div className="text-[11px] mb-0.5" style={{ color: "var(--text-faint)" }}>Target property id</div>
-                    <input value={prop.rollupTarget ?? ""} onChange={(e) => onConfig({ rollupTarget: e.target.value })}
-                      placeholder="property id on related db" className="w-full px-1.5 py-1 text-[12px] rounded border outline-none" style={selectStyle} />
+                    <div className="text-[11px] mb-0.5" style={{ color: "var(--text-faint)" }}>Target property</div>
+                    <select value={prop.rollupTarget ?? ""} onChange={(e) => onConfig({ rollupTarget: e.target.value })}
+                      disabled={!prop.rollupRelation}
+                      className="w-full px-1.5 py-1 text-[13px] rounded border outline-none disabled:opacity-50" style={selectStyle}>
+                      <option value="">{prop.rollupRelation ? "Select…" : "Pick a relation first"}</option>
+                      {targetProps.map((p) => <option key={p.id} value={p.id}>{p.name || "Untitled"}</option>)}
+                    </select>
                   </div>
                   <div>
                     <div className="text-[11px] mb-0.5" style={{ color: "var(--text-faint)" }}>Calculate</div>
