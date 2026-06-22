@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Copy, Trash2 } from "lucide-react";
 import type { DBProperty, DBRow } from "@/lib/models/notes-database";
 import { PROPERTY_TYPE_LABELS } from "@/lib/notes/database";
 import { CellEditor, type RelatedDbs } from "./cell-editor";
 
 /** Notion-style row peek: a side panel showing every property of a database row
  * as an editable field. Edits persist through the same onCell used by the grid. */
-export function RowPeek({ properties, row, relatedDbs, onCell, onAddOption, onClose }: {
+export function RowPeek({ properties, row, relatedDbs, onCell, onAddOption, onDuplicate, onDelete, onClose }: {
   properties: DBProperty[]; row: DBRow; relatedDbs: RelatedDbs;
   onCell: (rowId: string, cells: Record<string, unknown>) => void;
   onAddOption: (propId: string, label: string) => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -30,9 +32,15 @@ export function RowPeek({ properties, row, relatedDbs, onCell, onAddOption, onCl
         style={{ background: "var(--surface-1)", borderLeft: "1px solid var(--border-default)", boxShadow: "-8px 0 32px rgba(0,0,0,.16)" }}>
         <div className="flex items-center justify-between mb-4">
           <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>Row</span>
-          <button type="button" aria-label="Close" onClick={onClose} className="p-1 rounded hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-muted)" }}>
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button type="button" aria-label="Duplicate row" title="Duplicate" onClick={onDuplicate}
+              className="p-1 rounded hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-muted)" }}><Copy size={15} /></button>
+            <button type="button" aria-label="Delete row" title="Delete" onClick={onDelete}
+              className="p-1 rounded hover:bg-[var(--surface-raised)]" style={{ color: "var(--alert)" }}><Trash2 size={15} /></button>
+            <button type="button" aria-label="Close" onClick={onClose} className="p-1 rounded hover:bg-[var(--surface-raised)]" style={{ color: "var(--text-muted)" }}>
+              <X size={16} />
+            </button>
+          </div>
         </div>
         <h2 className="text-[24px] font-bold mb-5" style={{ color: "var(--text-primary)" }}>{title}</h2>
         <div className="space-y-3">

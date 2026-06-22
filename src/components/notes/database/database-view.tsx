@@ -104,6 +104,10 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     setDb((d) => d ? { ...d, rows: d.rows.filter((r) => r.id !== rowId) } : d);
     await fetch(`/api/notes/databases/${databaseId}/rows/${rowId}`, { method: "DELETE" });
   };
+  const duplicateRow = (rowId: string) => {
+    const src = db?.rows.find((r) => r.id === rowId);
+    if (src) addRow({ ...src.cells });
+  };
   const saveSchema = async (properties: DBProperty[]) => {
     setDb((d) => d ? { ...d, properties } : d);
     await fetch(`/api/notes/databases/${databaseId}`, {
@@ -268,7 +272,10 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
 
       {peekRow && (
         <RowPeek properties={db.properties} row={peekRow} relatedDbs={relatedDbs}
-          onCell={patchRow} onAddOption={addOption} onClose={() => setPeekRowId(null)} />
+          onCell={patchRow} onAddOption={addOption}
+          onDuplicate={() => { duplicateRow(peekRow.id); setPeekRowId(null); }}
+          onDelete={() => { deleteRow(peekRow.id); setPeekRowId(null); }}
+          onClose={() => setPeekRowId(null)} />
       )}
     </div>
   );
