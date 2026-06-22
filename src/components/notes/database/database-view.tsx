@@ -329,7 +329,7 @@ function TableView({ db, schema, relatedDbs, onCell, onAddRow, onAddColumn, onDe
         </thead>
         <tbody>
           {db.rows.map((row) => (
-            <tr key={row.id} className="group/row"
+            <tr key={row.id} className="group/row db-row transition-colors"
               onDragOver={onMoveRow ? (e) => e.preventDefault() : undefined}
               onDrop={onMoveRow ? (e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (id) onMoveRow(id, row.id); } : undefined}>
               {onMoveRow && (

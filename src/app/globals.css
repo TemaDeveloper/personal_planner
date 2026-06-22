@@ -321,6 +321,11 @@
   @keyframes notesPop { from { opacity: 0; transform: scale(0.97) translateY(-2px); } to { opacity: 1; transform: scale(1) translateY(0); } }
   @keyframes slideInRight { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
 
+  /* Notion database row hover — warm-tinted grey (measured rgba(42,28,0,0.07)),
+     subtle light overlay in dark mode. */
+  .notes-page .db-row:hover { background: rgba(42, 28, 0, 0.055); }
+  .dark .notes-page .db-row:hover { background: rgba(255, 255, 255, 0.05); }
+
   .animate-slide-up { animation: slide-up-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
   .animate-slide-up-delay-1 { animation: slide-up-fade 0.4s 0.05s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .animate-slide-up-delay-2 { animation: slide-up-fade 0.4s 0.10s cubic-bezier(0.22, 1, 0.36, 1) both; }
