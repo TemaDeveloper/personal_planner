@@ -244,6 +244,47 @@ function habitDB(): TemplateDatabase {
   };
 }
 
+/** Roadmap databases (Python-Roadmap style): Chapters with a Progress rollup
+ * ring over related Steps' Done checkbox. Built together so chapter rows can
+ * link real step row ids; the server swaps the relation's target db id. */
+const DB_CHAPTERS = "__DB_CHAPTERS__";
+const DB_STEPS = "__DB_STEPS__";
+function roadmapDBs(): Record<string, TemplateDatabase> {
+  // Steps
+  const sName = genId("ra", 1), sDone = genId("ra", 2), sChap = genId("ra", 3);
+  const sid = [1, 2, 3, 4, 5, 6].map((i) => genId("rr", i));
+  const step = (id: string, n: string, done: boolean): DBRow => ({ id, cells: { [sName]: n, [sDone]: done } });
+  const steps: TemplateDatabase = {
+    title: "Steps", icon: "🪜",
+    properties: [
+      { id: sName, name: "Lesson", type: "title" },
+      { id: sDone, name: "Done", type: "checkbox" },
+      { id: sChap, name: "Chapter", type: "relation", relationDbId: DB_CHAPTERS },
+    ],
+    views: [{ id: genId("rd", 1), name: "Table", type: "table" }],
+    rows: [
+      step(sid[0], "Setup & basics", true), step(sid[1], "Variables", true), step(sid[2], "Control flow", false),
+      step(sid[3], "Functions", false), step(sid[4], "Modules", false), step(sid[5], "Files & errors", false),
+    ],
+  };
+  // Chapters (relation → Steps, + a percent-checked rollup over Steps' Done)
+  const cName = genId("rb", 1), cSteps = genId("rb", 2), cProg = genId("rb", 3);
+  const chapters: TemplateDatabase = {
+    title: "Chapters", icon: "📘",
+    properties: [
+      { id: cName, name: "Chapter", type: "title" },
+      { id: cSteps, name: "Steps", type: "relation", relationDbId: DB_STEPS },
+      { id: cProg, name: "Progress", type: "rollup", rollupRelation: cSteps, rollupTarget: sDone, rollupFn: "percent_checked" },
+    ],
+    views: [{ id: genId("re", 1), name: "Table", type: "table" }, { id: genId("re", 2), name: "Gallery", type: "gallery" }],
+    rows: [
+      { id: genId("rc", 1), cells: { [cName]: "Beginner", [cSteps]: [sid[0], sid[1], sid[2]] } },
+      { id: genId("rc", 2), cells: { [cName]: "Intermediate", [cSteps]: [sid[3], sid[4], sid[5]] } },
+    ],
+  };
+  return { [DB_CHAPTERS]: chapters, [DB_STEPS]: steps };
+}
+
 export const TEMPLATES: NotesTemplate[] = [
   // ─────────────── Basic ───────────────
   { key: "blank", category: "Basic", label: "Blank page", description: "Start from scratch", icon: "📄",
@@ -421,6 +462,14 @@ export const TEMPLATES: NotesTemplate[] = [
       dbBlock(),
     ],
     database: crmDB },
+  { key: "roadmap", category: "Work & Productivity", label: "Learning roadmap", description: "Chapters with a progress ring over related steps", icon: "🗺️",
+    build: () => [
+      h1("🗺️ Learning roadmap"),
+      callout("🚀", "Each chapter shows a live progress ring as you check off its steps."),
+      h2("📘 Chapters"), dbBlock(DB_CHAPTERS),
+      h2("🪜 Steps"), dbBlock(DB_STEPS),
+    ],
+    databases: roadmapDBs },
   { key: "work-meeting", category: "Work & Productivity", label: "Meeting notes", description: "Agenda, decisions, action items", icon: "🧑‍💼",
     build: () => [
       h1("🧑‍💼 Meeting"),

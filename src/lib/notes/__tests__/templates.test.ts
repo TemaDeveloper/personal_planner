@@ -81,6 +81,28 @@ describe("templates", () => {
     }
   });
 
+  it("cross-database relations/rollups in a template are wired to sibling DBs", () => {
+    for (const t of TEMPLATES) {
+      const defs = templateDatabases(t.key);
+      const sentinelKeys = new Set(Object.keys(defs));
+      for (const [, def] of Object.entries(defs)) {
+        const propById = new Map(def.properties.map((p) => [p.id, p]));
+        for (const p of def.properties) {
+          if (p.type === "relation") {
+            // a relation's target must be a sibling database in the same template
+            expect(p.relationDbId && sentinelKeys.has(p.relationDbId), `${t.key}: relation "${p.name}" target must be a sibling DB sentinel`).toBe(true);
+          }
+          if (p.type === "rollup") {
+            const rel = p.rollupRelation ? propById.get(p.rollupRelation) : undefined;
+            expect(rel?.type, `${t.key}: rollup "${p.name}" must point at a relation prop`).toBe("relation");
+            const targetDef = rel?.relationDbId ? defs[rel.relationDbId] : undefined;
+            expect(targetDef?.properties.some((q) => q.id === p.rollupTarget), `${t.key}: rollup target must be a prop on the related DB`).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
   it("database-template definitions are internally valid (title prop + ≥1 view)", () => {
     for (const t of TEMPLATES) {
       for (const [, def] of Object.entries(templateDatabases(t.key))) {
