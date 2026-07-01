@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { parseSections, pickSourceFacetKey } from "@/lib/profile/generate-sections";
 import { buildTemplateDoc } from "@/lib/profile/persist-sections";
+import {
+  buildMigrationInserts,
+  migrationMarker,
+  MIGRATION_MARKER,
+} from "@/lib/profile/migrate-run";
 import type { ILifeFacet } from "@/lib/models/life-profile";
 
 const f = (key: string, dimension: string, salience: number): ILifeFacet => ({
@@ -56,5 +61,25 @@ describe("SP-5a per-facet source tagging", () => {
     const doc = buildTemplateDoc(section, "u1", "x");
     expect(doc.sourceDimension).toBeUndefined();
     expect(doc.sourceFacetKey).toBeUndefined();
+  });
+});
+
+describe("SP-5d migration kernel", () => {
+  it("maps legacy docs to CustomEntry inserts and stamps an idempotency marker", () => {
+    const legacy = [
+      { _id: "a1", jobName: "Wuzzals", hours: 8, date: "2026-05-20T00:00:00.000Z" },
+      { _id: "a2", jobName: "Advapay", hours: 5, date: "2026-05-21T00:00:00.000Z" },
+    ];
+    const inserts = buildMigrationInserts("work", "tpl1", legacy, new Set());
+    expect(inserts).toHaveLength(2);
+    expect(inserts[0].templateId).toBe("tpl1");
+    expect(inserts[0].data.job).toBe("Wuzzals");
+    expect(inserts[0].data[MIGRATION_MARKER]).toBe(migrationMarker("work", "a1"));
+  });
+
+  it("is idempotent — skips docs already migrated", () => {
+    const legacy = [{ _id: "a1", jobName: "Wuzzals", hours: 8 }];
+    const seen = new Set([migrationMarker("work", "a1")]);
+    expect(buildMigrationInserts("work", "tpl1", legacy, seen)).toHaveLength(0);
   });
 });
