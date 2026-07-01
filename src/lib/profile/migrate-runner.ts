@@ -66,16 +66,20 @@ export async function migrateUserBuiltins(
   // re-migrate cleanly (e.g. after a transform fix). Only touches migrated
   // copies (identified by the __src marker); legacy data is never affected.
   if (!opts.dryRun && opts.resetSections?.length) {
+    // Only reset known section slugs, and escape before use in $regex so a value
+    // like ".*" can't match every marker (over-delete) or "(a+)+" cause ReDoS.
+    const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     for (const section of opts.resetSections) {
+      if (!(SECTIONS as readonly string[]).includes(section)) continue;
       await CustomEntry.deleteMany({
         userId,
-        "data.__src": { $regex: `^${section}:` },
+        "data.__src": { $regex: `^${escapeRegex(section)}:` },
       });
     }
   }
 
   // Idempotency: markers already present on this user's CustomEntries.
-  const existing = await CustomEntry.find({ userId }).select("data").lean();
+  const existing = await CustomEntry.find({ userId }).select("data.__src").lean();
   const seen = new Set<string>();
   for (const e of existing) {
     const marker = (e.data as Record<string, unknown> | undefined)?.[MIGRATION_MARKER];

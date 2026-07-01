@@ -1,9 +1,9 @@
-import { z } from "zod/v4";
 import { callAI, type AIProvider } from "@/lib/ai";
 import { extractJsonBlock } from "@/lib/profile/parse-json";
 import type { ILifeFacet } from "@/lib/models/life-profile";
 
-const coerceNum = z.union([z.number(), z.string().transform(Number)]).pipe(z.number());
+const SOURCES = ["asked", "inferred", "stated"] as const;
+const MAX_FACETS = 40;
 
 function slug(s: string): string {
   return s
@@ -13,15 +13,12 @@ function slug(s: string): string {
     .slice(0, 48);
 }
 
-const FacetSchema = z.object({
-  key: z.string().optional(),
-  dimension: z.string().min(1),
-  value: z.string().min(1),
-  salience: coerceNum.pipe(z.number().min(0).max(1)).default(0.5),
-  source: z.enum(["asked", "inferred", "stated"]).default("inferred"),
-});
-
-const FacetsSchema = z.object({ facets: z.array(FacetSchema) });
+function coerceSalience(v: unknown): number {
+  let n = 0.5;
+  if (typeof v === "number" && Number.isFinite(v)) n = v;
+  else if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) n = Number(v);
+  return Math.max(0, Math.min(1, n)); // clamp; a 1-5/1-10 scale collapses to "high", never throws
+}
 
 export const FACET_SYSTEM_PROMPT = `You extract a person's "life facets" from a short free-text description of their life.
 
@@ -40,21 +37,42 @@ Return ONLY JSON: {"facets":[{"dimension":"...","value":"...","salience":0.9,"so
 Aim for 5-12 facets. Do not invent facts not supported by the description.`;
 
 /**
- * Deterministic parse of a raw AI response into validated facets.
- * Extracted so it can be unit-tested without a live model.
+ * Lenient, deterministic parse of a raw AI response into facets. Repairs
+ * imperfect output (clamps salience, defaults source, backfills keys) and skips
+ * facets missing a dimension/value — never throws, so a single bad facet can't
+ * 500 the onboarding turn.
  */
 export function parseFacets(raw: string): ILifeFacet[] {
-  const json = extractJsonBlock(raw);
-  const parsed = JSON.parse(json);
-  const shaped = Array.isArray(parsed) ? { facets: parsed } : parsed;
-  const { facets } = FacetsSchema.parse(shaped);
-  return facets.map((f) => ({
-    key: f.key && f.key.length > 0 ? f.key : slug(`${f.dimension}-${f.value}`),
-    dimension: f.dimension,
-    value: f.value,
-    salience: f.salience,
-    source: f.source,
-  }));
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(extractJsonBlock(raw));
+  } catch {
+    return [];
+  }
+  const arr = Array.isArray(parsed)
+    ? parsed
+    : (parsed as { facets?: unknown })?.facets;
+  if (!Array.isArray(arr)) return [];
+
+  const out: ILifeFacet[] = [];
+  for (const item of arr.slice(0, MAX_FACETS)) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const dimension = typeof r.dimension === "string" ? r.dimension.trim() : "";
+    const value =
+      typeof r.value === "string"
+        ? r.value.trim()
+        : r.value != null
+          ? String(r.value)
+          : "";
+    if (!dimension || !value) continue;
+    const source = SOURCES.includes(r.source as (typeof SOURCES)[number])
+      ? (r.source as ILifeFacet["source"])
+      : "inferred";
+    const key = typeof r.key === "string" && r.key.length > 0 ? r.key : slug(`${dimension}-${value}`);
+    out.push({ key, dimension, value, salience: coerceSalience(r.salience), source });
+  }
+  return out;
 }
 
 /** Extract life facets from a free-text life description via the given AI provider. */

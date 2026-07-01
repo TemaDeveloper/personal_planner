@@ -23,6 +23,13 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "facets array required" }, { status: 400 });
   }
 
-  const profile = await replaceFacets(userId, body.facets as ILifeFacet[]);
-  return NextResponse.json({ profile });
+  try {
+    const profile = await replaceFacets(userId, body.facets as ILifeFacet[]);
+    return NextResponse.json({ profile });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Invalid facets" },
+      { status: 400 }
+    );
+  }
 }

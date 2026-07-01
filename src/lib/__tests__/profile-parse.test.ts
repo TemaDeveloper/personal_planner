@@ -25,9 +25,11 @@ describe("parseFacets", () => {
     expect(parseFacets(raw)[0].salience).toBe(0.8);
   });
 
-  it("throws when a facet is missing its dimension", () => {
-    const raw = '{"facets":[{"value":"no dimension"}]}';
-    expect(() => parseFacets(raw)).toThrow();
+  it("skips a facet missing its dimension instead of throwing", () => {
+    const raw = '{"facets":[{"value":"no dimension"},{"dimension":"money","value":"tight"}]}';
+    const out = parseFacets(raw);
+    expect(out).toHaveLength(1);
+    expect(out[0].dimension).toBe("money");
   });
 });
 

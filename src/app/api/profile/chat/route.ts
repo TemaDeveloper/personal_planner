@@ -3,7 +3,8 @@ import { auth } from "@/lib/auth";
 import { resolveUserId } from "@/lib/session";
 import { callAI } from "@/lib/ai";
 import { extractFacets } from "@/lib/profile/facet-extract";
-import { applyFacets } from "@/lib/profile/profile-store";
+import { applyFacets, getProfile } from "@/lib/profile/profile-store";
+import type { ILifeFacet } from "@/lib/models/life-profile";
 import { resolveAIConfig } from "@/lib/profile/ai-config";
 import {
   ONBOARDING_SYSTEM_PROMPT,
@@ -42,9 +43,21 @@ export async function POST(req: NextRequest) {
     .map((m) => m.content)
     .join("\n");
 
-  const facets = await extractFacets(userText, ai.provider, ai.apiKey);
-  const profile = await applyFacets(userId, facets);
-  const sufficient = isProfileSufficient(profile.facets);
+  // Extraction/merge must not 500 the turn — degrade to the existing profile.
+  let profileFacets: ILifeFacet[] = [];
+  let version = 0;
+  try {
+    const facets = await extractFacets(userText, ai.provider, ai.apiKey);
+    const profile = await applyFacets(userId, facets);
+    profileFacets = profile.facets;
+    version = profile.version;
+  } catch (err) {
+    console.error("[profile/chat] facet extraction failed", err);
+    const existing = await getProfile(userId);
+    profileFacets = existing?.facets ?? [];
+    version = existing?.version ?? 0;
+  }
+  const sufficient = isProfileSufficient(profileFacets);
 
   const transcript = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
   let assistant = "";
@@ -63,8 +76,8 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     assistant,
-    facets: profile.facets,
-    version: profile.version,
+    facets: profileFacets,
+    version,
     sufficient,
   });
 }

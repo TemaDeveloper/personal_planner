@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,32 +49,36 @@ const FONT_FAMILY_MAP: Record<FontStyle, string> = {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  // Return to the chat step (1) after a refresh IF there's a saved conversation;
+  // otherwise start at the welcome step. Deriving from the chat (rather than
+  // persisting an arbitrary index) avoids a stale/out-of-range step crashing the
+  // page or misrouting the manual flow.
   const [step, setStep] = useState<number>(() => {
     if (typeof window === "undefined") return 0;
-    const v = Number(localStorage.getItem("lifora_onboarding_step"));
-    return Number.isInteger(v) && v >= 0 ? v : 0;
+    try {
+      const chat = JSON.parse(localStorage.getItem("lifora_onboarding_chat_v1") || "null");
+      if (Array.isArray(chat?.messages) && chat.messages.some((m: { role?: string }) => m?.role === "user")) {
+        return 1;
+      }
+    } catch {
+      /* ignore */
+    }
+    return 0;
   });
   const [loading, setLoading] = useState(false);
   const [aiMode, setAiMode] = useState(true);
-
-  // Keep the current step across refreshes so the chat isn't lost.
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("lifora_onboarding_step", String(step));
-    }
-  }, [step]);
 
   // Personalization
   const [name, setName] = useState("");
   const [avatarEmoji] = useState("🌟");
   const [accentTheme, setAccentTheme] = useState("amber");
   const [fontStyle, setFontStyle] = useState("sans");
-  const [currency, setCurrency] = useState("CAD");
+  const [currency, setCurrency] = useState("USD");
 
   // Sections & config — empty when using AI mode, defaults only for manual mode
   const [enabledSections, setEnabledSections] = useState<SectionId[]>([...DEFAULT_ENABLED_SECTIONS]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [targetDaysPerWeek, setTargetDaysPerWeek] = useState(5);
+  const [targetDaysPerWeek, setTargetDaysPerWeek] = useState(3);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [hobbies, setHobbies] = useState<Hobby[]>([]);
   const [chores, setChores] = useState<Chore[]>([]);
@@ -117,7 +121,7 @@ export default function OnboardingPage() {
         onboardingDone: true,
         preferences: { accentTheme, fontStyle, layoutDensity: "default", currency },
         enabledSections,
-        workConfig: { jobs: jobs.filter((j) => j.name.trim()), gasPrice: 210.2, carConsumption: 9.0 },
+        workConfig: { jobs: jobs.filter((j) => j.name.trim()), gasPrice: 0, carConsumption: 0 },
         gymConfig: { targetDaysPerWeek },
         studyConfig: { subjects },
         hobbiesConfig: { hobbies },

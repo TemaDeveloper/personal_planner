@@ -7,9 +7,49 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export interface StreakResult {
   current: number;
   longest: number;
+}
+
+/** Robust truthiness for logged flags — "false"/"0"/"no"/"" are NOT done. */
+export function isDone(v: unknown): boolean {
+  if (v === true) return true;
+  if (v === false || v == null) return false;
+  if (typeof v === "number") return v !== 0;
+  if (typeof v === "string") {
+    const s = v.trim().toLowerCase();
+    return s !== "" && s !== "false" && s !== "0" && s !== "no" && s !== "off";
+  }
+  return Boolean(v);
+}
+
+/**
+ * Consecutive-CALENDAR-DAY streak from a list of ISO date strings (one per
+ * logged day). Unlike streak(), gaps between dates break the run — the correct
+ * semantics for attendance logs that only store days that happened.
+ */
+export function dayStreak(isoDates: string[]): StreakResult {
+  const days = [...new Set(isoDates.map((d) => String(d).slice(0, 10)))]
+    .filter((d) => !Number.isNaN(Date.parse(d)))
+    .sort();
+  if (days.length === 0) return { current: 0, longest: 0 };
+
+  let longest = 1;
+  let run = 1;
+  for (let i = 1; i < days.length; i++) {
+    const gap = Date.parse(days[i]) - Date.parse(days[i - 1]);
+    run = gap === DAY_MS ? run + 1 : 1;
+    if (run > longest) longest = run;
+  }
+  let current = 1;
+  for (let i = days.length - 1; i > 0; i--) {
+    if (Date.parse(days[i]) - Date.parse(days[i - 1]) === DAY_MS) current++;
+    else break;
+  }
+  return { current, longest };
 }
 
 /**
@@ -54,6 +94,8 @@ export function aggregate(values: number[], op: AggregateOp): number {
       return finite.length ? Math.max(...finite) : 0;
     case "min":
       return finite.length ? Math.min(...finite) : 0;
+    default:
+      return 0;
   }
 }
 
@@ -71,9 +113,11 @@ export type SectionComputedValue =
   | { kind: "rolling_avg"; value: number }
   | { kind: "aggregate"; value: number };
 
-function toNum(v: unknown): number {
+/** Missing/non-numeric → NaN (so aggregate/rollingAvg filter it out, not treat as 0). */
+function numeric(v: unknown): number {
+  if (v === undefined || v === null || v === "") return NaN;
   const n = typeof v === "number" ? v : Number(v);
-  return Number.isFinite(n) ? n : 0;
+  return Number.isFinite(n) ? n : NaN;
 }
 
 function column(entries: Entry[], field: string): unknown[] {
@@ -89,13 +133,13 @@ export function resolveSectionComputed(
     case "streak":
       return {
         kind: "streak",
-        value: streak(column(entries, computation.params.field).map(Boolean)),
+        value: streak(column(entries, computation.params.field).map(isDone)),
       };
     case "rolling_avg":
       return {
         kind: "rolling_avg",
         value: rollingAvg(
-          column(entries, computation.params.field).map(toNum),
+          column(entries, computation.params.field).map(numeric),
           computation.params.window ?? 7
         ),
       };
@@ -103,7 +147,7 @@ export function resolveSectionComputed(
       return {
         kind: "aggregate",
         value: aggregate(
-          column(entries, computation.params.field).map(toNum),
+          column(entries, computation.params.field).map(numeric),
           computation.params.op
         ),
       };

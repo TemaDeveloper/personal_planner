@@ -12,7 +12,7 @@ import {
   sortByDateAsc,
   type SectionFieldDef,
 } from "@/components/sections/use-section-entries";
-import { streak } from "@/lib/compute/aggregates";
+import { dayStreak, isDone } from "@/lib/compute/aggregates";
 
 export function StreakView({ slug, fields }: { slug: string; fields: SectionFieldDef[] }) {
   const { entries, loading, refresh } = useSectionEntries(slug);
@@ -20,9 +20,11 @@ export function StreakView({ slug, fields }: { slug: string; fields: SectionFiel
 
   const boolField = fields.find((f) => f.type === "boolean");
   const asc = sortByDateAsc(entries);
-  // An entry counts as "done" if it has no boolean field (mere presence) or the flag is true.
-  const done = asc.map((e) => (boolField ? Boolean(e.data[boolField.key]) : true));
-  const { current, longest } = streak(done);
+  // An entry counts as "done" if it has no boolean field (mere presence) or the flag is truthy.
+  const entryDone = (e: (typeof asc)[number]) =>
+    boolField ? isDone(e.data[boolField.key]) : true;
+  // Streak is by calendar day (gaps break it), not by row count.
+  const { current, longest } = dayStreak(asc.filter(entryDone).map((e) => e.date));
   const recent = asc.slice(-28);
 
   if (loading) return <Card padding="lg">Loading…</Card>;
@@ -53,12 +55,12 @@ export function StreakView({ slug, fields }: { slug: string; fields: SectionFiel
           </div>
 
           <div className="flex flex-wrap gap-1.5 mt-6">
-            {recent.map((e, i) => (
+            {recent.map((e) => (
               <div
                 key={e._id}
                 title={format(new Date(e.date), "MMM d")}
                 className="w-6 h-6 rounded"
-                style={{ background: done[asc.length - recent.length + i] ? "var(--accent-color)" : "var(--surface-2)" }}
+                style={{ background: entryDone(e) ? "var(--accent-color)" : "var(--surface-2)" }}
               />
             ))}
           </div>

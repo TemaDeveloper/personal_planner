@@ -41,12 +41,13 @@ export function useSectionEntries(slug: string) {
     };
   }, [slug]);
 
+  // Silent background refetch — no loading flip (avoids blanking the whole view
+  // to "Loading…" on every add/delete) and swallows transient errors.
   const refresh = useCallback(() => {
-    setLoading(true);
     fetch(`/api/sections/${slug}/entries?all=1`)
       .then((r) => r.json())
       .then((d) => setEntries(d.entries || []))
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, [slug]);
 
   return { entries, loading, refresh };

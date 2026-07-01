@@ -38,10 +38,12 @@ export function buildTemplateDoc(
   source?: { dimension?: string; facetKey?: string }
 ): TemplateDoc {
   return {
-    name: section.name.trim(),
+    // Clamp to the SectionTemplate schema limits (name 50 / description 200) so a
+    // long AI-generated name can't throw a ValidationError mid-generation.
+    name: section.name.trim().slice(0, 50),
     slug,
     icon: section.icon || "Star",
-    description: section.description || "",
+    description: (section.description || "").slice(0, 200),
     fields: section.fields.map((f) => ({
       key: f.key,
       label: f.label,

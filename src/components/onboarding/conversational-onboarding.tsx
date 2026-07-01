@@ -41,12 +41,13 @@ function loadSaved(): SavedChat | null {
  */
 export function ConversationalOnboarding({ onManual }: { onManual: () => void }) {
   const router = useRouter();
+  const [saved] = useState(loadSaved); // parse localStorage once
   const [messages, setMessages] = useState<ChatMessage[]>(
-    () => loadSaved()?.messages ?? [{ role: "assistant", content: GREETING }]
+    saved?.messages ?? [{ role: "assistant", content: GREETING }]
   );
   const [input, setInput] = useState("");
-  const [facets, setFacets] = useState<Facet[]>(() => loadSaved()?.facets ?? []);
-  const [sufficient, setSufficient] = useState<boolean>(() => loadSaved()?.sufficient ?? false);
+  const [facets, setFacets] = useState<Facet[]>(saved?.facets ?? []);
+  const [sufficient, setSufficient] = useState<boolean>(saved?.sufficient ?? false);
   const [sending, setSending] = useState(false);
   const [building, setBuilding] = useState(false);
 

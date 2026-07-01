@@ -120,8 +120,9 @@ export interface CountdownResult {
 
 /** Whole days until a target date (negative once past). */
 export function countdown(target: Date, from: Date): CountdownResult {
-  const ms = target.getTime() - from.getTime();
-  return { daysRemaining: Math.ceil(ms / DAY_MS), past: ms < 0 };
+  const days = Math.ceil((target.getTime() - from.getTime()) / DAY_MS) || 0; // normalize -0
+  // Same-day (days === 0) is "today", not past — avoids a red "0d ago".
+  return { daysRemaining: days, past: days < 0 };
 }
 
 export interface CycleResult {
@@ -149,7 +150,7 @@ function toNum(v: unknown): number {
 
 /** A param may be a literal number, or a string key into the entry data. */
 function resolveNum(ref: unknown, data: Data): number {
-  if (typeof ref === "number") return ref;
+  if (typeof ref === "number") return Number.isFinite(ref) ? ref : 0;
   if (typeof ref === "string") {
     if (ref in data) return toNum(data[ref]);
     const parsed = Number(ref);
@@ -167,7 +168,8 @@ function resolveNumList(ref: unknown, data: Data): number[] {
 function resolveDate(ref: unknown, data: Data, fallback: Date): Date {
   const raw = typeof ref === "string" && ref in data ? data[ref] : ref;
   if (raw instanceof Date && !isNaN(raw.getTime())) return raw;
-  if (typeof raw === "string" || typeof raw === "number") {
+  // Only parse strings — a bare number like 2026 would parse to 1970 (epoch ms).
+  if (typeof raw === "string") {
     const d = new Date(raw);
     if (!isNaN(d.getTime())) return d;
   }

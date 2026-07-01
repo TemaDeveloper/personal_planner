@@ -27,9 +27,11 @@ const securityHeaders = [
   },
 ];
 
-// The former built-in sections now exist as unified seed templates at
-// /sections/<slug>. When UNIFIED_SECTIONS=1, these legacy routes redirect to the
-// unified ones. `work` now has a dedicated unified earnings view, so all 13 flip.
+// The former built-in sections now live as unified seed templates at
+// /sections/<slug> (nav links point there directly via SECTION_META). These
+// redirects catch any old /work-style links/bookmarks. Unconditional — nav no
+// longer depends on an env flag being set (the old UNIFIED_SECTIONS gate made
+// every legacy link 404 in any environment that didn't set it).
 const BUILTIN_SLUGS = [
   "work", "gym", "finances", "habits", "study", "hobbies", "housework",
   "health", "goals", "reading", "journal", "shopping", "mealprep",
@@ -43,7 +45,6 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
-    if (process.env.UNIFIED_SECTIONS !== "1") return [];
     return BUILTIN_SLUGS.map((slug) => ({
       source: `/${slug}`,
       destination: `/sections/${slug}`,

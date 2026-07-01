@@ -14,7 +14,17 @@ export async function applyFacets(userId: string, incoming: ILifeFacet[]) {
   if (!doc) {
     return LifeProfile.create({ userId, facets: incoming, version: 1 });
   }
-  doc.facets = mergeFacets(doc.facets, incoming);
+  // Convert Mongoose subdocuments to plain objects first — spreading a subdoc
+  // ({...f}) drops its schema fields (e.g. `source`), which would corrupt the
+  // provenance-precedence logic in mergeFacets.
+  const existing: ILifeFacet[] = doc.facets.map((f) => ({
+    key: f.key,
+    dimension: f.dimension,
+    value: f.value,
+    salience: f.salience,
+    source: f.source,
+  }));
+  doc.facets = mergeFacets(existing, incoming);
   doc.version += 1;
   await doc.save();
   return doc;

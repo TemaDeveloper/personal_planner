@@ -53,6 +53,8 @@ function tokenize(expr: string): Token[] | null {
 export function evalFormula(expr: string, data: Record<string, unknown>): number | null {
   const tokens = tokenize(expr);
   if (!tokens || tokens.length === 0) return null;
+  // Bound complexity so pathological input can't blow the recursion stack.
+  if (tokens.length > 200) return null;
 
   let pos = 0;
   let failed = false;

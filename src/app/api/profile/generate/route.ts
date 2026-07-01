@@ -73,12 +73,20 @@ export async function POST(req: NextRequest) {
       created.push({ _id: template._id, name: template.name, slug: template.slug });
     }
 
+    // Mark onboarding complete server-side so a failed client PATCH can't bounce
+    // the user back into onboarding after their planner was created.
+    await User.updateOne({ _id: userId }, { $set: { onboardingDone: true } });
+
     // Learn-back: record each facet dimension into the vocabulary.
     for (const facet of profile.facets) {
       const dimension = normalizeDimension(facet.dimension);
       await FacetVocab.findOneAndUpdate(
         { dimension },
-        { $inc: { count: 1 }, $addToSet: { examples: facet.value } },
+        {
+          $inc: { count: 1 },
+          // Bounded to the most recent 25 examples (was unbounded $addToSet).
+          $push: { examples: { $each: [facet.value], $slice: -25 } },
+        },
         { upsert: true }
       );
     }

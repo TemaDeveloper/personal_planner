@@ -123,10 +123,21 @@ function normalizeSection(s: unknown): GeneratedSection | null {
   const r = s as Record<string, unknown>;
   const name = r.name ?? r.title;
   if (!name) return null;
-  const rawFields = Array.isArray(r.fields) ? r.fields : [];
-  const fields = rawFields
-    .map(normalizeField)
-    .filter((f): f is GeneratedSection["fields"][number] => f !== null);
+  const rawFields = Array.isArray(r.fields) ? r.fields.slice(0, 40) : [];
+  const seenKeys = new Set<string>();
+  const fields: GeneratedSection["fields"] = [];
+  for (const rf of rawFields) {
+    const nf = normalizeField(rf);
+    if (!nf) continue;
+    // De-dup keys so two fields (e.g. "Net $" and "Net %" → "net") don't clobber
+    // the same entry-data slot.
+    let key = nf.key;
+    let n = 2;
+    while (seenKeys.has(key)) key = `${nf.key}_${n++}`;
+    seenKeys.add(key);
+    nf.key = key;
+    fields.push(nf);
+  }
   if (fields.length === 0) return null; // a section with no usable fields is useless
   return {
     name: String(name),
@@ -161,6 +172,7 @@ export function parseSections(raw: string): GeneratedSection[] {
         : null;
   if (!Array.isArray(arr)) return [];
   return arr
+    .slice(0, 20) // cap to bound downstream DB writes on a runaway response
     .map(normalizeSection)
     .filter((s): s is GeneratedSection => s !== null);
 }

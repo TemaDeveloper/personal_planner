@@ -75,19 +75,19 @@ export const SECTION_META: Record<SectionId, {
   mobilePriority: number;
   mobileLabel: string;
 }> = {
-  work:      { label: "Work",      icon: "Briefcase",       href: "/work",      description: "Track hours and earnings",     mobilePriority: 1,  mobileLabel: "Work" },
-  gym:       { label: "Gym",       icon: "Dumbbell",        href: "/gym",       description: "Daily attendance tracker",      mobilePriority: 2,  mobileLabel: "Gym" },
-  finances:  { label: "Finances",  icon: "DollarSign",      href: "/finances",  description: "Income & expenses",            mobilePriority: 3,  mobileLabel: "Money" },
-  habits:    { label: "Habits",    icon: "Flame",           href: "/habits",    description: "Daily habits & streaks",       mobilePriority: 4,  mobileLabel: "Habits" },
-  study:     { label: "Study",     icon: "GraduationCap",   href: "/study",     description: "Subjects, homework & grades",  mobilePriority: 5,  mobileLabel: "Study" },
-  hobbies:   { label: "Hobbies",   icon: "Palette",         href: "/hobbies",   description: "Track hobby time & projects",  mobilePriority: 6,  mobileLabel: "Hobbies" },
-  housework: { label: "Housework", icon: "Home",            href: "/housework", description: "Chores & recurring tasks",     mobilePriority: 7,  mobileLabel: "Chores" },
-  health:    { label: "Health",    icon: "Heart",           href: "/health",    description: "Water, sleep & wellness",      mobilePriority: 8,  mobileLabel: "Health" },
-  goals:     { label: "Goals",     icon: "Target",          href: "/goals",     description: "Goals & milestones",           mobilePriority: 9,  mobileLabel: "Goals" },
-  reading:   { label: "Reading",   icon: "BookOpen",        href: "/reading",   description: "Reading list & progress",      mobilePriority: 10, mobileLabel: "Books" },
-  journal:   { label: "Journal",   icon: "NotebookPen",     href: "/journal",   description: "Daily journal",               mobilePriority: 11, mobileLabel: "Journal" },
-  shopping:  { label: "Shopping",  icon: "ShoppingCart",    href: "/shopping",  description: "Shopping lists",               mobilePriority: 12, mobileLabel: "Shop" },
-  mealprep:  { label: "Meal Prep", icon: "UtensilsCrossed", href: "/mealprep",  description: "Weekly meal planning",         mobilePriority: 13, mobileLabel: "Meals" },
+  work:      { label: "Work",      icon: "Briefcase",       href: "/sections/work",      description: "Track hours and earnings",     mobilePriority: 1,  mobileLabel: "Work" },
+  gym:       { label: "Gym",       icon: "Dumbbell",        href: "/sections/gym",       description: "Daily attendance tracker",      mobilePriority: 2,  mobileLabel: "Gym" },
+  finances:  { label: "Finances",  icon: "DollarSign",      href: "/sections/finances",  description: "Income & expenses",            mobilePriority: 3,  mobileLabel: "Money" },
+  habits:    { label: "Habits",    icon: "Flame",           href: "/sections/habits",    description: "Daily habits & streaks",       mobilePriority: 4,  mobileLabel: "Habits" },
+  study:     { label: "Study",     icon: "GraduationCap",   href: "/sections/study",     description: "Subjects, homework & grades",  mobilePriority: 5,  mobileLabel: "Study" },
+  hobbies:   { label: "Hobbies",   icon: "Palette",         href: "/sections/hobbies",   description: "Track hobby time & projects",  mobilePriority: 6,  mobileLabel: "Hobbies" },
+  housework: { label: "Housework", icon: "Home",            href: "/sections/housework", description: "Chores & recurring tasks",     mobilePriority: 7,  mobileLabel: "Chores" },
+  health:    { label: "Health",    icon: "Heart",           href: "/sections/health",    description: "Water, sleep & wellness",      mobilePriority: 8,  mobileLabel: "Health" },
+  goals:     { label: "Goals",     icon: "Target",          href: "/sections/goals",     description: "Goals & milestones",           mobilePriority: 9,  mobileLabel: "Goals" },
+  reading:   { label: "Reading",   icon: "BookOpen",        href: "/sections/reading",   description: "Reading list & progress",      mobilePriority: 10, mobileLabel: "Books" },
+  journal:   { label: "Journal",   icon: "NotebookPen",     href: "/sections/journal",   description: "Daily journal",               mobilePriority: 11, mobileLabel: "Journal" },
+  shopping:  { label: "Shopping",  icon: "ShoppingCart",    href: "/sections/shopping",  description: "Shopping lists",               mobilePriority: 12, mobileLabel: "Shop" },
+  mealprep:  { label: "Meal Prep", icon: "UtensilsCrossed", href: "/sections/mealprep",  description: "Weekly meal planning",         mobilePriority: 13, mobileLabel: "Meals" },
 };
 
 export const ACADEMIC_ITEM_TYPES = ["lab", "assignment", "test", "quiz"] as const;
