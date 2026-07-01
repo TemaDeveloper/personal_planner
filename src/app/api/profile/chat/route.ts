@@ -11,6 +11,9 @@ import {
   type ChatMessage,
 } from "@/lib/profile/conversation";
 
+// Two sequential AI calls per turn (facet extraction + reply) — give it room.
+export const maxDuration = 60;
+
 /**
  * Onboarding chat turn: takes the conversation so far, extracts life facets from
  * what the user has said, merges them into the living profile, and returns the

@@ -12,6 +12,10 @@ import { buildTemplateDoc, slugify } from "@/lib/profile/persist-sections";
 import { resolveAIConfig } from "@/lib/profile/ai-config";
 import { normalizeDimension } from "@/lib/profile/merge";
 
+// AI planner generation can take a while — give the function room so Vercel
+// doesn't abort the model call (the default timeout was too short).
+export const maxDuration = 60;
+
 /**
  * Generate a bespoke planner from the user's stored life profile: create one
  * SectionTemplate per generated section, enable them for the user, and record
@@ -34,11 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    let sections = await generateSectionsFromFacets(profile.facets, ai.provider, ai.apiKey);
-    // One retry if the model returned nothing usable.
-    if (sections.length === 0) {
-      sections = await generateSectionsFromFacets(profile.facets, ai.provider, ai.apiKey);
-    }
+    const sections = await generateSectionsFromFacets(profile.facets, ai.provider, ai.apiKey);
     if (sections.length === 0) {
       return NextResponse.json(
         { error: "The AI couldn't design your planner this time. Please try again." },
