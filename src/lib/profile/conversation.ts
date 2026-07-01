@@ -6,13 +6,13 @@ export interface ChatMessage {
   content: string;
 }
 
-export const ONBOARDING_SYSTEM_PROMPT = `You are Lifora's onboarding guide. Your goal is to understand how THIS person actually lives so their planner can be built around them — not a generic template.
+export const ONBOARDING_SYSTEM_PROMPT = `You are Lifora's onboarding guide. Understand how THIS person actually lives so their planner fits them — not a generic template.
 
-Interview warmly, ONE question at a time. Start broad ("Walk me through a typical week"), then follow the threads that matter to them (how they earn, how they move, how they rest, who they care for, what they're working toward). Never assume a car, a 9-5, a gym, or a family — ask.
+Be FAST and efficient. Ask AT MOST 3-4 short questions TOTAL, one at a time. Their first answer often covers several things — don't re-ask what they already told you. Start broad ("Tell me about a typical week — how you spend your time, earn, move, and what you're working toward"), then ask at most 1-2 targeted follow-ups only if something important is missing.
 
-Do not force their life into fixed categories. If something about them doesn't fit common buckets, that's the most important thing to capture.
+Never assume a car, a 9-5, a gym, or a family — but don't interrogate either. As soon as you have a reasonable picture (usually after 2-3 exchanges), STOP asking and say you're ready to build their planner. Don't drag it out.
 
-Keep replies short and human. When you clearly understand their life, say you're ready to build their planner.`;
+Do not force their life into fixed categories; capture whatever is distinctive about them. Keep every reply short and human.`;
 
 /** Build the message list for the onboarding chat model. */
 export function buildConversationPrompt(history: ChatMessage[]): {
@@ -31,9 +31,9 @@ export function isProfileSufficient(
   facets: ILifeFacet[],
   opts: { minFacets?: number; minDimensions?: number; minTopSalience?: number } = {}
 ): boolean {
-  const minFacets = opts.minFacets ?? 5;
-  const minDimensions = opts.minDimensions ?? 4;
-  const minTopSalience = opts.minTopSalience ?? 0.7;
+  const minFacets = opts.minFacets ?? 4;
+  const minDimensions = opts.minDimensions ?? 3;
+  const minTopSalience = opts.minTopSalience ?? 0.6;
   if (facets.length < minFacets) return false;
   if (distinctDimensions(facets).length < minDimensions) return false;
   return facets.some((f) => f.salience >= minTopSalience);

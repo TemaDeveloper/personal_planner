@@ -33,44 +33,62 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No profile to generate from" }, { status: 400 });
   }
 
-  const sections = await generateSectionsFromFacets(profile.facets, ai.provider, ai.apiKey);
-
-  await connectDB();
-  const created = [];
-  for (const section of sections) {
-    // Unique slug, avoiding collisions with built-ins and existing templates.
-    let base = slugify(section.name);
-    if (!base) base = "section";
-    if ((SECTIONS as readonly string[]).includes(base)) base = `${base}-custom`;
-    let slug = base;
-    let counter = 0;
-    while (await SectionTemplate.findOne({ slug })) {
-      counter++;
-      slug = `${base}-${counter}`;
+  try {
+    let sections = await generateSectionsFromFacets(profile.facets, ai.provider, ai.apiKey);
+    // One retry if the model returned nothing usable.
+    if (sections.length === 0) {
+      sections = await generateSectionsFromFacets(profile.facets, ai.provider, ai.apiKey);
+    }
+    if (sections.length === 0) {
+      return NextResponse.json(
+        { error: "The AI couldn't design your planner this time. Please try again." },
+        { status: 502 }
+      );
     }
 
-    const facetKey = pickSourceFacetKey(section.sourceDimension, profile.facets);
-    const template = await SectionTemplate.create(
-      buildTemplateDoc(section, userId, slug, {
-        dimension: section.sourceDimension,
-        facetKey,
-      })
-    );
-    await User.findByIdAndUpdate(userId, {
-      $push: { customSections: { templateId: template._id, enabled: true } },
-    });
-    created.push({ _id: template._id, name: template.name, slug: template.slug });
-  }
+    await connectDB();
+    const created = [];
+    for (const section of sections) {
+      // Unique slug, avoiding collisions with built-ins and existing templates.
+      let base = slugify(section.name);
+      if (!base) base = "section";
+      if ((SECTIONS as readonly string[]).includes(base)) base = `${base}-custom`;
+      let slug = base;
+      let counter = 0;
+      while (await SectionTemplate.findOne({ slug })) {
+        counter++;
+        slug = `${base}-${counter}`;
+      }
 
-  // Learn-back: record each facet dimension into the vocabulary.
-  for (const facet of profile.facets) {
-    const dimension = normalizeDimension(facet.dimension);
-    await FacetVocab.findOneAndUpdate(
-      { dimension },
-      { $inc: { count: 1 }, $addToSet: { examples: facet.value } },
-      { upsert: true }
+      const facetKey = pickSourceFacetKey(section.sourceDimension, profile.facets);
+      const template = await SectionTemplate.create(
+        buildTemplateDoc(section, userId, slug, {
+          dimension: section.sourceDimension,
+          facetKey,
+        })
+      );
+      await User.findByIdAndUpdate(userId, {
+        $push: { customSections: { templateId: template._id, enabled: true } },
+      });
+      created.push({ _id: template._id, name: template.name, slug: template.slug });
+    }
+
+    // Learn-back: record each facet dimension into the vocabulary.
+    for (const facet of profile.facets) {
+      const dimension = normalizeDimension(facet.dimension);
+      await FacetVocab.findOneAndUpdate(
+        { dimension },
+        { $inc: { count: 1 }, $addToSet: { examples: facet.value } },
+        { upsert: true }
+      );
+    }
+
+    return NextResponse.json({ sections: created }, { status: 201 });
+  } catch (err) {
+    console.error("[profile/generate] failed", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Generation failed" },
+      { status: 500 }
     );
   }
-
-  return NextResponse.json({ sections: created }, { status: 201 });
 }

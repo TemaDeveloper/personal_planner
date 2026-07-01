@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Send, Sparkles } from "lucide-react";
@@ -15,7 +15,24 @@ interface Facet {
 }
 
 const GREETING =
-  "Hi! I'm here to build a planner around your actual life — not a generic template. To start: walk me through a typical week for you.";
+  "Hi! I'm here to build a planner around your actual life — not a generic template. To start: tell me about a typical week — how you spend your time, how you earn, how you move, and what you're working toward.";
+
+const STORAGE_KEY = "lifora_onboarding_chat_v1";
+
+interface SavedChat {
+  messages?: ChatMessage[];
+  facets?: Facet[];
+  sufficient?: boolean;
+}
+
+function loadSaved(): SavedChat | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Conversational, profile-driven onboarding. Interviews the user, extracts an
@@ -24,14 +41,24 @@ const GREETING =
  */
 export function ConversationalOnboarding({ onManual }: { onManual: () => void }) {
   const router = useRouter();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: GREETING },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    () => loadSaved()?.messages ?? [{ role: "assistant", content: GREETING }]
+  );
   const [input, setInput] = useState("");
-  const [facets, setFacets] = useState<Facet[]>([]);
-  const [sufficient, setSufficient] = useState(false);
+  const [facets, setFacets] = useState<Facet[]>(() => loadSaved()?.facets ?? []);
+  const [sufficient, setSufficient] = useState<boolean>(() => loadSaved()?.sufficient ?? false);
   const [sending, setSending] = useState(false);
   const [building, setBuilding] = useState(false);
+
+  // Persist the conversation so a refresh doesn't wipe it.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, facets, sufficient }));
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [messages, facets, sufficient]);
 
   const send = async () => {
     const text = input.trim();
@@ -75,6 +102,12 @@ export function ConversationalOnboarding({ onManual }: { onManual: () => void })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingDone: true }),
       });
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("lifora_onboarding_step");
+      } catch {
+        /* ignore */
+      }
       toast.success(`Built ${data.sections?.length ?? 0} sections for you`);
       router.push("/dashboard");
     } catch {

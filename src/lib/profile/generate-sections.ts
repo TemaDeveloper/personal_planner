@@ -38,8 +38,6 @@ const GenSectionSchema = z.object({
   layoutHtml: z.string().default(""),
 });
 
-const GenSectionsSchema = z.object({ sections: z.array(GenSectionSchema) });
-
 export type GeneratedSection = z.infer<typeof GenSectionSchema>;
 
 export const SECTION_GEN_SYSTEM_PROMPT = `You design bespoke planner sections for one specific person, from their life facets.
@@ -90,10 +88,25 @@ export function facetSummary(facets: ILifeFacet[]): string {
  * Extracted so it can be unit-tested without a live model.
  */
 export function parseSections(raw: string): GeneratedSection[] {
-  const json = extractJsonBlock(raw);
-  const parsed = JSON.parse(json);
-  const shaped = Array.isArray(parsed) ? { sections: parsed } : parsed;
-  return GenSectionsSchema.parse(shaped).sections;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(extractJsonBlock(raw));
+  } catch {
+    return [];
+  }
+  const arr = Array.isArray(parsed)
+    ? parsed
+    : (parsed as { sections?: unknown })?.sections;
+  if (!Array.isArray(arr)) return [];
+
+  // Resilient: keep the valid sections, skip malformed ones (never throw on a
+  // single bad section — that used to 500 the whole generation).
+  const out: GeneratedSection[] = [];
+  for (const item of arr) {
+    const res = GenSectionSchema.safeParse(item);
+    if (res.success) out.push(res.data);
+  }
+  return out;
 }
 
 /** Generate bespoke section specs for a person from their life facets. */

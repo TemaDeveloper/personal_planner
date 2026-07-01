@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,9 +49,20 @@ const FONT_FAMILY_MAP: Record<FontStyle, string> = {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    const v = Number(localStorage.getItem("lifora_onboarding_step"));
+    return Number.isInteger(v) && v >= 0 ? v : 0;
+  });
   const [loading, setLoading] = useState(false);
   const [aiMode, setAiMode] = useState(true);
+
+  // Keep the current step across refreshes so the chat isn't lost.
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lifora_onboarding_step", String(step));
+    }
+  }, [step]);
 
   // Personalization
   const [name, setName] = useState("");
@@ -118,6 +129,12 @@ export default function OnboardingPage() {
     if (res.ok) {
       document.documentElement.setAttribute("data-theme", accentTheme);
       document.documentElement.setAttribute("data-font", fontStyle);
+      try {
+        localStorage.removeItem("lifora_onboarding_step");
+        localStorage.removeItem("lifora_onboarding_chat_v1");
+      } catch {
+        /* ignore */
+      }
       toast.success("Welcome to Lifora!");
       router.push("/dashboard");
     } else {

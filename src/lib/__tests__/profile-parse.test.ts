@@ -65,9 +65,16 @@ describe("parseSections", () => {
     expect(kinds).toEqual(["net", "pace_eta"]);
   });
 
-  it("rejects an unknown computation kind", () => {
+  it("skips a section with an unknown computation kind instead of throwing", () => {
     const raw = '{"sections":[{"name":"X","fields":[{"key":"a","label":"A","type":"number","computation":{"kind":"bogus","params":{}}}]}]}';
-    expect(() => parseSections(raw)).toThrow();
+    expect(parseSections(raw)).toEqual([]);
+  });
+
+  it("keeps valid sections and drops malformed ones", () => {
+    const raw = '{"sections":[{"name":"Good","fields":[{"key":"a","label":"A","type":"number"}]},{"nope":true}]}';
+    const out = parseSections(raw);
+    expect(out).toHaveLength(1);
+    expect(out[0].name).toBe("Good");
   });
 });
 
