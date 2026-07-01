@@ -31,6 +31,8 @@ const GenSectionSchema = z.object({
   description: z.string().default(""),
   // Open vocabulary — see views/registry. A novel value renders via fallback.
   viewType: z.string().default("weekly-cards"),
+  /** The facet dimension this section primarily serves (for reconciliation). */
+  sourceDimension: z.string().optional(),
   fields: z.array(GenFieldSchema),
   layoutHtml: z.string().default(""),
 });
@@ -43,7 +45,7 @@ export const SECTION_GEN_SYSTEM_PROMPT = `You design bespoke planner sections fo
 
 Rules:
 - Create only sections that fit THIS person. Two different people should share almost nothing.
-- Each section: name, icon (Lucide name), description, viewType, and fields.
+- Each section: name, icon (Lucide name), description, viewType, sourceDimension (the facet dimension this section primarily serves), and fields.
 - viewType is one of: weekly-cards | table | grid | board | calendar | goal-progress | streak | daily-log | schedule | trend | pipeline | budget. Pick the one that fits.
 - Each field: key (snake_case), label, type (boolean|number|text|select|date), options (for select).
 
@@ -57,6 +59,22 @@ DERIVED VALUES — when a field is computed from other fields, attach a "computa
 - cycle (repeating period — chemo/menstrual/crop): {"kind":"cycle","params":{"start":"cycle_start","current":"today","cycleLengthDays":21}}
 
 Return ONLY JSON: {"sections":[{...}]}. Aim for 2-5 sections driven by the most salient facets.`;
+
+/**
+ * The key of the most salient facet in a given dimension — the facet a section
+ * for that dimension is considered to be driven by (SP-4 reconciliation).
+ */
+export function pickSourceFacetKey(
+  dimension: string | undefined,
+  facets: ILifeFacet[]
+): string | undefined {
+  if (!dimension) return undefined;
+  const norm = dimension.trim().toLowerCase();
+  const matches = facets
+    .filter((f) => f.dimension.trim().toLowerCase() === norm)
+    .sort((a, b) => b.salience - a.salience);
+  return matches[0]?.key;
+}
 
 export function facetSummary(facets: ILifeFacet[]): string {
   return facets

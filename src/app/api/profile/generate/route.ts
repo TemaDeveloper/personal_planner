@@ -7,7 +7,7 @@ import FacetVocab from "@/lib/models/facet-vocab";
 import User from "@/lib/models/user";
 import { SECTIONS } from "@/lib/constants";
 import { getProfile } from "@/lib/profile/profile-store";
-import { generateSectionsFromFacets } from "@/lib/profile/generate-sections";
+import { generateSectionsFromFacets, pickSourceFacetKey } from "@/lib/profile/generate-sections";
 import { buildTemplateDoc, slugify } from "@/lib/profile/persist-sections";
 import { resolveAIConfig } from "@/lib/profile/ai-config";
 import { normalizeDimension } from "@/lib/profile/merge";
@@ -49,7 +49,13 @@ export async function POST(req: NextRequest) {
       slug = `${base}-${counter}`;
     }
 
-    const template = await SectionTemplate.create(buildTemplateDoc(section, userId, slug));
+    const facetKey = pickSourceFacetKey(section.sourceDimension, profile.facets);
+    const template = await SectionTemplate.create(
+      buildTemplateDoc(section, userId, slug, {
+        dimension: section.sourceDimension,
+        facetKey,
+      })
+    );
     await User.findByIdAndUpdate(userId, {
       $push: { customSections: { templateId: template._id, enabled: true } },
     });

@@ -11,8 +11,6 @@ import {
   Plus,
   Trash2,
   Check,
-  Sparkles,
-  Loader2,
 } from "lucide-react";
 import {
   THEMES, FONTS, FONT_META, CURRENCIES, THEME_COLORS,
@@ -20,12 +18,12 @@ import {
   type SectionId, type FontStyle,
 } from "@/lib/constants";
 import { ICON_MAP } from "@/lib/icon-map";
-import type { PlannerConfig } from "@/lib/ai";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FormInput, FormSelect, FormTextarea } from "@/components/ui/form-input";
+import { FormInput, FormSelect } from "@/components/ui/form-input";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { ConversationalOnboarding } from "@/components/onboarding/conversational-onboarding";
 
 interface Job {
   name: string;
@@ -39,8 +37,6 @@ interface Subject { name: string; color: string; active: boolean }
 interface Hobby { name: string; color: string; active: boolean }
 interface Chore { name: string; frequency: string; active: boolean }
 interface Bill { name: string; amount: number; dueDay: number; category: string; active: boolean }
-
-const SUBJECT_COLORS = ["#D4A853", "#00C9A7", "#9B72F0", "#F07070", "#7EC8A0", "#5B9BD5", "#FF8C42"];
 
 /** Map font key → actual CSS font-family string for preview rendering */
 const FONT_FAMILY_MAP: Record<FontStyle, string> = {
@@ -56,10 +52,6 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [aiMode, setAiMode] = useState(true);
-
-  // AI prompt state
-  const [prompt, setPrompt] = useState("");
-  const [generating, setGenerating] = useState(false);
 
   // Personalization
   const [name, setName] = useState("");
@@ -87,78 +79,6 @@ export default function OnboardingPage() {
     setEnabledSections((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
-  };
-
-  const applyAIConfig = (config: PlannerConfig) => {
-    // Only enable sections the AI explicitly returned — no defaults
-    const validSections = config.enabledSections.filter((s) =>
-      SECTIONS.includes(s as SectionId)
-    ) as SectionId[];
-    setEnabledSections(validSections);
-
-    if (config.workConfig?.jobs) {
-      setJobs(config.workConfig.jobs.map((j) => ({
-        name: j.name, hourlyRate: j.hourlyRate || 0, weeklyTarget: j.weeklyTarget || 20,
-        active: true, enableExpenseTracking: false,
-      })));
-    }
-    if (config.gymConfig) setTargetDaysPerWeek(config.gymConfig.targetDaysPerWeek);
-    if (config.studyConfig?.subjects) {
-      setSubjects(config.studyConfig.subjects.map((s, i) => ({
-        name: s.name, color: SUBJECT_COLORS[i % SUBJECT_COLORS.length], active: true,
-      })));
-    }
-    if (config.hobbiesConfig?.hobbies) {
-      setHobbies(config.hobbiesConfig.hobbies.map((h, i) => ({
-        name: h.name, color: SUBJECT_COLORS[i % SUBJECT_COLORS.length], active: true,
-      })));
-    }
-    if (config.houseworkConfig?.chores) {
-      setChores(config.houseworkConfig.chores.map((c) => ({
-        name: c.name, frequency: c.frequency || "daily", active: true,
-      })));
-    }
-    if (config.bills) {
-      setBills(config.bills.map((b) => ({
-        name: b.name, amount: b.amount || 0, dueDay: b.dueDay || 1,
-        category: b.category || "other", active: true,
-      })));
-    }
-    if (config.suggestedHabits) setSuggestedHabits(config.suggestedHabits);
-    if (config.customSections) setCustomSectionTemplates(config.customSections);
-  };
-
-  const handleGenerate = async () => {
-    if (!prompt.trim()) { toast.error("Describe what you want to track"); return; }
-
-    // Reset everything before AI generates — no leftover defaults
-    setEnabledSections([]);
-    setJobs([]);
-    setSubjects([]);
-    setHobbies([]);
-    setChores([]);
-    setBills([]);
-    setSuggestedHabits([]);
-    setCustomSectionTemplates([]);
-
-    setGenerating(true);
-    try {
-      const res = await fetch("/api/onboarding/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim() }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) { toast.error(data.error || "Generation failed"); setGenerating(false); return; }
-
-      applyAIConfig(data.config);
-      toast.success("Your plan is ready!");
-      setStep(2); // Go to review step
-    } catch {
-      toast.error("Network error. Please try again.");
-    }
-    setGenerating(false);
   };
 
   const handleFinish = async () => {
@@ -238,48 +158,9 @@ export default function OnboardingPage() {
 
     // Step 1: AI Prompt OR Manual section picker
     {
-      title: aiMode ? "Describe your planner" : "Choose your sections",
+      title: aiMode ? "Let's build your planner" : "Choose your sections",
       content: aiMode ? (
-        <div className="space-y-6 max-w-md mx-auto">
-          <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
-            Tell us what you want to track and we&apos;ll set up your planner automatically.
-          </p>
-
-          <FormTextarea
-            placeholder={"e.g. I work two part-time jobs at Starbucks ($17/hr, 20h/week) and a bookstore ($16/hr, 15h/week). I go to the gym 5 days a week. I study Computer Science and Math at university. I want to track my reading and daily habits like meditation and journaling."}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={5}
-          />
-
-          <Button
-            onClick={handleGenerate}
-            disabled={generating}
-            variant="primary"
-            size="lg"
-            className="w-full"
-          >
-            {generating ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles size={16} />
-                Generate my planner
-              </>
-            )}
-          </Button>
-
-          <button
-            onClick={() => setAiMode(false)}
-            className="w-full text-center text-xs hover:underline"
-            style={{ color: "var(--accent-text)" }}
-          >
-            Skip AI — I&apos;ll choose sections manually
-          </button>
-        </div>
+        <ConversationalOnboarding onManual={() => setAiMode(false)} />
       ) : (
         // Manual section picker
         <div className="space-y-4 max-w-sm mx-auto">

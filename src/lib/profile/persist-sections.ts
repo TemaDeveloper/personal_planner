@@ -22,16 +22,20 @@ export interface TemplateDoc {
   isBuiltIn: boolean;
   createdBy: string;
   usageCount: number;
+  sourceDimension?: string;
+  sourceFacetKey?: string;
 }
 
 /**
  * Pure transform from a generated section spec to a SectionTemplate document,
  * preserving typed computations. Slug uniqueness is the caller's job (DB).
+ * `source` links the section to the facet that drove it (SP-4 reconciliation).
  */
 export function buildTemplateDoc(
   section: GeneratedSection,
   userId: string,
-  slug: string
+  slug: string,
+  source?: { dimension?: string; facetKey?: string }
 ): TemplateDoc {
   return {
     name: section.name.trim(),
@@ -51,5 +55,7 @@ export function buildTemplateDoc(
     isBuiltIn: false,
     createdBy: userId,
     usageCount: 1,
+    ...(source?.dimension ? { sourceDimension: source.dimension } : {}),
+    ...(source?.facetKey ? { sourceFacetKey: source.facetKey } : {}),
   };
 }
