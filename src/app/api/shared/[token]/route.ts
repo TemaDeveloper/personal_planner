@@ -18,7 +18,8 @@ import SectionTemplate from "@/lib/models/section-template";
 import User from "@/lib/models/user";
 import ShareToken from "@/lib/models/share-token";
 import Route from "@/lib/models/route";
-import { buildWorkReport } from "@/lib/work-report";
+import { buildMonthlyWorkReports } from "@/lib/work-report";
+import { format } from "date-fns";
 
 export interface WorkShareJobBreakdown {
   jobName: string;
@@ -27,13 +28,25 @@ export interface WorkShareJobBreakdown {
   total: number;
 }
 
-export interface WorkShareSummary {
+export interface WorkShareSessionRow {
+  jobName: string;
+  date: Date | string;
+  hours: number;
+  note: string;
+  total: number;
+}
+
+export interface WorkShareMonthSummary {
+  /** Sortable "YYYY-MM" key, newest first. */
+  monthKey: string;
+  monthLabel: string;
   grossEarnings: number;
   gasCost: number;
   net: number;
   totalKm: number;
   litres: number;
   byJob: WorkShareJobBreakdown[];
+  rows: WorkShareSessionRow[];
 }
 
 async function fetchSectionData(
@@ -43,7 +56,7 @@ async function fetchSectionData(
 ): Promise<{
   data: unknown[];
   meta?: Record<string, unknown>;
-  summary?: WorkShareSummary | null;
+  monthlySummaries?: WorkShareMonthSummary[] | null;
   routes?: Record<string, unknown>[] | null;
 }> {
   switch (sectionType) {
@@ -55,13 +68,17 @@ async function fetchSectionData(
         })
           .sort({ date: -1 })
           .lean(),
-        // Routes are not job-linked: gas reflects all routes for all time.
+        // Routes are not job-linked, but are still attributed to whichever
+        // calendar month they fall in for the per-month gas deduction.
         Route.find({ userId: ownerId }).sort({ date: -1 }).lean(),
         User.findById(ownerId).select("workConfig").lean(),
       ]);
 
       const workConfig = owner?.workConfig;
-      const report = buildWorkReport({
+      // One fully independent report per calendar month — a multi-month share
+      // must show separate, self-contained monthly cards (e.g. for invoicing),
+      // never a single all-time total.
+      const monthlyReports = buildMonthlyWorkReports({
         sessions: sessions.map((s) => ({
           jobName: s.jobName,
           date: s.date,
@@ -80,31 +97,49 @@ async function fetchSectionData(
       });
 
       // Display-keyed rows so the viewer shows readable headers and the Total column.
-      const data = report.rows.map((r) => ({
-        "Job Name": r.jobName,
-        Date: r.date,
-        Hours: r.hours,
-        Note: r.note,
-        Total: r.total,
-      }));
+      const data = monthlyReports.flatMap((m) =>
+        m.rows.map((r) => ({
+          "Job Name": r.jobName,
+          Date: r.date,
+          Hours: r.hours,
+          Note: r.note,
+          Total: r.total,
+        }))
+      );
 
-      const routes = report.routeRows.map((r) => ({
-        Date: r.date,
-        Origin: r.origin,
-        Destination: r.destination,
-        "Distance (km)": r.distanceKm,
-      }));
+      const routes = monthlyReports.flatMap((m) =>
+        m.routeRows.map((r) => ({
+          Date: r.date,
+          Origin: r.origin,
+          Destination: r.destination,
+          "Distance (km)": r.distanceKm,
+        }))
+      );
+
+      const monthlySummaries: WorkShareMonthSummary[] = monthlyReports.map((m) => {
+        const [year, month] = m.monthKey.split("-").map(Number);
+        return {
+          monthKey: m.monthKey,
+          monthLabel: format(new Date(year, month - 1, 1), "MMMM yyyy"),
+          grossEarnings: m.grossEarnings,
+          gasCost: m.gas.totalCostDollars,
+          net: m.net,
+          totalKm: m.gas.totalKm,
+          litres: m.gas.litresUsed,
+          byJob: m.byJob,
+          rows: m.rows.map((r) => ({
+            jobName: r.jobName,
+            date: r.date,
+            hours: r.hours,
+            note: r.note,
+            total: r.total,
+          })),
+        };
+      });
 
       return {
         data,
-        summary: {
-          grossEarnings: report.grossEarnings,
-          gasCost: report.gas.totalCostDollars,
-          net: report.net,
-          totalKm: report.gas.totalKm,
-          litres: report.gas.litresUsed,
-          byJob: report.byJob,
-        },
+        monthlySummaries,
         routes,
       };
     }
@@ -216,7 +251,7 @@ export async function GET(
     return NextResponse.json({ error: "This share has expired" }, { status: 410 });
 
   const owner = await User.findById(share.ownerId).select("name email").lean();
-  const { data, summary, routes } = await fetchSectionData(
+  const { data, monthlySummaries, routes } = await fetchSectionData(
     share.sectionType,
     String(share.ownerId),
     share.scopeFilter ?? null
@@ -228,7 +263,7 @@ export async function GET(
     ownerName: (owner?.name as string) || "Unknown",
     permission: share.permission,
     data: stripInternalFields(data),
-    summary: summary ?? null,
+    monthlySummaries: monthlySummaries ?? null,
     routes: routes ?? null,
   });
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildWorkReport } from "@/lib/work-report";
+import { buildWorkReport, buildMonthlyWorkReports } from "@/lib/work-report";
 
 const GAS = { gasPriceCentsPerLitre: 200, carConsumptionLPer100km: 10 };
 
@@ -100,5 +100,48 @@ describe("buildWorkReport", () => {
     expect(report.gas.totalKm).toBe(0);
     expect(report.gas.totalCostDollars).toBe(0);
     expect(report.net).toBe(0);
+  });
+});
+
+describe("buildMonthlyWorkReports", () => {
+  it("splits sessions into one fully independent report per calendar month, newest first", () => {
+    const months = buildMonthlyWorkReports({
+      sessions: [
+        { jobName: "Wuzzals", date: "2026-04-10", hours: 8, note: "" },
+        { jobName: "Wuzzals", date: "2026-05-15", hours: 4, note: "" },
+        { jobName: "Wuzzals", date: "2026-05-20", hours: 6, note: "" },
+      ],
+      jobs: [{ name: "Wuzzals", hourlyRate: 25 }],
+      routes: [],
+      ...GAS,
+    });
+
+    expect(months.map((m) => m.monthKey)).toEqual(["2026-05", "2026-04"]);
+    expect(months[0].rows).toHaveLength(2);
+    expect(months[0].grossEarnings).toBe(250); // (4+6)h * 25
+    expect(months[1].rows).toHaveLength(1);
+    expect(months[1].grossEarnings).toBe(200); // 8h * 25
+  });
+
+  it("attributes each route's gas cost to its own month, not the whole span", () => {
+    const months = buildMonthlyWorkReports({
+      sessions: [],
+      jobs: [],
+      routes: [
+        { date: "2026-04-01", origin: "Home", destination: "A", distanceKm: 50 },
+        { date: "2026-05-01", origin: "Home", destination: "B", distanceKm: 100 },
+      ],
+      ...GAS,
+    });
+
+    const april = months.find((m) => m.monthKey === "2026-04")!;
+    const may = months.find((m) => m.monthKey === "2026-05")!;
+    // 50km -> 5L -> $10; 100km -> 10L -> $20
+    expect(april.gas.totalCostDollars).toBe(10);
+    expect(may.gas.totalCostDollars).toBe(20);
+  });
+
+  it("returns an empty array when there are no sessions or routes", () => {
+    expect(buildMonthlyWorkReports({ sessions: [], jobs: [], routes: [], ...GAS })).toEqual([]);
   });
 });

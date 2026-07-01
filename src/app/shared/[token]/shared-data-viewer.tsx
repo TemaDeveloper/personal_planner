@@ -14,13 +14,24 @@ interface WorkJobBreakdown {
   total: number;
 }
 
-interface WorkSummary {
+interface WorkSessionRow {
+  jobName: string;
+  date: string | Date;
+  hours: number;
+  note: string;
+  total: number;
+}
+
+interface WorkMonthSummary {
+  monthKey: string;
+  monthLabel: string;
   grossEarnings: number;
   gasCost: number;
   net: number;
   totalKm: number;
   litres: number;
   byJob: WorkJobBreakdown[];
+  rows: WorkSessionRow[];
 }
 
 interface SharedData {
@@ -29,7 +40,7 @@ interface SharedData {
   ownerName: string;
   data: Record<string, unknown>[];
   meta?: Record<string, unknown>;
-  summary?: WorkSummary | null;
+  monthlySummaries?: WorkMonthSummary[] | null;
   routes?: Record<string, unknown>[] | null;
 }
 
@@ -125,28 +136,25 @@ interface BreakdownItem {
 }
 
 /**
- * Builds the itemized lines under "Gross earnings".
+ * Builds the itemized lines under "Gross earnings" for one month.
  * - Single job: one line per session (the task note, with date + hours as context).
  * - Multiple jobs: one line per job (name, with hours × rate as context).
  */
-function buildBreakdown(
-  summary: WorkSummary,
-  rows: Record<string, unknown>[]
-): BreakdownItem[] {
-  if (summary.byJob.length <= 1) {
-    return rows.map((r, i) => {
-      const note = typeof r["Note"] === "string" ? r["Note"].trim() : "";
-      const date = fmtDate(r["Date"]);
-      const hours = typeof r["Hours"] === "number" ? `${r["Hours"]}h` : "";
+function buildBreakdown(month: WorkMonthSummary): BreakdownItem[] {
+  if (month.byJob.length <= 1) {
+    return month.rows.map((r, i) => {
+      const note = r.note.trim();
+      const date = fmtDate(r.date);
+      const hours = `${r.hours}h`;
       return {
         key: String(i),
         primary: note || date || `Session ${i + 1}`,
         secondary: [note ? date : "", hours].filter(Boolean).join(" · "),
-        value: typeof r["Total"] === "number" ? r["Total"] : 0,
+        value: r.total,
       };
     });
   }
-  return summary.byJob.map((j) => ({
+  return month.byJob.map((j) => ({
     key: j.jobName,
     primary: j.jobName,
     secondary: `${j.hours}h × ${money(j.rate)}/h`,
@@ -154,29 +162,30 @@ function buildBreakdown(
   }));
 }
 
-/* ---------- The single earnings card: every money number lives here ---------- */
-function EarningsCard({
-  summary,
-  rows,
-}: {
-  summary: WorkSummary;
-  rows: Record<string, unknown>[];
-}) {
-  const items = buildBreakdown(summary, rows);
+/* ---------- One fully self-contained earnings card per calendar month ---------- */
+function EarningsCard({ month }: { month: WorkMonthSummary }) {
+  const items = buildBreakdown(month);
 
   return (
     <Card padding="lg">
+      <h2
+        className="text-xs font-semibold uppercase tracking-wider stat-label mb-4"
+        style={{ color: "var(--accent-color)" }}
+      >
+        {month.monthLabel}
+      </h2>
+
       {/* Hero metric — Net earnings */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <StatBlock
           label="Net earnings"
-          value={money(summary.net)}
-          sub={`After ${money(summary.gasCost)} gas deduction`}
+          value={money(month.net)}
+          sub={`After ${money(month.gasCost)} gas deduction`}
           size="hero"
         />
         <StatBlock
           label="Gross"
-          value={money(summary.grossEarnings)}
+          value={money(month.grossEarnings)}
           size="lg"
           className="sm:text-right"
         />
@@ -218,8 +227,8 @@ function EarningsCard({
         <span style={{ color: "var(--text-muted)" }}>
           Gas &amp; fuel
           <span style={{ color: "var(--text-faint)" }}>
-            {" "}· <span className="num">{summary.totalKm}</span> km ·{" "}
-            <span className="num">{summary.litres}</span> L
+            {" "}· <span className="num">{month.totalKm}</span> km ·{" "}
+            <span className="num">{month.litres}</span> L
           </span>
         </span>
         <span
@@ -227,7 +236,7 @@ function EarningsCard({
           style={{ borderColor: "var(--hair-strong)" }}
         />
         <span className="num font-medium" style={{ color: "var(--alert)" }}>
-          −{money(summary.gasCost)}
+          −{money(month.gasCost)}
         </span>
       </div>
     </Card>
@@ -274,15 +283,18 @@ export function SharedDataViewer({ token }: { token: string }) {
 
   const rows = Array.isArray(shared.data) ? shared.data : [];
   const routes = Array.isArray(shared.routes) ? shared.routes : [];
-  const summary = shared.summary ?? null;
-  // For a single-job share the earnings card already itemizes every session,
-  // so the sessions table would only repeat it — show it only for multi-job.
-  const showSessions = summary
-    ? rows.length > 0 && summary.byJob.length > 1
+  const monthlySummaries = shared.monthlySummaries ?? null;
+  const isWorkSection = monthlySummaries !== null;
+  // For a month where a single job did all the work, that month's earnings
+  // card already itemizes every session — so the flat sessions table would
+  // only repeat it. Still show it if any month has more than one job (whose
+  // card only itemizes per-job totals) or for non-work sections entirely.
+  const showSessions = isWorkSection
+    ? rows.length > 0 && monthlySummaries.some((m) => m.byJob.length > 1)
     : rows.length > 0;
-  const sessionsTitle = summary ? "Sessions" : "Records";
+  const sessionsTitle = isWorkSection ? "Sessions" : "Records";
 
-  const hasContent = summary || showSessions || routes.length > 0;
+  const hasContent = (monthlySummaries && monthlySummaries.length > 0) || showSessions || routes.length > 0;
 
   const exportButton = (
     <a
@@ -304,7 +316,13 @@ export function SharedDataViewer({ token }: { token: string }) {
     <div className="space-y-6">
       <div className="flex items-center justify-end">{exportButton}</div>
 
-      {summary && <EarningsCard summary={summary} rows={rows} />}
+      {monthlySummaries && monthlySummaries.length > 0 && (
+        <div className="space-y-6">
+          {monthlySummaries.map((m) => (
+            <EarningsCard key={m.monthKey} month={m} />
+          ))}
+        </div>
+      )}
 
       {showSessions || routes.length > 0 ? (
         <div

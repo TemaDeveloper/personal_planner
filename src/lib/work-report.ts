@@ -115,3 +115,50 @@ export function buildWorkReport(input: {
 
   return { rows, routeRows, byJob, grossEarnings, gas, net };
 }
+
+export interface WorkReportMonth extends WorkReport {
+  /** Sortable "YYYY-MM" key for the calendar month this report covers. */
+  monthKey: string;
+}
+
+function monthKeyOf(d: Date | string): string {
+  const date = typeof d === "string" ? new Date(d) : d;
+  // Session/route dates are stored as UTC midnight of the intended calendar
+  // day (new Date("YYYY-MM-DD")). Reading them back with local getters would
+  // shift dates near month boundaries into the wrong month on any server or
+  // browser running behind UTC (e.g. all of North America) — use UTC getters
+  // so the month always matches the date the user actually entered.
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Splits sessions and routes by calendar month and builds an independent
+ * WorkReport for each one — its own rows, per-job breakdown, gas cost (from
+ * that month's routes only), and net. Lets a multi-month share show one
+ * fully self-contained card per month (e.g. to build a monthly invoice)
+ * instead of a single all-time total. Sorted newest month first.
+ */
+export function buildMonthlyWorkReports(input: {
+  sessions: WorkReportSession[];
+  jobs: WorkReportJob[];
+  routes: WorkReportRoute[];
+  gasPriceCentsPerLitre: number;
+  carConsumptionLPer100km: number;
+}): WorkReportMonth[] {
+  const monthKeys = new Set<string>();
+  input.sessions.forEach((s) => monthKeys.add(monthKeyOf(s.date)));
+  input.routes.forEach((r) => monthKeys.add(monthKeyOf(r.date)));
+
+  return [...monthKeys]
+    .sort((a, b) => b.localeCompare(a))
+    .map((monthKey) => ({
+      monthKey,
+      ...buildWorkReport({
+        sessions: input.sessions.filter((s) => monthKeyOf(s.date) === monthKey),
+        jobs: input.jobs,
+        routes: input.routes.filter((r) => monthKeyOf(r.date) === monthKey),
+        gasPriceCentsPerLitre: input.gasPriceCentsPerLitre,
+        carConsumptionLPer100km: input.carConsumptionLPer100km,
+      }),
+    }));
+}
