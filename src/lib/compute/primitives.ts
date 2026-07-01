@@ -7,7 +7,14 @@
  * the field values from an entry's data and returns the derived result.
  */
 
-export type ComputationKind = "net" | "pace_eta" | "ceiling";
+export type ComputationKind =
+  | "net"
+  | "pace_eta"
+  | "ceiling"
+  | "rate"
+  | "target_progress"
+  | "countdown"
+  | "cycle";
 
 export interface FieldComputation {
   kind: ComputationKind;
@@ -75,6 +82,59 @@ export function ceiling(value: number, cap: number): CeilingResult {
   };
 }
 
+/** A per-unit rate, e.g. $/hr or $/km. null when the denominator is 0. */
+export function rate(numerator: number, denominator: number): number | null {
+  return denominator > 0 ? round2(numerator / denominator) : null;
+}
+
+export interface TargetProgressResult {
+  pct: number;
+  remaining: number;
+  done: boolean;
+  ratio: number | null;
+}
+
+/** Progress toward a target (a goal to reach, clamped 0..100%). */
+export function targetProgress(current: number, target: number): TargetProgressResult {
+  if (!(target > 0)) {
+    return { pct: 0, remaining: 0, done: current >= target, ratio: null };
+  }
+  const ratio = current / target;
+  return {
+    pct: round2(Math.min(100, Math.max(0, ratio * 100))),
+    remaining: round2(Math.max(0, target - current)),
+    done: current >= target,
+    ratio: round2(ratio),
+  };
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export interface CountdownResult {
+  daysRemaining: number;
+  past: boolean;
+}
+
+/** Whole days until a target date (negative once past). */
+export function countdown(target: Date, from: Date): CountdownResult {
+  const ms = target.getTime() - from.getTime();
+  return { daysRemaining: Math.ceil(ms / DAY_MS), past: ms < 0 };
+}
+
+export interface CycleResult {
+  dayInCycle: number;
+  cycleNumber: number;
+}
+
+/** Which cycle/day we are in for a repeating period (chemo, menstrual, crop...). 1-based. */
+export function cycle(start: Date, current: Date, cycleLengthDays: number): CycleResult {
+  if (!(cycleLengthDays > 0)) return { dayInCycle: 0, cycleNumber: 0 };
+  const diffDays = Math.floor((current.getTime() - start.getTime()) / DAY_MS);
+  const n = Math.floor(diffDays / cycleLengthDays);
+  const dayInCycle = diffDays - n * cycleLengthDays; // 0-based, always 0..len-1
+  return { dayInCycle: dayInCycle + 1, cycleNumber: n + 1 };
+}
+
 // --- Resolution from entry data -------------------------------------------
 
 type Data = Record<string, unknown>;
@@ -114,7 +174,11 @@ function resolveDate(ref: unknown, data: Data, fallback: Date): Date {
 export type ComputedValue =
   | { kind: "net"; value: number }
   | { kind: "pace_eta"; value: PaceEtaResult }
-  | { kind: "ceiling"; value: CeilingResult };
+  | { kind: "ceiling"; value: CeilingResult }
+  | { kind: "rate"; value: number | null }
+  | { kind: "target_progress"; value: TargetProgressResult }
+  | { kind: "countdown"; value: CountdownResult }
+  | { kind: "cycle"; value: CycleResult };
 
 /**
  * Evaluate a field computation against an entry's data.
@@ -149,6 +213,34 @@ export function resolveComputed(
         kind: "ceiling",
         value: ceiling(resolveNum(p.value, data), resolveNum(p.cap, data)),
       };
+    case "rate":
+      return {
+        kind: "rate",
+        value: rate(resolveNum(p.numerator, data), resolveNum(p.denominator, data)),
+      };
+    case "target_progress":
+      return {
+        kind: "target_progress",
+        value: targetProgress(resolveNum(p.current, data), resolveNum(p.target, data)),
+      };
+    case "countdown": {
+      const now = ctx.now ?? new Date();
+      return {
+        kind: "countdown",
+        value: countdown(resolveDate(p.target, data, now), resolveDate(p.from, data, now)),
+      };
+    }
+    case "cycle": {
+      const now = ctx.now ?? new Date();
+      return {
+        kind: "cycle",
+        value: cycle(
+          resolveDate(p.start, data, now),
+          resolveDate(p.current, data, now),
+          resolveNum(p.cycleLengthDays, data)
+        ),
+      };
+    }
     default:
       return null;
   }

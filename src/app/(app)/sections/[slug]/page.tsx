@@ -17,6 +17,8 @@ import { BoardView } from "@/components/sections/board-view";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 import type { CalendarCategory } from "@/lib/calendar";
+import { resolveRenderer } from "@/lib/views/registry";
+import type { FieldComputation } from "@/lib/compute/primitives";
 
 interface FieldDef {
   key: string;
@@ -24,6 +26,7 @@ interface FieldDef {
   type: "boolean" | "number" | "text" | "select" | "date";
   options?: string[];
   formula?: string;
+  computation?: FieldComputation;
 }
 
 interface Template {
@@ -32,7 +35,8 @@ interface Template {
   slug: string;
   icon: string;
   description: string;
-  viewType?: "weekly-cards" | "table" | "grid" | "board" | "calendar";
+  /** Open vocabulary — resolved to a concrete renderer via views/registry. */
+  viewType?: string;
   layoutHtml?: string;
   fields: FieldDef[];
   calendarCategories?: CalendarCategory[];
@@ -104,8 +108,11 @@ export default function CustomSectionPage() {
     );
   }
 
+  // Resolve the (possibly novel) view type to a concrete renderer.
+  const renderer = resolveRenderer(template.viewType);
+
   // Board view — self-contained, no week navigation
-  if (template.viewType === "board") {
+  if (renderer === "board") {
     return (
       <div className="animate-slide-up">
         <PageHeader
@@ -127,7 +134,7 @@ export default function CustomSectionPage() {
   }
 
   // Calendar view — self-contained, has its own header/navigation
-  if (template.viewType === "calendar") {
+  if (renderer === "calendar") {
     return (
       <div className="h-full">
         <CalendarView slug={template.slug} categories={template.calendarCategories} />
@@ -151,7 +158,7 @@ export default function CustomSectionPage() {
             >
               <Download size={16} />
             </button>
-            {template.viewType !== "table" && (
+            {renderer !== "table" && (
               <Button size="sm" onClick={() => setShowForm(true)}>
                 <Plus size={14} />
                 Add
@@ -182,7 +189,7 @@ export default function CustomSectionPage() {
             entries={entries.map((e) => e.data)}
           />
         </>
-      ) : template.viewType === "table" ? (
+      ) : renderer === "table" ? (
         <TableView
           slug={slug}
           fields={template.fields}

@@ -4,7 +4,15 @@ import { extractJsonBlock } from "@/lib/profile/parse-json";
 import type { ILifeFacet } from "@/lib/models/life-profile";
 
 const ComputationSchema = z.object({
-  kind: z.enum(["net", "pace_eta", "ceiling"]),
+  kind: z.enum([
+    "net",
+    "pace_eta",
+    "ceiling",
+    "rate",
+    "target_progress",
+    "countdown",
+    "cycle",
+  ]),
   params: z.record(z.string(), z.any()),
 });
 
@@ -21,7 +29,8 @@ const GenSectionSchema = z.object({
   name: z.string(),
   icon: z.string().default("Star"),
   description: z.string().default(""),
-  viewType: z.enum(["weekly-cards", "table", "grid", "board", "calendar"]).default("weekly-cards"),
+  // Open vocabulary — see views/registry. A novel value renders via fallback.
+  viewType: z.string().default("weekly-cards"),
   fields: z.array(GenFieldSchema),
   layoutHtml: z.string().default(""),
 });
@@ -34,14 +43,18 @@ export const SECTION_GEN_SYSTEM_PROMPT = `You design bespoke planner sections fo
 
 Rules:
 - Create only sections that fit THIS person. Two different people should share almost nothing.
-- Each section: name, icon (Lucide name), description, viewType (weekly-cards|table|grid|board|calendar), and fields.
+- Each section: name, icon (Lucide name), description, viewType, and fields.
+- viewType is one of: weekly-cards | table | grid | board | calendar | goal-progress | streak | daily-log | schedule | trend | pipeline | budget. Pick the one that fits.
 - Each field: key (snake_case), label, type (boolean|number|text|select|date), options (for select).
 
-DERIVED VALUES — when a field is computed from other fields, attach a "computation":
-- Money net after costs: {"kind":"net","params":{"add":["gross","tips"],"subtract":["fuel","depreciation"]}}
-- Progress/ETA toward a goal at a weekly rate: {"kind":"pace_eta","params":{"target":"goal_amount","current":"saved","ratePerWeek":"weekly_rate"}}
-- A limit to STAY UNDER (not a goal to maximise), e.g. energy/pain caps: {"kind":"ceiling","params":{"value":"spent","cap":"daily_cap"}}
-Only use these three kinds. params values are other field keys (or literal numbers). A computed field's own "type" should be "number".
+DERIVED VALUES — when a field is computed from other fields, attach a "computation". A computed field's own "type" is "number". params values are other field keys (or literal numbers/dates). Kinds:
+- net (money after costs): {"kind":"net","params":{"add":["gross","tips"],"subtract":["fuel","depreciation"]}}
+- pace_eta (ETA toward a goal at a weekly rate): {"kind":"pace_eta","params":{"target":"goal_amount","current":"saved","ratePerWeek":"weekly_rate"}}
+- ceiling (a LIMIT to stay under, not a goal — energy/pain caps): {"kind":"ceiling","params":{"value":"spent","cap":"daily_cap"}}
+- rate (per-unit, e.g. $/hr): {"kind":"rate","params":{"numerator":"earnings","denominator":"hours"}}
+- target_progress (% toward a target): {"kind":"target_progress","params":{"current":"done","target":"goal"}}
+- countdown (days until a date field): {"kind":"countdown","params":{"target":"due_date"}}
+- cycle (repeating period — chemo/menstrual/crop): {"kind":"cycle","params":{"start":"cycle_start","current":"today","cycleLengthDays":21}}
 
 Return ONLY JSON: {"sections":[{...}]}. Aim for 2-5 sections driven by the most salient facets.`;
 

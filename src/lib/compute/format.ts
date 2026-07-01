@@ -29,5 +29,17 @@ export function formatComputed(cv: ComputedValue): FormattedComputed {
         ? { text: `${r.remaining} left`, warn: false }
         : { text: `Over by ${r.over}`, warn: true };
     }
+    case "rate":
+      return { text: cv.value === null ? "—" : cv.value.toFixed(2), warn: false };
+    case "target_progress":
+      return { text: `${cv.value.pct}%`, warn: false };
+    case "countdown": {
+      const d = cv.value.daysRemaining;
+      return cv.value.past
+        ? { text: `${Math.abs(d)}d ago`, warn: true }
+        : { text: `${d}d left`, warn: false };
+    }
+    case "cycle":
+      return { text: `Cycle ${cv.value.cycleNumber}, day ${cv.value.dayInCycle}`, warn: false };
   }
 }

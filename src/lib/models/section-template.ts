@@ -25,7 +25,8 @@ export interface ISectionTemplate extends Document {
   icon: string;
   description: string;
   fields: IFieldDefinition[];
-  viewType: "weekly-cards" | "table" | "grid" | "board" | "calendar";
+  /** Open vocabulary (see views/registry). Rendering falls back gracefully. */
+  viewType: string;
   calendarCategories?: ICalendarCategory[];
   layoutHtml: string;
   isBuiltIn: boolean;
@@ -73,9 +74,9 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
     icon: { type: String, required: true, default: "Star" },
     description: { type: String, maxlength: 200, default: "" },
     fields: { type: [FieldDefinitionSchema], default: [] },
+    // Open vocabulary — no enum. views/registry maps novel types to a renderer.
     viewType: {
       type: String,
-      enum: ["weekly-cards", "table", "grid", "board", "calendar"],
       default: "weekly-cards",
     },
     calendarCategories: { type: [CalendarCategorySchema], default: undefined },
