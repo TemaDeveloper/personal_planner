@@ -30,6 +30,9 @@ export interface ISectionTemplate extends Document {
   calendarCategories?: ICalendarCategory[];
   layoutHtml: string;
   isBuiltIn: boolean;
+  /** The life-facet that spawned this section (for SP-4 reconciliation). */
+  sourceFacetKey?: string;
+  sourceDimension?: string;
   createdBy: mongoose.Types.ObjectId | null;
   usageCount: number;
   embedding: number[];
@@ -82,6 +85,8 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
     calendarCategories: { type: [CalendarCategorySchema], default: undefined },
     layoutHtml: { type: String, default: "" },
     isBuiltIn: { type: Boolean, default: false },
+    sourceFacetKey: { type: String, default: undefined },
+    sourceDimension: { type: String, default: undefined },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     usageCount: { type: Number, default: 1 },
     embedding: { type: [Number], default: [] },
