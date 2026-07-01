@@ -1,44 +1,28 @@
-import { z } from "zod/v4";
 import { callAI, type AIProvider } from "@/lib/ai";
 import { extractJsonBlock } from "@/lib/profile/parse-json";
 import type { ILifeFacet } from "@/lib/models/life-profile";
+import type { FieldComputation } from "@/lib/compute/primitives";
 
-const ComputationSchema = z.object({
-  kind: z.enum([
-    "net",
-    "pace_eta",
-    "ceiling",
-    "rate",
-    "target_progress",
-    "countdown",
-    "cycle",
-    "formula",
-  ]),
-  params: z.record(z.string(), z.any()),
-});
+export interface GeneratedField {
+  key: string;
+  label: string;
+  type: "boolean" | "number" | "text" | "select" | "date";
+  options?: string[];
+  formula?: string;
+  computation?: FieldComputation;
+}
 
-const GenFieldSchema = z.object({
-  key: z.string(),
-  label: z.string(),
-  type: z.enum(["boolean", "number", "text", "select", "date"]),
-  options: z.array(z.string()).optional(),
-  formula: z.string().optional(),
-  computation: ComputationSchema.optional(),
-});
-
-const GenSectionSchema = z.object({
-  name: z.string(),
-  icon: z.string().default("Star"),
-  description: z.string().default(""),
-  // Open vocabulary — see views/registry. A novel value renders via fallback.
-  viewType: z.string().default("weekly-cards"),
+export interface GeneratedSection {
+  name: string;
+  icon: string;
+  description: string;
+  /** Open vocabulary — see views/registry. A novel value renders via fallback. */
+  viewType: string;
   /** The facet dimension this section primarily serves (for reconciliation). */
-  sourceDimension: z.string().optional(),
-  fields: z.array(GenFieldSchema),
-  layoutHtml: z.string().default(""),
-});
-
-export type GeneratedSection = z.infer<typeof GenSectionSchema>;
+  sourceDimension?: string;
+  fields: GeneratedField[];
+  layoutHtml: string;
+}
 
 export const SECTION_GEN_SYSTEM_PROMPT = `You design bespoke planner sections for one specific person, from their life facets.
 
@@ -87,6 +71,79 @@ export function facetSummary(facets: ILifeFacet[]): string {
  * Deterministic parse of a raw AI response into validated section specs.
  * Extracted so it can be unit-tested without a live model.
  */
+const FIELD_TYPES = ["boolean", "number", "text", "select", "date"] as const;
+const TYPE_SYNONYMS: Record<string, (typeof FIELD_TYPES)[number]> = {
+  string: "text", str: "text", textarea: "text", int: "number", integer: "number",
+  float: "number", double: "number", currency: "number", checkbox: "boolean",
+  bool: "boolean", toggle: "boolean", dropdown: "select", enum: "select",
+  datetime: "date", time: "date",
+};
+const COMPUTATION_KINDS = [
+  "net", "pace_eta", "ceiling", "rate", "target_progress", "countdown", "cycle", "formula",
+];
+
+function slugKey(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, "").slice(0, 48);
+}
+
+function coerceType(t: unknown): (typeof FIELD_TYPES)[number] {
+  const s = String(t ?? "").toLowerCase();
+  if ((FIELD_TYPES as readonly string[]).includes(s)) return s as (typeof FIELD_TYPES)[number];
+  return TYPE_SYNONYMS[s] ?? "text";
+}
+
+function normalizeField(f: unknown): GeneratedSection["fields"][number] | null {
+  if (!f || typeof f !== "object") return null;
+  const r = f as Record<string, unknown>;
+  const label = r.label ?? r.name ?? r.key;
+  const key = r.key ?? (label != null ? slugKey(String(label)) : null);
+  if (!key) return null;
+  const field: GeneratedSection["fields"][number] = {
+    key: slugKey(String(key)) || "field",
+    label: String(label ?? key),
+    type: coerceType(r.type),
+  };
+  if (Array.isArray(r.options)) field.options = r.options.map(String);
+  if (typeof r.formula === "string") field.formula = r.formula;
+  const comp = r.computation as Record<string, unknown> | undefined;
+  if (comp && typeof comp === "object" && COMPUTATION_KINDS.includes(String(comp.kind))) {
+    const params = comp.params;
+    if (params && typeof params === "object") {
+      field.computation = {
+        kind: comp.kind as FieldComputation["kind"],
+        params: params as Record<string, unknown>,
+      };
+    }
+  }
+  return field;
+}
+
+function normalizeSection(s: unknown): GeneratedSection | null {
+  if (!s || typeof s !== "object") return null;
+  const r = s as Record<string, unknown>;
+  const name = r.name ?? r.title;
+  if (!name) return null;
+  const rawFields = Array.isArray(r.fields) ? r.fields : [];
+  const fields = rawFields
+    .map(normalizeField)
+    .filter((f): f is GeneratedSection["fields"][number] => f !== null);
+  if (fields.length === 0) return null; // a section with no usable fields is useless
+  return {
+    name: String(name),
+    icon: typeof r.icon === "string" ? r.icon : "Star",
+    description: typeof r.description === "string" ? r.description : "",
+    viewType: typeof r.viewType === "string" ? r.viewType : "weekly-cards",
+    sourceDimension: typeof r.sourceDimension === "string" ? r.sourceDimension : undefined,
+    fields,
+    layoutHtml: typeof r.layoutHtml === "string" ? r.layoutHtml : "",
+  };
+}
+
+/**
+ * Lenient parse: repair imperfect model output rather than reject it. Coerces
+ * field types, backfills keys/labels, drops only invalid bits (e.g. an unknown
+ * computation kind), and accepts several JSON envelope shapes.
+ */
 export function parseSections(raw: string): GeneratedSection[] {
   let parsed: unknown;
   try {
@@ -94,19 +151,18 @@ export function parseSections(raw: string): GeneratedSection[] {
   } catch {
     return [];
   }
+  const p = parsed as { sections?: unknown; planner?: { sections?: unknown } };
   const arr = Array.isArray(parsed)
     ? parsed
-    : (parsed as { sections?: unknown })?.sections;
+    : Array.isArray(p?.sections)
+      ? p.sections
+      : Array.isArray(p?.planner?.sections)
+        ? p.planner!.sections
+        : null;
   if (!Array.isArray(arr)) return [];
-
-  // Resilient: keep the valid sections, skip malformed ones (never throw on a
-  // single bad section — that used to 500 the whole generation).
-  const out: GeneratedSection[] = [];
-  for (const item of arr) {
-    const res = GenSectionSchema.safeParse(item);
-    if (res.success) out.push(res.data);
-  }
-  return out;
+  return arr
+    .map(normalizeSection)
+    .filter((s): s is GeneratedSection => s !== null);
 }
 
 /** Generate bespoke section specs for a person from their life facets. */
@@ -117,5 +173,12 @@ export async function generateSectionsFromFacets(
 ): Promise<GeneratedSection[]> {
   const userMessage = `This person's life facets:\n${facetSummary(facets)}\n\nDesign their planner sections.`;
   const raw = await callAI(provider, apiKey, SECTION_GEN_SYSTEM_PROMPT, userMessage);
-  return parseSections(raw);
+  const sections = parseSections(raw);
+  if (sections.length === 0) {
+    console.error(
+      "[generateSectionsFromFacets] 0 sections parsed. Raw (first 800 chars):",
+      raw.slice(0, 800)
+    );
+  }
+  return sections;
 }

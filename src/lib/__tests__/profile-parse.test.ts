@@ -65,16 +65,25 @@ describe("parseSections", () => {
     expect(kinds).toEqual(["net", "pace_eta"]);
   });
 
-  it("skips a section with an unknown computation kind instead of throwing", () => {
+  it("keeps a section but strips an unknown computation kind", () => {
     const raw = '{"sections":[{"name":"X","fields":[{"key":"a","label":"A","type":"number","computation":{"kind":"bogus","params":{}}}]}]}';
-    expect(parseSections(raw)).toEqual([]);
+    const out = parseSections(raw);
+    expect(out).toHaveLength(1);
+    expect(out[0].fields[0].computation).toBeUndefined();
   });
 
-  it("keeps valid sections and drops malformed ones", () => {
+  it("keeps valid sections and drops nameless/fieldless ones", () => {
     const raw = '{"sections":[{"name":"Good","fields":[{"key":"a","label":"A","type":"number"}]},{"nope":true}]}';
     const out = parseSections(raw);
     expect(out).toHaveLength(1);
     expect(out[0].name).toBe("Good");
+  });
+
+  it("repairs imperfect field types and backfills keys", () => {
+    const raw = '{"sections":[{"name":"S","fields":[{"label":"Done?","type":"checkbox"},{"label":"Amount","type":"currency"}]}]}';
+    const out = parseSections(raw);
+    expect(out[0].fields[0]).toMatchObject({ key: "done", type: "boolean" });
+    expect(out[0].fields[1]).toMatchObject({ key: "amount", type: "number" });
   });
 });
 
