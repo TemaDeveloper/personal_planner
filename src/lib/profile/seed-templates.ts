@@ -26,12 +26,14 @@ const sel = (key: string, label: string, options: string[]): IFieldDefinition =>
   options,
 });
 
+// Field specs aligned to the real legacy data shapes so migration is faithful.
 export const SEED_SPECS: Record<SectionId, SeedSpec> = {
   work: {
     viewType: "table",
     fields: [
       text("job", "Job"),
       num("hours", "Hours"),
+      text("note", "Note"),
       num("gross", "Gross"),
       num("fuel", "Fuel cost"),
       {
@@ -52,7 +54,8 @@ export const SEED_SPECS: Record<SectionId, SeedSpec> = {
       text("description", "Description"),
       num("amount", "Amount"),
       sel("type", "Type", ["income", "expense"]),
-      sel("category", "Category", ["rent", "utilities", "subscriptions", "insurance", "other"]),
+      sel("category", "Category", ["travel", "equipment", "meals", "office", "other"]),
+      bool("reimbursed", "Reimbursed"),
     ],
   },
   habits: {
@@ -63,14 +66,22 @@ export const SEED_SPECS: Record<SectionId, SeedSpec> = {
     viewType: "table",
     fields: [
       text("subject", "Subject"),
-      sel("item_type", "Type", ["lab", "assignment", "test", "quiz"]),
+      sel("item_type", "Type", ["lab", "assignment", "test", "quiz", "session"]),
+      text("title", "Title"),
       num("grade", "Grade"),
-      num("hours", "Hours"),
+      num("minutes", "Minutes"),
+      bool("completed", "Completed"),
     ],
   },
   hobbies: {
     viewType: "table",
-    fields: [text("hobby", "Hobby"), num("minutes", "Minutes"), text("note", "Note")],
+    fields: [
+      text("hobby", "Hobby"),
+      num("minutes", "Minutes"),
+      text("note", "Note"),
+      text("project", "Project"),
+      sel("status", "Status", ["in-progress", "completed", "paused"]),
+    ],
   },
   housework: {
     viewType: "table",
@@ -86,20 +97,22 @@ export const SEED_SPECS: Record<SectionId, SeedSpec> = {
       num("water", "Water (glasses)"),
       num("sleep_hours", "Sleep (hrs)"),
       num("weight", "Weight"),
-      sel("mood", "Mood", ["great", "good", "ok", "low"]),
+      num("mood", "Mood (1-5)"),
     ],
   },
   goals: {
     viewType: "goal-progress",
     fields: [
       text("goal", "Goal"),
-      num("current", "Current"),
-      num("target", "Target"),
+      text("description", "Description"),
+      sel("category", "Category", ["personal", "career", "health", "financial"]),
+      sel("status", "Status", ["active", "completed", "paused"]),
+      { key: "target_date", label: "Target date", type: "date" },
       {
-        key: "progress",
-        label: "Progress",
+        key: "days_left",
+        label: "Days left",
         type: "number",
-        computation: { kind: "target_progress", params: { current: "current", target: "target" } },
+        computation: { kind: "countdown", params: { target: "target_date" } },
       },
     ],
   },
@@ -107,7 +120,8 @@ export const SEED_SPECS: Record<SectionId, SeedSpec> = {
     viewType: "table",
     fields: [
       text("title", "Title"),
-      num("pages_read", "Pages read"),
+      text("author", "Author"),
+      num("current_page", "Current page"),
       num("total_pages", "Total pages"),
       {
         key: "progress",
@@ -115,25 +129,29 @@ export const SEED_SPECS: Record<SectionId, SeedSpec> = {
         type: "number",
         computation: {
           kind: "target_progress",
-          params: { current: "pages_read", target: "total_pages" },
+          params: { current: "current_page", target: "total_pages" },
         },
       },
-      sel("status", "Status", ["to-read", "reading", "finished"]),
+      sel("status", "Status", ["want-to-read", "reading", "completed"]),
+      num("rating", "Rating"),
+      text("notes", "Notes"),
     ],
   },
   journal: {
     viewType: "daily-log",
-    fields: [text("entry", "Entry"), sel("mood", "Mood", ["great", "good", "ok", "low"])],
+    fields: [text("entry", "Entry"), num("mood", "Mood (1-5)")],
   },
   shopping: {
     viewType: "table",
-    fields: [text("item", "Item"), num("qty", "Qty"), bool("bought", "Bought")],
+    fields: [text("item", "Item"), num("qty", "Qty"), bool("bought", "Bought"), text("list", "List")],
   },
   mealprep: {
     viewType: "weekly-cards",
     fields: [
       text("meal", "Meal"),
       sel("day", "Day", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]),
+      sel("type", "Type", ["breakfast", "lunch", "dinner", "snack"]),
+      text("notes", "Notes"),
     ],
   },
 };
