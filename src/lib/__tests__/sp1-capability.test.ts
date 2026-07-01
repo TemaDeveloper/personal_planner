@@ -130,8 +130,9 @@ describe("structural patterns", () => {
 describe("view registry", () => {
   it("maps novel view types to a real renderer, falling back gracefully", () => {
     expect(resolveRenderer("pipeline")).toBe("board");
-    expect(resolveRenderer("budget")).toBe("table");
-    expect(resolveRenderer("goal-progress")).toBe("table");
+    expect(resolveRenderer("budget")).toBe("budget");
+    expect(resolveRenderer("goal-progress")).toBe("goal-progress");
+    expect(resolveRenderer("schedule")).toBe("daily-log");
     expect(resolveRenderer("table")).toBe("table");
     expect(resolveRenderer("something-unknown")).toBe("weekly-cards");
     expect(resolveRenderer(undefined)).toBe("weekly-cards");

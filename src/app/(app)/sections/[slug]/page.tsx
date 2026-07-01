@@ -15,6 +15,11 @@ import { ICON_MAP } from "@/lib/icon-map";
 import { RenderedLayout } from "@/components/sections/rendered-layout";
 import { BoardView } from "@/components/sections/board-view";
 import { CalendarView } from "@/components/calendar/calendar-view";
+import { GoalProgressView } from "@/components/sections/goal-progress-view";
+import { StreakView } from "@/components/sections/streak-view";
+import { BudgetView } from "@/components/sections/budget-view";
+import { TrendView } from "@/components/sections/trend-view";
+import { DailyLogView } from "@/components/sections/daily-log-view";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 import type { CalendarCategory } from "@/lib/calendar";
 import { resolveRenderer } from "@/lib/views/registry";
@@ -138,6 +143,36 @@ export default function CustomSectionPage() {
     return (
       <div className="h-full">
         <CalendarView slug={template.slug} categories={template.calendarCategories} />
+      </div>
+    );
+  }
+
+  // Rich, self-contained views (parity with former built-in pages).
+  const SelfView =
+    renderer === "goal-progress" ? GoalProgressView
+    : renderer === "streak" ? StreakView
+    : renderer === "budget" ? BudgetView
+    : renderer === "trend" ? TrendView
+    : renderer === "daily-log" ? DailyLogView
+    : null;
+
+  if (SelfView) {
+    return (
+      <div className="animate-slide-up">
+        <PageHeader
+          title={template.name}
+          description={template.description}
+          action={
+            <button
+              onClick={() => { window.location.href = `/api/export/custom:${slug}`; }}
+              className="p-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors text-[var(--text-muted)]"
+              aria-label="Export to Excel"
+            >
+              <Download size={16} />
+            </button>
+          }
+        />
+        <SelfView slug={slug} fields={template.fields} />
       </div>
     );
   }

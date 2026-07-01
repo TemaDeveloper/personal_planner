@@ -6,7 +6,17 @@
  * back gracefully instead of breaking the page.
  */
 
-export type Renderer = "weekly-cards" | "table" | "grid" | "board" | "calendar";
+export type Renderer =
+  | "weekly-cards"
+  | "table"
+  | "grid"
+  | "board"
+  | "calendar"
+  | "goal-progress"
+  | "streak"
+  | "budget"
+  | "trend"
+  | "daily-log";
 
 export type ViewType =
   | "weekly-cards"
@@ -37,13 +47,13 @@ export const VIEW_REGISTRY: Record<ViewType, ViewMeta> = {
   grid: { key: "grid", label: "Grid", description: "Attendance/habit dot grid", renderer: "grid", supportsComputed: false },
   board: { key: "board", label: "Board", description: "Kanban columns", renderer: "board", supportsComputed: false },
   calendar: { key: "calendar", label: "Calendar", description: "Time-based events", renderer: "calendar", supportsComputed: false },
-  "goal-progress": { key: "goal-progress", label: "Goal progress", description: "Progress toward a target", renderer: "table", supportsComputed: true },
-  streak: { key: "streak", label: "Streak", description: "Consecutive-day tracking", renderer: "grid", supportsComputed: false },
-  "daily-log": { key: "daily-log", label: "Daily log", description: "Dated log of entries", renderer: "table", supportsComputed: true },
-  schedule: { key: "schedule", label: "Schedule", description: "Time-slotted plan", renderer: "table", supportsComputed: true },
-  trend: { key: "trend", label: "Trend", description: "Values over time", renderer: "table", supportsComputed: true },
+  "goal-progress": { key: "goal-progress", label: "Goal progress", description: "Progress toward a target", renderer: "goal-progress", supportsComputed: true },
+  streak: { key: "streak", label: "Streak", description: "Consecutive-day tracking", renderer: "streak", supportsComputed: false },
+  "daily-log": { key: "daily-log", label: "Daily log", description: "Dated log of entries", renderer: "daily-log", supportsComputed: true },
+  schedule: { key: "schedule", label: "Schedule", description: "Time-slotted plan", renderer: "daily-log", supportsComputed: true },
+  trend: { key: "trend", label: "Trend", description: "Values over time", renderer: "trend", supportsComputed: true },
   pipeline: { key: "pipeline", label: "Pipeline", description: "Stages a record moves through", renderer: "board", supportsComputed: false },
-  budget: { key: "budget", label: "Budget", description: "Money in/out with a net", renderer: "table", supportsComputed: true },
+  budget: { key: "budget", label: "Budget", description: "Money in/out with a net", renderer: "budget", supportsComputed: true },
 };
 
 export const VIEW_TYPES = Object.keys(VIEW_REGISTRY) as ViewType[];

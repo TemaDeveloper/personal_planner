@@ -117,7 +117,7 @@ export const SEED_SPECS: Record<SectionId, SeedSpec> = {
     ],
   },
   reading: {
-    viewType: "table",
+    viewType: "goal-progress",
     fields: [
       text("title", "Title"),
       text("author", "Author"),
