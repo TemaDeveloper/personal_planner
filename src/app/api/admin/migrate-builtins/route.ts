@@ -18,9 +18,10 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const dryRun = Boolean(body?.dryRun);
+  const resetSections = Array.isArray(body?.resetSections) ? body.resetSections.map(String) : undefined;
 
   if (body?.userId) {
-    const report = await migrateUserBuiltins(String(body.userId), { dryRun });
+    const report = await migrateUserBuiltins(String(body.userId), { dryRun, resetSections });
     return NextResponse.json({ users: 1, report });
   }
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     let totalInserts = 0;
     const perSection: Record<string, number> = {};
     for (const u of users) {
-      const report = await migrateUserBuiltins(String(u._id), { dryRun });
+      const report = await migrateUserBuiltins(String(u._id), { dryRun, resetSections });
       totalInserts += report.totalInserts;
       for (const [k, v] of Object.entries(report.counts)) {
         perSection[k] = (perSection[k] ?? 0) + v;

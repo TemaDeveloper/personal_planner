@@ -29,18 +29,24 @@ const sel = (key: string, label: string, options: string[]): IFieldDefinition =>
 // Field specs aligned to the real legacy data shapes so migration is faithful.
 export const SEED_SPECS: Record<SectionId, SeedSpec> = {
   work: {
-    viewType: "table",
+    viewType: "work-earnings",
     fields: [
       text("job", "Job"),
       num("hours", "Hours"),
-      text("note", "Note"),
-      num("gross", "Gross"),
+      num("hourly_rate", "Hourly rate"),
       num("fuel", "Fuel cost"),
+      text("note", "Note"),
+      {
+        key: "gross",
+        label: "Gross",
+        type: "number",
+        computation: { kind: "formula", params: { expr: "hours * hourly_rate" } },
+      },
       {
         key: "net",
         label: "Net",
         type: "number",
-        computation: { kind: "net", params: { add: ["gross"], subtract: ["fuel"] } },
+        computation: { kind: "formula", params: { expr: "hours * hourly_rate - fuel" } },
       },
     ],
   },

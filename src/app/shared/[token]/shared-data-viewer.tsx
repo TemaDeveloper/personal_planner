@@ -49,7 +49,7 @@ const HIDDEN_KEYS = ["_id", "__v", "userId", "createdAt", "updatedAt", "template
 const CURRENCY_KEYS = new Set(["Total", "Amount"]);
 
 function money(n: number): string {
-  return n.toLocaleString("en-CA", { style: "currency", currency: "CAD" });
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
 function isNumericKey(key: string, rows: Record<string, unknown>[]): boolean {

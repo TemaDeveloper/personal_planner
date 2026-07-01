@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   const expense = await Expense.create({
     userId,
     amount: Number(amount),
-    currency: currency || "CAD",
+    currency: currency || "USD",
     description,
     date: new Date(date),
     category: category || "other",

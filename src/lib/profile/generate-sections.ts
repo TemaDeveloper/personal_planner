@@ -12,6 +12,7 @@ const ComputationSchema = z.object({
     "target_progress",
     "countdown",
     "cycle",
+    "formula",
   ]),
   params: z.record(z.string(), z.any()),
 });

@@ -16,7 +16,8 @@ export type Renderer =
   | "streak"
   | "budget"
   | "trend"
-  | "daily-log";
+  | "daily-log"
+  | "work-earnings";
 
 export type ViewType =
   | "weekly-cards"
@@ -30,7 +31,8 @@ export type ViewType =
   | "schedule"
   | "trend"
   | "pipeline"
-  | "budget";
+  | "budget"
+  | "work-earnings";
 
 export interface ViewMeta {
   key: ViewType;
@@ -54,6 +56,7 @@ export const VIEW_REGISTRY: Record<ViewType, ViewMeta> = {
   trend: { key: "trend", label: "Trend", description: "Values over time", renderer: "trend", supportsComputed: true },
   pipeline: { key: "pipeline", label: "Pipeline", description: "Stages a record moves through", renderer: "board", supportsComputed: false },
   budget: { key: "budget", label: "Budget", description: "Money in/out with a net", renderer: "budget", supportsComputed: true },
+  "work-earnings": { key: "work-earnings", label: "Work earnings", description: "Hours, pay and fuel-adjusted net", renderer: "work-earnings", supportsComputed: true },
 };
 
 export const VIEW_TYPES = Object.keys(VIEW_REGISTRY) as ViewType[];

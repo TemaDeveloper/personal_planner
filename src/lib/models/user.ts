@@ -121,13 +121,12 @@ const UserSchema = new Schema<IUser>(
     },
     avatarEmoji: { type: String, default: "🌟" },
     onboardingDone: { type: Boolean, default: false },
+    // Open set — no enum. Sections are dynamic; this legacy field only tracks
+    // which seed sections a pre-adaptive user has enabled. New users use the
+    // adaptive customSections pipeline instead.
     enabledSections: {
       type: [String],
-      enum: [
-        "work", "gym", "finances", "habits", "study",
-        "hobbies", "housework", "health", "goals", "reading", "journal", "shopping", "mealprep",
-      ],
-      default: ["work", "gym", "finances", "habits"],
+      default: [],
     },
     preferences: {
       accentTheme: {
@@ -148,7 +147,7 @@ const UserSchema = new Schema<IUser>(
       currency: {
         type: String,
         enum: ["CAD", "USD", "EUR", "GBP"],
-        default: "CAD",
+        default: "USD",
       },
       weekStart: {
         type: String,
@@ -168,8 +167,8 @@ const UserSchema = new Schema<IUser>(
     },
     workConfig: {
       jobs: { type: [JobSchema], default: [] },
-      gasPrice: { type: Number, default: 210.2 },
-      carConsumption: { type: Number, default: 9.0 },
+      gasPrice: { type: Number, default: 0 },
+      carConsumption: { type: Number, default: 0 },
     },
     studyConfig: {
       subjects: {
@@ -212,7 +211,7 @@ const UserSchema = new Schema<IUser>(
       },
     },
     gymConfig: {
-      targetDaysPerWeek: { type: Number, default: 5, min: 1, max: 7 },
+      targetDaysPerWeek: { type: Number, default: 3, min: 1, max: 7 },
     },
     aiConfig: {
       provider: {

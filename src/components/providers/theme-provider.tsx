@@ -25,7 +25,7 @@ const defaultPreferences: Preferences = {
   accentTheme: "amber",
   fontStyle: "sans",
   layoutDensity: "default",
-  currency: "CAD",
+  currency: "USD",
   weekStart: "monday",
   dateFormat: "MMM d, yyyy",
   timeFormat: "24h",

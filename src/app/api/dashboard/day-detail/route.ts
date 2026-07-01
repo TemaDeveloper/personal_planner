@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
 
   // Add user config for inline forms
   const jobs = user.workConfig?.jobs?.filter((j: { active: boolean }) => j.active) || [];
-  const currency = user.preferences?.currency || "CAD";
+  const currency = user.preferences?.currency || "USD";
 
   return NextResponse.json({ sections: result, jobs, currency });
 }

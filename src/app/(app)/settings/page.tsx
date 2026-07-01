@@ -77,14 +77,14 @@ export default function SettingsPage() {
   const [colorMode, setColorMode] = useState<ColorMode>(preferences.colorMode);
 
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [gasPrice, setGasPrice] = useState("210.2");
-  const [carConsumption, setCarConsumption] = useState("9.0");
+  const [gasPrice, setGasPrice] = useState("0");
+  const [carConsumption, setCarConsumption] = useState("0");
 
   const [bills, setBills] = useState<Bill[]>([]);
 
   const [localSections, setLocalSections] = useState<SectionId[]>([...enabledSections]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [targetDaysPerWeek, setTargetDaysPerWeek] = useState(5);
+  const [targetDaysPerWeek, setTargetDaysPerWeek] = useState(3);
   const [aiProviderSetting, setAiProviderSetting] = useState<AIProvider | "">("");
   const [hasAiKey, setHasAiKey] = useState(false);
   const [newAiKey, setNewAiKey] = useState("");
@@ -109,18 +109,18 @@ export default function SettingsPage() {
         setAccentTheme(data.preferences?.accentTheme || "amber");
         setFontStyle(data.preferences?.fontStyle || "sans");
         setLayoutDensity(data.preferences?.layoutDensity || "default");
-        setCurrency(data.preferences?.currency || "CAD");
+        setCurrency(data.preferences?.currency || "USD");
         setWeekStart(data.preferences?.weekStart || "monday");
         setDateFormat(data.preferences?.dateFormat || "MMM d, yyyy");
         setTimeFormat(data.preferences?.timeFormat || "24h");
         setColorMode(data.preferences?.colorMode || "system");
         setJobs(data.workConfig?.jobs || []);
-        setGasPrice(String(data.workConfig?.gasPrice || 210.2));
-        setCarConsumption(String(data.workConfig?.carConsumption || 9.0));
+        setGasPrice(String(data.workConfig?.gasPrice || 0));
+        setCarConsumption(String(data.workConfig?.carConsumption || 0));
         setBills(data.bills || []);
         if (data.enabledSections) setLocalSections(data.enabledSections);
         setSubjects(data.studyConfig?.subjects || []);
-        setTargetDaysPerWeek(data.gymConfig?.targetDaysPerWeek ?? 5);
+        setTargetDaysPerWeek(data.gymConfig?.targetDaysPerWeek ?? 3);
         setAiProviderSetting(data.aiProvider || "");
         setHasAiKey(data.hasAiKey || false);
         setLoading(false);

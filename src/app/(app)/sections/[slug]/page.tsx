@@ -20,6 +20,7 @@ import { StreakView } from "@/components/sections/streak-view";
 import { BudgetView } from "@/components/sections/budget-view";
 import { TrendView } from "@/components/sections/trend-view";
 import { DailyLogView } from "@/components/sections/daily-log-view";
+import { WorkEarningsView } from "@/components/sections/work-earnings-view";
 import { startOfWeek, addWeeks, addDays, format } from "date-fns";
 import type { CalendarCategory } from "@/lib/calendar";
 import { resolveRenderer } from "@/lib/views/registry";
@@ -154,6 +155,7 @@ export default function CustomSectionPage() {
     : renderer === "budget" ? BudgetView
     : renderer === "trend" ? TrendView
     : renderer === "daily-log" ? DailyLogView
+    : renderer === "work-earnings" ? WorkEarningsView
     : null;
 
   if (SelfView) {

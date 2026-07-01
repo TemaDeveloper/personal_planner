@@ -28,12 +28,10 @@ const securityHeaders = [
 ];
 
 // The former built-in sections now exist as unified seed templates at
-// /sections/<slug>. When UNIFIED_SECTIONS=1 (set after the data migration has
-// run and the unified renderer is at parity), these legacy routes redirect to
-// the unified ones. `work` is intentionally excluded — its bespoke earnings
-// breakdown (per-job, gas, monthly) has no unified equivalent yet.
+// /sections/<slug>. When UNIFIED_SECTIONS=1, these legacy routes redirect to the
+// unified ones. `work` now has a dedicated unified earnings view, so all 13 flip.
 const BUILTIN_SLUGS = [
-  "gym", "finances", "habits", "study", "hobbies", "housework",
+  "work", "gym", "finances", "habits", "study", "hobbies", "housework",
   "health", "goals", "reading", "journal", "shopping", "mealprep",
 ];
 

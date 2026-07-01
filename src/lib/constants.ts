@@ -55,8 +55,9 @@ export const THEME_COLORS: Record<AccentTheme, string> = {
   plum: "#7A5C7E",
 };
 
-export const DEFAULT_GAS_PRICE = 210.2; // cents per litre
-export const DEFAULT_CAR_CONSUMPTION = 9.0; // L/100km
+// No car is assumed by default. Users who drive set these in Settings.
+export const DEFAULT_GAS_PRICE = 0; // cents per litre
+export const DEFAULT_CAR_CONSUMPTION = 0; // L/100km
 
 // Configurable sections
 export const SECTIONS = [

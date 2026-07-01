@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/db";
 import SectionTemplate from "@/lib/models/section-template";
 import CustomEntry from "@/lib/models/custom-entry";
+import User from "@/lib/models/user";
 import WorkSession from "@/lib/models/work-session";
 import GymAttendance from "@/lib/models/gym-attendance";
 import Expense from "@/lib/models/expense";
@@ -55,11 +56,23 @@ export interface MigrationReport {
  */
 export async function migrateUserBuiltins(
   userId: string,
-  opts: { dryRun?: boolean } = {}
+  opts: { dryRun?: boolean; resetSections?: string[] } = {}
 ): Promise<MigrationReport> {
   await connectDB();
   const now = new Date();
   const counts: Record<string, number> = {};
+
+  // Optional reset: drop previously-migrated rows for given sections so they
+  // re-migrate cleanly (e.g. after a transform fix). Only touches migrated
+  // copies (identified by the __src marker); legacy data is never affected.
+  if (!opts.dryRun && opts.resetSections?.length) {
+    for (const section of opts.resetSections) {
+      await CustomEntry.deleteMany({
+        userId,
+        "data.__src": { $regex: `^${section}:` },
+      });
+    }
+  }
 
   // Idempotency: markers already present on this user's CustomEntries.
   const existing = await CustomEntry.find({ userId }).select("data").lean();
@@ -98,7 +111,13 @@ export async function migrateUserBuiltins(
     }
   };
 
-  await run("work", transformWork(asRows(await WorkSession.find({ userId }).lean()), now));
+  // Legacy hourly rates live on the user's job config, not the session rows.
+  const userDoc = await User.findById(userId).select("workConfig.jobs").lean();
+  const rateByJob = new Map<string, number>();
+  for (const job of userDoc?.workConfig?.jobs ?? []) {
+    if (job?.name) rateByJob.set(String(job.name), Number(job.hourlyRate) || 0);
+  }
+  await run("work", transformWork(asRows(await WorkSession.find({ userId }).lean()), now, rateByJob));
   await run("gym", transformGym(asRows(await GymAttendance.find({ userId }).lean()), now));
   await run("finances", transformFinances(asRows(await Expense.find({ userId }).lean()), now));
 

@@ -65,7 +65,7 @@ export default async function DashboardPage() {
   ]);
 
   const jobs = user.workConfig?.jobs || [];
-  const currency = user.preferences?.currency || "CAD";
+  const currency = user.preferences?.currency || "USD";
 
   // Calculate work summaries per job
   const workSummaries = has("work")
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
     : [];
 
   const gymDaysThisWeek = weekWorkouts.length;
-  const gymTargetDays = user.gymConfig?.targetDaysPerWeek ?? 5;
+  const gymTargetDays = user.gymConfig?.targetDaysPerWeek ?? 3;
   const studyMinutesThisWeek = weekStudySessions.reduce(
     (sum: number, s: { minutes: number }) => sum + s.minutes,
     0

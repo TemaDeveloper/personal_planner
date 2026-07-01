@@ -54,11 +54,20 @@ function clean(o: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-export const transformWork = (rows: LegacyRow[], now: Date): OutRow[] =>
+export const transformWork = (
+  rows: LegacyRow[],
+  now: Date,
+  rateByJob: Map<string, number> = new Map()
+): OutRow[] =>
   rows.map((r) => ({
     srcKey: rid(r),
     date: iso(r.date, now),
-    data: clean({ job: r.jobName, hours: r.hours, note: r.note }),
+    data: clean({
+      job: r.jobName,
+      hours: r.hours,
+      hourly_rate: rateByJob.get(String(r.jobName)),
+      note: r.note,
+    }),
   }));
 
 export const transformGym = (rows: LegacyRow[], now: Date): OutRow[] =>

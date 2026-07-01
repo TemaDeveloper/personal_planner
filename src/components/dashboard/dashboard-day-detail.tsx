@@ -74,7 +74,7 @@ const SECTION_ICONS: Record<string, React.ComponentType<{ size: number; classNam
 export function DashboardDayDetail({ date, onDataChange }: DayDetailProps) {
   const [data, setData] = useState<DayData | null>(null);
   const [jobs, setJobs] = useState<{ name: string }[]>([]);
-  const [currency, setCurrency] = useState("CAD");
+  const [currency, setCurrency] = useState("USD");
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(() => {

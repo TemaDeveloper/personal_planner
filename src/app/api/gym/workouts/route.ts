@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     attendance,
-    targetDaysPerWeek: user?.gymConfig?.targetDaysPerWeek ?? 5,
+    targetDaysPerWeek: user?.gymConfig?.targetDaysPerWeek ?? 3,
   });
 }
 

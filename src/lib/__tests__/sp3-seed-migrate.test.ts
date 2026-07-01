@@ -18,12 +18,16 @@ describe("buildSeedTemplates", () => {
     }
   });
 
-  it("turns work's fuel assumption into a plain field feeding a net computation", () => {
+  it("computes work net from hours*rate-fuel via a formula (no fuel assumption baked in)", () => {
     const work = seeds.find((s) => s.slug === "work")!;
     const net = work.fields.find((f) => f.key === "net")!;
-    expect(net.computation?.kind).toBe("net");
-    const cv = resolveComputed(net.computation!, { gross: 200, fuel: 0 });
-    expect(cv).toEqual({ kind: "net", value: 200 });
+    expect(net.computation?.kind).toBe("formula");
+    // A cyclist with no fuel: net === gross
+    expect(resolveComputed(net.computation!, { hours: 8, hourly_rate: 25, fuel: 0 }))
+      .toEqual({ kind: "formula", value: 200 });
+    // A driver: fuel comes out
+    expect(resolveComputed(net.computation!, { hours: 8, hourly_rate: 25, fuel: 30 }))
+      .toEqual({ kind: "formula", value: 170 });
   });
 
   it("uses target_progress for reading and countdown for goals", () => {

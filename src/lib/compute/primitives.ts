@@ -7,6 +7,8 @@
  * the field values from an entry's data and returns the derived result.
  */
 
+import { evalFormula } from "@/lib/compute/formula";
+
 export type ComputationKind =
   | "net"
   | "pace_eta"
@@ -14,7 +16,8 @@ export type ComputationKind =
   | "rate"
   | "target_progress"
   | "countdown"
-  | "cycle";
+  | "cycle"
+  | "formula";
 
 export interface FieldComputation {
   kind: ComputationKind;
@@ -178,7 +181,8 @@ export type ComputedValue =
   | { kind: "rate"; value: number | null }
   | { kind: "target_progress"; value: TargetProgressResult }
   | { kind: "countdown"; value: CountdownResult }
-  | { kind: "cycle"; value: CycleResult };
+  | { kind: "cycle"; value: CycleResult }
+  | { kind: "formula"; value: number | null };
 
 /**
  * Evaluate a field computation against an entry's data.
@@ -241,6 +245,8 @@ export function resolveComputed(
         ),
       };
     }
+    case "formula":
+      return { kind: "formula", value: evalFormula(String(p.expr ?? ""), data) };
     default:
       return null;
   }

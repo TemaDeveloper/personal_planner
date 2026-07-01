@@ -30,6 +30,7 @@ export function formatComputed(cv: ComputedValue): FormattedComputed {
         : { text: `Over by ${r.over}`, warn: true };
     }
     case "rate":
+    case "formula":
       return { text: cv.value === null ? "—" : cv.value.toFixed(2), warn: false };
     case "target_progress":
       return { text: `${cv.value.pct}%`, warn: false };
