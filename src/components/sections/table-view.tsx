@@ -4,14 +4,17 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, Trash2, Check, TableIcon } from "lucide-react";
+import { Plus, Trash2, Check, TableIcon, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import { resolveComputed, type FieldComputation } from "@/lib/compute/primitives";
+import { formatComputed } from "@/lib/compute/format";
 
 interface FieldDef {
   key: string;
   label: string;
   type: string;
   formula?: string;
+  computation?: FieldComputation;
 }
 
 interface Entry {
@@ -99,7 +102,22 @@ export function TableView({ slug, fields, entries, onAdd, onRefresh }: TableView
                 const val = entry.data[f.key];
                 return (
                   <div key={f.key} className="flex-1 min-w-[100px] text-sm px-2 text-[var(--text-primary)]">
-                    {f.type === "boolean" ? (
+                    {f.computation ? (
+                      (() => {
+                        const cv = resolveComputed(f.computation!, entry.data);
+                        if (!cv) return <span className="text-[var(--text-faint)]">—</span>;
+                        const fc = formatComputed(cv);
+                        return (
+                          <span
+                            className="num font-semibold inline-flex items-center gap-1"
+                            style={{ color: fc.warn ? "var(--alert)" : "var(--accent-text)" }}
+                          >
+                            {fc.warn && <AlertTriangle size={12} />}
+                            {fc.text}
+                          </span>
+                        );
+                      })()
+                    ) : f.type === "boolean" ? (
                       val ? (
                         <Check size={14} style={{ color: "var(--accent-color)" }} />
                       ) : (

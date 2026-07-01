@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Document } from "mongoose";
+import type { FieldComputation } from "@/lib/compute/primitives";
 
 export interface IFieldDefinition {
   key: string;
@@ -6,7 +7,10 @@ export interface IFieldDefinition {
   type: "boolean" | "number" | "text" | "select" | "date";
   options?: string[];
   required?: boolean;
+  /** Legacy arithmetic interpolation string used by the layout renderer. */
   formula?: string;
+  /** Typed, deterministic derivation evaluated by compute/primitives. */
+  computation?: FieldComputation;
 }
 
 export interface ICalendarCategory {
@@ -48,6 +52,7 @@ const FieldDefinitionSchema = new Schema<IFieldDefinition>(
     options: { type: [String], default: undefined },
     required: { type: Boolean, default: false },
     formula: { type: String },
+    computation: { type: Schema.Types.Mixed, default: undefined },
   },
   { _id: false }
 );
