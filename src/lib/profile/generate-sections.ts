@@ -30,7 +30,12 @@ export const SECTION_GEN_SYSTEM_PROMPT = `You design bespoke planner sections fo
 Rules:
 - Create only sections that fit THIS person. Two different people should share almost nothing.
 - Each section: name, icon, description, viewType, sourceDimension (the facet dimension this section primarily serves), and fields.
-- icon MUST be exactly one of these names (pick the most fitting; do NOT invent others): ${ICON_NAMES.join(", ")}.
+
+NAMING — make it personal, not generic. Name sections in the person's own world, referencing their actual situation; never use bland template names.
+- Good: "Rideshare Nights", "Escape Fund", "Ava & Ben's Week", "Spoons & Crashes", "Marathon Build". Bad: "Work Tracker", "Finance Section", "Health", "Custom Section", "Tasks".
+- Descriptions: one concrete, warm line about what THIS person tracks here — not a definition of the category.
+
+ICONS — pick a DISTINCT, on-topic icon for EACH section. Never reuse the same icon across two sections, and never fall back to a generic "Star" when a fitting one exists. Choose the single most specific match. icon MUST be exactly one of these names (do NOT invent others): ${ICON_NAMES.join(", ")}.
 - viewType is one of: weekly-cards | table | grid | board | calendar | goal-progress | streak | daily-log | schedule | trend | pipeline | budget. Pick the one that fits.
 - Each field: key (snake_case), label, type (boolean|number|text|select|date), options (for select).
 
