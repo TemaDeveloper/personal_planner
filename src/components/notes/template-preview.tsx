@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import type { PresetBlock } from "@/lib/notes/templates";
 import { buildTemplate, templateDatabases } from "@/lib/notes/templates";
 
@@ -8,54 +9,70 @@ import { buildTemplate, templateDatabases } from "@/lib/notes/templates";
  * Covers the block types templates use (headings, text, callout, lists, quote,
  * divider, columns, button, and a labeled placeholder for database blocks). */
 export function TemplatePreview({ templateKey }: { templateKey: string }) {
-  const blocks = buildTemplate(templateKey);
-  const dbs = templateDatabases(templateKey);
+  const blocks = useMemo(() => buildTemplate(templateKey), [templateKey]);
+  const dbs = useMemo(() => templateDatabases(templateKey), [templateKey]);
   return (
     <div className="text-[13px] leading-relaxed" style={{ color: "var(--text-primary)" }}>
-      {blocks.map((b, i) => <PreviewBlock key={i} block={b} dbs={dbs} />)}
+      {renderBlocks(blocks, dbs)}
     </div>
   );
 }
 
-function PreviewBlock({ block, dbs }: { block: PresetBlock; dbs: Record<string, { title: string; icon: string; views: { name: string }[] }> }) {
+type PreviewDbs = Record<string, { title: string; icon: string; views: { name: string }[] }>;
+
+/** Numbered-list items auto-increment over a consecutive run, matching
+ * BlockNote's real numbering (which resets after a non-numbered sibling). */
+function numberedListPosition(list: PresetBlock[], i: number): number {
+  let n = 1;
+  for (let j = i - 1; j >= 0 && list[j].type === "numberedListItem"; j--) n++;
+  return n;
+}
+
+function renderBlocks(list: PresetBlock[], dbs: PreviewDbs) {
+  return list.map((b, i) => (
+    <PreviewBlock key={i} block={b} dbs={dbs} number={b.type === "numberedListItem" ? numberedListPosition(list, i) : undefined} />
+  ));
+}
+
+function PreviewBlock({ block, dbs, number }: { block: PresetBlock; dbs: PreviewDbs; number?: number }) {
   const text = block.content ?? "";
   const kids = block.children ?? [];
   switch (block.type) {
     case "heading": {
       const lvl = Number(block.props?.level) || 1;
-      const cls = lvl === 1 ? "text-[20px] font-bold mt-3 mb-1" : lvl === 2 ? "text-[16px] font-semibold mt-3 mb-1" : "text-[14px] font-semibold mt-2 mb-0.5";
+      const cls = lvl === 1 ? "text-[30px] font-semibold mt-3 mb-1" : lvl === 2 ? "text-[24px] font-semibold mt-3 mb-1" : "text-[20px] font-semibold mt-2 mb-0.5";
       return <div className={cls}>{text}</div>;
     }
     case "paragraph":
-      return <div className="min-h-[1.1em] mb-1" style={{ color: text ? "var(--text-primary)" : "var(--text-faint)" }}>{text || " "}</div>;
+      return <div className="min-h-[1.1em] mb-1" style={{ color: text ? "var(--text-primary)" : "var(--text-faint)" }}>{text || " "}</div>;
     case "quote":
-      return <div className="border-l-2 pl-2 my-1 italic" style={{ borderColor: "var(--border-default)", color: "var(--text-muted)" }}>{text}</div>;
+      return <div className="min-h-[1.1em] border-l-2 pl-2 my-1 italic" style={{ borderColor: "var(--border-default)", color: "var(--text-muted)" }}>{text || " "}</div>;
     case "divider":
       return <hr className="my-2" style={{ border: "none", borderTop: "1px solid var(--border-subtle)" }} />;
     case "bulletListItem":
-      return <div className="flex gap-1.5 ml-1"><span style={{ color: "var(--text-faint)" }}>•</span><span>{text || " "}</span></div>;
+      return <div className="flex gap-1.5 ml-1"><span style={{ color: "var(--text-faint)" }}>•</span><span>{text || " "}</span></div>;
     case "numberedListItem":
-      return <div className="flex gap-1.5 ml-1"><span style={{ color: "var(--text-faint)" }}>1.</span><span>{text || " "}</span></div>;
+      return <div className="flex gap-1.5 ml-1"><span style={{ color: "var(--text-faint)" }}>{number ?? 1}.</span><span>{text || " "}</span></div>;
     case "checkListItem":
-      return <div className="flex items-center gap-1.5 ml-1"><span className="inline-block w-3.5 h-3.5 rounded-sm border" style={{ borderColor: "var(--border-default)" }} /><span>{text || " "}</span></div>;
+      return <div className="flex items-center gap-1.5 ml-1"><span className="inline-block w-3.5 h-3.5 rounded-sm border" style={{ borderColor: "var(--border-default)" }} /><span>{text || " "}</span></div>;
     case "callout":
       return (
-        <div className="flex gap-2 rounded-md px-2.5 py-2 my-1" data-callout-color={(block.props?.color as string) || "default"} style={{ background: "var(--surface-raised)" }}>
-          <span className="shrink-0">{(block.props?.emoji as string) || "💡"}</span>
-          <div className="min-w-0 flex-1">
-            {text && <div>{text}</div>}
-            {kids.map((c, i) => <PreviewBlock key={i} block={c} dbs={dbs} />)}
+        <div className="my-1">
+          <div className="flex gap-2 rounded-md px-2.5 py-2" data-callout-color={(block.props?.color as string) || "default"} style={{ background: "var(--surface-raised)" }}>
+            <span className="shrink-0">{(block.props?.emoji as string) || "💡"}</span>
+            <div className="min-w-0 flex-1">{text || " "}</div>
           </div>
+          {kids.length > 0 && <div className="ml-1 mt-1">{renderBlocks(kids, dbs)}</div>}
         </div>
       );
     case "button":
-      return <span className="inline-block rounded-md px-3 py-1 my-1 text-[12px] font-medium" style={{ background: "var(--surface-raised)", border: "1px solid var(--border-default)" }}>{text || "Button"}</span>;
+      return <span className="inline-flex items-center rounded-md px-3 py-1.5 my-1 text-[14px] font-medium" style={{ background: "var(--surface-raised)", border: "1px solid var(--border-default)" }}>{text || " "}</span>;
     case "columnList":
       return (
         <div className="flex gap-3 my-1">
           {kids.map((col, i) => (
             <div key={i} className="flex-1 min-w-0">
-              {(col.children ?? []).map((c, j) => <PreviewBlock key={j} block={c} dbs={dbs} />)}
+              {renderBlocks(col.children ?? [], dbs)}
             </div>
           ))}
         </div>
