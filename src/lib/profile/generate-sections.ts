@@ -1,5 +1,6 @@
 import { callAI, type AIProvider } from "@/lib/ai";
 import { extractJsonBlock } from "@/lib/profile/parse-json";
+import { ICON_NAMES, ICON_NAME_SET } from "@/lib/icon-names";
 import type { ILifeFacet } from "@/lib/models/life-profile";
 import type { FieldComputation } from "@/lib/compute/primitives";
 
@@ -28,7 +29,8 @@ export const SECTION_GEN_SYSTEM_PROMPT = `You design bespoke planner sections fo
 
 Rules:
 - Create only sections that fit THIS person. Two different people should share almost nothing.
-- Each section: name, icon (Lucide name), description, viewType, sourceDimension (the facet dimension this section primarily serves), and fields.
+- Each section: name, icon, description, viewType, sourceDimension (the facet dimension this section primarily serves), and fields.
+- icon MUST be exactly one of these names (pick the most fitting; do NOT invent others): ${ICON_NAMES.join(", ")}.
 - viewType is one of: weekly-cards | table | grid | board | calendar | goal-progress | streak | daily-log | schedule | trend | pipeline | budget. Pick the one that fits.
 - Each field: key (snake_case), label, type (boolean|number|text|select|date), options (for select).
 
@@ -141,7 +143,8 @@ function normalizeSection(s: unknown): GeneratedSection | null {
   if (fields.length === 0) return null; // a section with no usable fields is useless
   return {
     name: String(name),
-    icon: typeof r.icon === "string" ? r.icon : "Star",
+    // Only names the app can render; anything else would silently show a Star.
+    icon: typeof r.icon === "string" && ICON_NAME_SET.has(r.icon) ? r.icon : "Star",
     description: typeof r.description === "string" ? r.description : "",
     viewType: typeof r.viewType === "string" ? r.viewType : "weekly-cards",
     sourceDimension: typeof r.sourceDimension === "string" ? r.sourceDimension : undefined,
