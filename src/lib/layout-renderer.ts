@@ -21,7 +21,7 @@ interface FieldDef {
 }
 
 const EXPRESSION_RE = /\{([^}]+)\}/g;
-const DATA_EACH_RE = /<([a-z][a-z0-9]*)\s([^>]*?)data-each="entries"([^>]*)>([\s\S]*?)<\/\1>/gi;
+const DATA_EACH_OPEN_RE = /<([a-z][a-z0-9]*)\b[^>]*\bdata-each="entries"[^>]*>/gi;
 const ALLOWED_TOKEN = /^[a-zA-Z_]\w*$/;
 
 /** Tags allowed in layout HTML */
@@ -176,6 +176,55 @@ function evaluateArithmetic(
 }
 
 /**
+ * Expand data-each="entries" blocks using a depth-counting scan so nested
+ * elements of the same tag inside the loop body don't truncate the match
+ * (a non-greedy regex would stop at the FIRST nested closing tag).
+ */
+function expandEachBlocks(
+  html: string,
+  render: (tag: string, attrs: string, inner: string) => string
+): string {
+  let result = "";
+  let cursor = 0;
+  DATA_EACH_OPEN_RE.lastIndex = 0;
+  let open: RegExpExecArray | null;
+  while ((open = DATA_EACH_OPEN_RE.exec(html)) !== null) {
+    if (open.index < cursor) continue; // inside an already-consumed block
+    const tag = open[1].toLowerCase();
+    const openEnd = open.index + open[0].length;
+
+    // Walk forward counting nested open/close tags of the same name.
+    const tokenRe = new RegExp(`<${tag}\\b[^>]*>|</${tag}\\s*>`, "gi");
+    tokenRe.lastIndex = openEnd;
+    let depth = 1;
+    let closeStart = -1;
+    let closeEnd = -1;
+    let token: RegExpExecArray | null;
+    while ((token = tokenRe.exec(html)) !== null) {
+      if (token[0][1] === "/") depth--;
+      else if (!token[0].endsWith("/>")) depth++;
+      if (depth === 0) {
+        closeStart = token.index;
+        closeEnd = token.index + token[0].length;
+        break;
+      }
+    }
+    if (closeStart === -1) break; // unbalanced — leave the rest untouched
+
+    const inner = html.slice(openEnd, closeStart);
+    const attrs = open[0]
+      .slice(1 + tag.length, open[0].length - 1)
+      .replace(/\s*data-each="entries"/i, "")
+      .trim();
+
+    result += html.slice(cursor, open.index) + render(tag, attrs, inner);
+    cursor = closeEnd;
+    DATA_EACH_OPEN_RE.lastIndex = cursor;
+  }
+  return result + html.slice(cursor);
+}
+
+/**
  * Render layout HTML with data interpolation.
  *
  * @param html - The layout HTML template with {expressions} and data-each
@@ -195,12 +244,12 @@ export function renderLayout(
 
   // Expand data-each loops
   if (entries && entries.length > 0) {
-    output = output.replace(DATA_EACH_RE, (_match, tag, attrsBefore, attrsAfter, innerHtml) => {
+    output = expandEachBlocks(output, (tag, attrs, innerHtml) => {
       return entries.map((entry) => {
         const expandedInner = innerHtml.replace(EXPRESSION_RE, (_: string, expr: string) =>
           parseExpression(expr, data, allowedFields, entry)
         );
-        return `<${tag} ${attrsBefore}${attrsAfter}>${expandedInner}</${tag}>`;
+        return `<${tag}${attrs ? " " + attrs : ""}>${expandedInner}</${tag}>`;
       }).join("\n");
     });
   }

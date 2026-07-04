@@ -19,7 +19,8 @@ import { DashboardCards } from "@/components/dashboard/dashboard-cards";
 import { DashboardCalendar } from "@/components/dashboard/dashboard-calendar";
 import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics";
 import { DashboardBoards } from "@/components/dashboard/dashboard-boards";
-import { DEFAULT_ENABLED_SECTIONS, type SectionId } from "@/lib/constants";
+import { builtinSectionEntries, num, type BuiltinEntry } from "@/lib/dashboard-data";
+import { DEFAULT_CURRENCY, DEFAULT_ENABLED_SECTIONS, type SectionId } from "@/lib/constants";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -42,42 +43,47 @@ export default async function DashboardPage() {
   const enabledSections = (user.enabledSections as SectionId[] | undefined) ?? [...DEFAULT_ENABLED_SECTIONS];
   const has = (s: SectionId) => enabledSections.includes(s);
 
-  const [
-    weekSessions, todaySessions, monthSessions,
-    weekWorkouts, weekStudySessions,
-    weekHobbySessions, todayHousework, weekHealthLogs,
-    activeGoals, readingBooks, monthJournalEntries,
-    shoppingLists, weekMealPlans,
-  ] = await Promise.all([
-    has("work") ? WorkSession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
-    has("work") ? WorkSession.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean() : Promise.resolve([]),
-    has("work") ? WorkSession.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean() : Promise.resolve([]),
-    has("gym") ? GymAttendance.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
-    has("study") ? StudySession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
-    has("hobbies") ? HobbySession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
-    has("housework") ? HouseworkLog.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean() : Promise.resolve([]),
-    has("health") ? HealthLog.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
-    has("goals") ? Goal.find({ userId, status: "active" }).lean() : Promise.resolve([]),
-    has("reading") ? Book.find({ userId, status: "reading" }).lean() : Promise.resolve([]),
-    has("journal") ? JournalEntry.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean() : Promise.resolve([]),
-    has("shopping") ? ShoppingList.find({ userId, archived: false }).lean() : Promise.resolve([]),
-    has("mealprep") ? MealPlan.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean() : Promise.resolve([]),
-  ]);
-
   const jobs = user.workConfig?.jobs || [];
-  const currency = user.preferences?.currency || "USD";
+  const currency = user.preferences?.currency || DEFAULT_CURRENCY;
 
-  // Calculate work summaries per job
+  const inRange = (d: Date, s: Date, e: Date) => {
+    const t = new Date(d).getTime();
+    return t >= s.getTime() && t <= e.getTime();
+  };
+  const dayKey = (d: Date) => new Date(d).toISOString().slice(0, 10);
+
+  // Every glance stat reads the unified CustomEntry store (what /sections write),
+  // falling back to the legacy collection only when a section has no unified rows
+  // yet (pre-migration data). Each block resolves the numbers the cards expect.
+
+  // ── Work: normalize to { date, job, hours } from either store ──────────────
+  type WorkRow = { date: Date; job: string; hours: number };
+  let workRows: WorkRow[] = [];
+  if (has("work")) {
+    const entries = await builtinSectionEntries(userId, "work", [monthStart, monthEnd]);
+    if (entries && entries.length > 0) {
+      workRows = entries.map((e) => ({
+        date: e.date,
+        job: String(e.data?.job ?? ""),
+        hours: num(e.data?.hours),
+      }));
+    } else {
+      const sessions = await WorkSession.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean();
+      workRows = sessions.map((s: { date: Date; jobName: string; hours: number }) => ({
+        date: s.date,
+        job: s.jobName,
+        hours: s.hours,
+      }));
+    }
+  }
   const workSummaries = has("work")
     ? jobs.filter((j: { active: boolean }) => j.active).map((job: { name: string; hourlyRate: number; weeklyTarget: number }) => {
-        const jobWeekSessions = weekSessions.filter((s: { jobName: string }) => s.jobName === job.name);
-        const jobTodaySessions = todaySessions.filter((s: { jobName: string }) => s.jobName === job.name);
-        const jobMonthSessions = monthSessions.filter((s: { jobName: string }) => s.jobName === job.name);
-
-        const weekHours = jobWeekSessions.reduce((sum: number, s: { hours: number }) => sum + s.hours, 0);
-        const todayHours = jobTodaySessions.reduce((sum: number, s: { hours: number }) => sum + s.hours, 0);
-        const monthHours = jobMonthSessions.reduce((sum: number, s: { hours: number }) => sum + s.hours, 0);
-
+        const forJob = workRows.filter((r) => r.job === job.name);
+        const sumHours = (s: Date, e: Date) =>
+          forJob.filter((r) => inRange(r.date, s, e)).reduce((sum, r) => sum + r.hours, 0);
+        const weekHours = sumHours(weekStart, weekEnd);
+        const todayHours = sumHours(todayStart, todayEnd);
+        const monthHours = sumHours(monthStart, monthEnd);
         return {
           name: job.name,
           weekHours,
@@ -92,33 +98,116 @@ export default async function DashboardPage() {
       })
     : [];
 
-  const gymDaysThisWeek = weekWorkouts.length;
+  // ── Gym: distinct attended days this week ──────────────────────────────────
+  let gymDaysThisWeek = 0;
+  if (has("gym")) {
+    const entries = await builtinSectionEntries(userId, "gym", [weekStart, weekEnd]);
+    if (entries) {
+      gymDaysThisWeek = new Set(
+        entries.filter((e) => e.data?.attended !== false).map((e) => dayKey(e.date))
+      ).size;
+    } else {
+      gymDaysThisWeek = await GymAttendance.countDocuments({ userId, date: { $gte: weekStart, $lte: weekEnd } });
+    }
+  }
   const gymTargetDays = user.gymConfig?.targetDaysPerWeek ?? 3;
-  const studyMinutesThisWeek = weekStudySessions.reduce(
-    (sum: number, s: { minutes: number }) => sum + s.minutes,
-    0
-  );
-  const hobbyMinutesThisWeek = weekHobbySessions.reduce(
-    (sum: number, s: { minutes: number }) => sum + s.minutes,
-    0
-  );
-  const houseworkToday = todayHousework as { completed: boolean }[];
-  const houseworkDone = houseworkToday.filter((h) => h.completed).length;
-  const houseworkTotal = houseworkToday.length;
-  const avgSleep = weekHealthLogs.length > 0
-    ? (weekHealthLogs.reduce((s: number, l: { sleepHours: number }) => s + l.sleepHours, 0) / weekHealthLogs.length)
+
+  // ── Study / Hobbies: minutes this week ─────────────────────────────────────
+  const sumMinutes = async (slug: string, legacy: () => Promise<number>): Promise<number> => {
+    const entries = await builtinSectionEntries(userId, slug, [weekStart, weekEnd]);
+    if (entries && entries.length > 0) return entries.reduce((s, e) => s + num(e.data?.minutes), 0);
+    if (entries && entries.length === 0) return 0;
+    return legacy();
+  };
+  const studyMinutesThisWeek = has("study")
+    ? await sumMinutes("study", async () =>
+        (await StudySession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean())
+          .reduce((s: number, x: { minutes: number }) => s + x.minutes, 0))
     : 0;
-  const activeGoalCount = activeGoals.length;
-  const readingCount = readingBooks.length;
-  const journalCount = monthJournalEntries.length;
-  const pendingItems = (shoppingLists as { items: { checked: boolean }[] }[]).reduce(
-    (sum, list) => sum + list.items.filter((i) => !i.checked).length,
-    0
-  );
-  const mealsPlanned = weekMealPlans.reduce(
-    (sum: number, p: { meals: unknown[] }) => sum + (p.meals?.length || 0),
-    0
-  );
+  const hobbyMinutesThisWeek = has("hobbies")
+    ? await sumMinutes("hobbies", async () =>
+        (await HobbySession.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean())
+          .reduce((s: number, x: { minutes: number }) => s + x.minutes, 0))
+    : 0;
+
+  // ── Housework: done / total today ──────────────────────────────────────────
+  let houseworkDone = 0, houseworkTotal = 0;
+  if (has("housework")) {
+    const entries = await builtinSectionEntries(userId, "housework", [todayStart, todayEnd]);
+    if (entries) {
+      houseworkTotal = entries.length;
+      houseworkDone = entries.filter((e) => e.data?.done === true).length;
+    } else {
+      const legacy = await HouseworkLog.find({ userId, date: { $gte: todayStart, $lte: todayEnd } }).lean();
+      houseworkTotal = legacy.length;
+      houseworkDone = (legacy as { completed: boolean }[]).filter((h) => h.completed).length;
+    }
+  }
+
+  // ── Health: avg sleep this week ────────────────────────────────────────────
+  let avgSleep = 0;
+  if (has("health")) {
+    const entries = await builtinSectionEntries(userId, "health", [weekStart, weekEnd]);
+    const sleeps: number[] = entries
+      ? entries.map((e) => Number(e.data?.sleep_hours)).filter((v) => Number.isFinite(v))
+      : (await HealthLog.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean())
+          .map((l: { sleepHours: number }) => l.sleepHours);
+    avgSleep = sleeps.length > 0 ? sleeps.reduce((a, b) => a + b, 0) / sleeps.length : 0;
+  }
+
+  // ── Goals / Reading: active/in-progress counts (not date-bound) ────────────
+  const countBy = async (
+    slug: string,
+    match: (e: BuiltinEntry) => boolean,
+    legacy: () => Promise<number>
+  ): Promise<number> => {
+    const entries = await builtinSectionEntries(userId, slug);
+    if (entries) return entries.filter(match).length;
+    return legacy();
+  };
+  const activeGoalCount = has("goals")
+    ? await countBy("goals", (e) => (e.data?.status ?? "active") === "active",
+        async () => Goal.countDocuments({ userId, status: "active" }))
+    : 0;
+  const readingCount = has("reading")
+    ? await countBy("reading", (e) => e.data?.status === "reading",
+        async () => Book.countDocuments({ userId, status: "reading" }))
+    : 0;
+
+  // ── Journal: entries this month ────────────────────────────────────────────
+  let journalCount = 0;
+  if (has("journal")) {
+    const entries = await builtinSectionEntries(userId, "journal", [monthStart, monthEnd]);
+    journalCount = entries
+      ? entries.length
+      : await JournalEntry.countDocuments({ userId, date: { $gte: monthStart, $lte: monthEnd } });
+  }
+
+  // ── Shopping: pending (unbought) items ─────────────────────────────────────
+  let pendingItems = 0;
+  if (has("shopping")) {
+    const entries = await builtinSectionEntries(userId, "shopping");
+    if (entries) {
+      pendingItems = entries.filter((e) => e.data?.bought !== true).length;
+    } else {
+      const lists = await ShoppingList.find({ userId, archived: false }).lean();
+      pendingItems = (lists as { items: { checked: boolean }[] }[]).reduce(
+        (sum, list) => sum + list.items.filter((i) => !i.checked).length, 0
+      );
+    }
+  }
+
+  // ── Meal prep: meals planned this week ─────────────────────────────────────
+  let mealsPlanned = 0;
+  if (has("mealprep")) {
+    const entries = await builtinSectionEntries(userId, "mealprep", [weekStart, weekEnd]);
+    if (entries) {
+      mealsPlanned = entries.length;
+    } else {
+      const plans = await MealPlan.find({ userId, date: { $gte: weekStart, $lte: weekEnd } }).lean();
+      mealsPlanned = plans.reduce((sum: number, p: { meals: unknown[] }) => sum + (p.meals?.length || 0), 0);
+    }
+  }
 
   const greeting = getGreeting();
   const userName = user.name || "there";

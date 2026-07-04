@@ -15,6 +15,7 @@ import { SECTION_META, type SectionId } from "@/lib/constants";
 import SectionCustomization from "@/lib/models/section-customization";
 import DashboardMetric from "@/lib/models/dashboard-metric";
 import SectionTemplate from "@/lib/models/section-template";
+import CustomEntry from "@/lib/models/custom-entry";
 import User from "@/lib/models/user";
 
 export async function POST(req: NextRequest) {
@@ -102,7 +103,25 @@ export async function POST(req: NextRequest) {
       { name: template.name, icon: template.icon, description: template.description, viewType: template.viewType, fields: template.fields, layoutHtml: template.layoutHtml },
       prompt
     );
-    template.set({ name: cs.name, icon: cs.icon, description: cs.description, viewType: cs.viewType, fields: cs.fields, layoutHtml: cs.layoutHtml, sourcePrompt: prompt });
+    // Preserve existing fields that still hold entry data but are missing
+    // from the AI's new field list, so a rename never orphans entry data.
+    const newKeys = new Set(cs.fields.map((f: { key: string }) => f.key));
+    // Keep the full field-definition shape so preserved fields spread back into
+    // cs.fields without losing label/type/options.
+    const dropped = (template.fields as unknown as typeof cs.fields).filter((f) => !newKeys.has(f.key));
+    let mergedFields = cs.fields;
+    if (dropped.length) {
+      const entryDocs = await CustomEntry.find({ userId, templateId: template._id }).select("data").lean();
+      const usedKeys = new Set<string>();
+      for (const doc of entryDocs) {
+        for (const [key, value] of Object.entries(doc.data ?? {})) {
+          if (value !== undefined && value !== null && value !== "") usedKeys.add(key);
+        }
+      }
+      const keep = dropped.filter((f) => usedKeys.has(f.key));
+      if (keep.length) mergedFields = [...cs.fields, ...keep];
+    }
+    template.set({ name: cs.name, icon: cs.icon, description: cs.description, viewType: cs.viewType, fields: mergedFields, layoutHtml: cs.layoutHtml, sourcePrompt: prompt });
     await template.save();
     return NextResponse.json({ kind: "custom", template });
   } catch (e) {

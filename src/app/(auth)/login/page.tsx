@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -10,11 +10,35 @@ import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/ui/form-input";
 import { LiforaLogo } from "@/components/brand/lifora-logo";
 
-export default function LoginPage() {
+// Only follow same-site relative paths — anything else falls back to the dashboard.
+function safeCallbackUrl(raw: string | null): string {
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return "/dashboard";
+}
+
+function oauthErrorMessage(code: string | null): string {
+  if (!code) return "";
+  switch (code) {
+    case "AccessDenied":
+      return "Sign-in was cancelled or denied. Please try again.";
+    case "OAuthAccountNotLinked":
+      return "This email is already registered with a different sign-in method.";
+    case "Configuration":
+      return "Sign-in is temporarily misconfigured. Please try again later.";
+    default:
+      return "Something went wrong during sign-in. Please try again.";
+  }
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    oauthErrorMessage(searchParams.get("error"))
+  );
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,12 +56,12 @@ export default function LoginPage() {
       setError("Invalid email or password");
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      router.push(callbackUrl);
     }
   };
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
+    signIn("google", { callbackUrl });
   };
 
   return (
@@ -106,6 +130,16 @@ export default function LoginPage() {
             error={error || undefined}
           />
 
+          <div className="text-right -mt-2">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium hover:underline"
+              style={{ color: "var(--accent-text)" }}
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <Button
             type="submit"
             variant="primary"
@@ -133,5 +167,13 @@ export default function LoginPage() {
         </p>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { resolveUserId } from "@/lib/session";
@@ -10,6 +11,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await connectDB();
   const { id } = await params;
+  if (!mongoose.Types.ObjectId.isValid(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const page = await NotesPage.findOne({ _id: id, userId, archived: false }).lean();
   if (!page) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({
@@ -32,13 +34,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const userId = await resolveUserId(await auth());
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const parsed = notesPageUpdateSchema.safeParse(await req.json());
+  const raw = await req.json().catch(() => null);
+  const parsed = notesPageUpdateSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
 
   await connectDB();
   const { id } = await params;
+  if (!mongoose.Types.ObjectId.isValid(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const update: Record<string, unknown> = { ...parsed.data };
   if ("parentId" in parsed.data) update.parentId = parsed.data.parentId ?? null;
   if ("coverUrl" in parsed.data) update.coverUrl = parsed.data.coverUrl ?? "";
@@ -60,9 +64,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (subtree.has(target)) return NextResponse.json({ error: "Cannot move a page into its own subtree" }, { status: 400 });
   }
 
-  const page = await NotesPage.findOneAndUpdate({ _id: id, userId }, update, { new: true }).lean();
-  if (!page) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  // Optimistic concurrency on content writes: when the client sends the
+  // updatedAt it loaded (baseUpdatedAt), only apply the patch if the stored
+  // page hasn't moved past it — otherwise 409 so the editor can stop
+  // overwriting. Clients that omit baseUpdatedAt keep last-write-wins.
+  const baseRaw = raw && typeof raw === "object" ? (raw as Record<string, unknown>).baseUpdatedAt : undefined;
+  const base = typeof baseRaw === "string" ? new Date(baseRaw) : null;
+  const filter: Record<string, unknown> = { _id: id, userId };
+  if ("content" in parsed.data && base && !Number.isNaN(base.getTime())) filter.updatedAt = base;
+
+  const page = await NotesPage.findOneAndUpdate(filter, update, { new: true }).lean();
+  if (!page) {
+    if ("updatedAt" in filter) {
+      const cur = await NotesPage.findOne({ _id: id, userId }).select("updatedAt").lean();
+      if (cur) {
+        return NextResponse.json(
+          { error: "Page was changed elsewhere", updatedAt: cur.updatedAt ? new Date(cur.updatedAt).toISOString() : null },
+          { status: 409 }
+        );
+      }
+    }
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true, updatedAt: page.updatedAt ? new Date(page.updatedAt).toISOString() : null });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -71,6 +95,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   await connectDB();
   const { id } = await params;
+  if (!mongoose.Types.ObjectId.isValid(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const permanent = req.nextUrl.searchParams.get("permanent") === "1";
 
   // Permanent delete operates on the trashed subtree; soft delete on the live one.
@@ -91,7 +116,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   if (permanent) {
-    const res = await NotesPage.deleteMany({ _id: { $in: toDelete }, userId });
+    // archived: true guard — a permanent delete can only ever remove trashed
+    // pages, never a live page/subtree (the UI only exposes it from trash).
+    const res = await NotesPage.deleteMany({ _id: { $in: toDelete }, userId, archived: true });
     if (res.deletedCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ ok: true, deleted: toDelete.length });
   }

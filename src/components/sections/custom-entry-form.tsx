@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
+import { format } from "date-fns";
 
 interface FieldDefinition {
   key: string;
@@ -25,7 +26,7 @@ interface CustomEntryFormProps {
 }
 
 export function CustomEntryForm({ slug, fields, onClose, onSuccess, initialDate }: CustomEntryFormProps) {
-  const [date, setDate] = useState(initialDate || new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(initialDate || format(new Date(), "yyyy-MM-dd"));
   const [data, setData] = useState<Record<string, unknown>>(() => {
     const init: Record<string, unknown> = {};
     for (const f of fields) {

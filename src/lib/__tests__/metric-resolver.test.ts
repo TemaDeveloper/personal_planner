@@ -29,6 +29,14 @@ vi.mock("@/lib/models/route", () => ({
 vi.mock("@/lib/models/custom-field-value", () => ({
   default: { find: () => { throw new Error("DB error"); } },
 }));
+// Built-in metrics now read the unified store first; make those throw too so
+// the resilience contract (never throw → "—") is what's exercised, not a hang.
+vi.mock("@/lib/models/custom-entry", () => ({
+  default: { find: () => { throw new Error("DB error"); } },
+}));
+vi.mock("@/lib/models/section-template", () => ({
+  default: { findOne: () => { throw new Error("DB error"); } },
+}));
 
 // ── Helpers (local, mirrors metric-resolver internals) ─────────────────────
 

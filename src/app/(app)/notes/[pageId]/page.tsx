@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Star } from "lucide-react";
@@ -12,6 +12,7 @@ import { Breadcrumbs } from "@/components/notes/breadcrumbs";
 import { PageOptionsMenu } from "@/components/notes/page-options-menu";
 import { relativeTime } from "@/lib/notes/relative-time";
 import { blocksToMarkdown, collectDatabaseIds } from "@/lib/notes/blocks-to-markdown";
+import { useDebouncedSave } from "@/hooks/use-debounced-save";
 
 type Loaded = { id: string; title: string; icon: string; content: unknown; coverUrl: string | null; fullWidth: boolean; pinned: boolean; updatedAt: string | null };
 
@@ -22,12 +23,41 @@ export default function NotesPageView() {
   const [page, setPage] = useState<Loaded | null>(null);
   const [notFound, setNotFound] = useState(false);
 
+  // Title typing is debounce-saved (blur alone loses a rename on tab close);
+  // the dirty flag + ref feed the pagehide/unmount flush below.
+  const titleDirty = useRef(false);
+  const titleRef = useRef("");
+
   useEffect(() => {
     setPage(null); setNotFound(false); // eslint-disable-line react-hooks/set-state-in-effect -- reset on page switch
     fetch(`/api/notes/${pageId}`).then(async (r) => {
       if (!r.ok) { setNotFound(true); return; }
-      setPage((await r.json()).page);
+      const loaded = (await r.json()).page as Loaded;
+      titleRef.current = loaded.title;
+      titleDirty.current = false;
+      setPage(loaded);
     });
+  }, [pageId]);
+
+  // Flush a pending title edit when the tab closes (keepalive so it survives
+  // unload) and when navigating to another page in-app (debounce timers are
+  // cleared on unmount, so the last ≤600ms of typing would otherwise die).
+  useEffect(() => {
+    const flush = () => {
+      if (!titleDirty.current) return;
+      titleDirty.current = false;
+      void fetch(`/api/notes/${pageId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: titleRef.current }), keepalive: true,
+      });
+    };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+      flush();
+    };
   }, [pageId]);
 
   const patch = async (body: Record<string, unknown>) => {
@@ -37,6 +67,8 @@ export default function NotesPageView() {
     if (!res.ok) { toast.error("Failed to save changes"); return; }
     refresh();
   };
+
+  const saveTitle = useDebouncedSave<string>((title) => { titleDirty.current = false; void patch({ title }); }, 600);
 
   const remove = async () => {
     const res = await fetch(`/api/notes/${pageId}`, { method: "DELETE" });
@@ -149,13 +181,14 @@ export default function NotesPageView() {
           </div>
         )}
         <input key={`title-${page.id}`} aria-label="Page title" defaultValue={page.title} placeholder="Untitled"
-          onBlur={(e) => patch({ title: e.target.value })}
+          onChange={(e) => { titleRef.current = e.target.value; titleDirty.current = true; saveTitle(e.target.value); }}
+          onBlur={(e) => { titleDirty.current = false; patch({ title: e.target.value }); }}
           className="block w-full text-[2.5rem] leading-tight font-bold bg-transparent outline-none mt-2 mb-6"
           style={{ color: "var(--text-primary)" }} />
       </div>
       {/* key={page.id}: remount the editor per page so navigating pages can't
           carry one page's content/save-target onto another (data-loss fix). */}
-      <NotesEditorLoader key={page.id} pageId={page.id} initialContent={page.content} />
+      <NotesEditorLoader key={page.id} pageId={page.id} initialContent={page.content} initialUpdatedAt={page.updatedAt} />
     </div>
   );
 }

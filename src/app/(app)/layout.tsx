@@ -10,8 +10,24 @@ import { SectionsProvider, type CustomSectionNav } from "@/components/providers/
 import { SidebarProvider } from "@/components/providers/sidebar-provider";
 import { ContentShell } from "@/components/layout/content-shell";
 import { ensureUserCalendar } from "@/lib/calendar-section";
-import { DEFAULT_ENABLED_SECTIONS } from "@/lib/constants";
+import { seedBuiltInTemplates } from "@/lib/profile/seed-run";
+import { DEFAULT_ENABLED_SECTIONS, SECTIONS } from "@/lib/constants";
 import type { SectionId } from "@/lib/constants";
+
+// Built-in section templates must exist for /sections/<slug> routes to work.
+// Guarded by a module-level flag so the check runs at most once per server
+// instance, and by a cheap countDocuments so the full upsert only runs when
+// templates are actually missing (e.g. a fresh database).
+let builtinsEnsured = false;
+
+async function ensureBuiltInTemplates() {
+  if (builtinsEnsured) return;
+  const count = await SectionTemplate.countDocuments({ isBuiltIn: true });
+  if (count < SECTIONS.length) {
+    await seedBuiltInTemplates();
+  }
+  builtinsEnsured = true;
+}
 
 export default async function AppLayout({
   children,
@@ -26,9 +42,17 @@ export default async function AppLayout({
   }
 
   await connectDB();
+  await ensureBuiltInTemplates();
   const user = await User.findById(userId).lean();
 
-  if (user && !user.onboardingDone) {
+  // Session references a deleted account — an empty ghost workspace would
+  // render otherwise. The auth layout only redirects back here for users
+  // that exist, so this cannot loop.
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (!user.onboardingDone) {
     redirect("/onboarding");
   }
 

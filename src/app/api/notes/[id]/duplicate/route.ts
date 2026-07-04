@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { resolveUserId } from "@/lib/session";
@@ -16,6 +17,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   await connectDB();
   const { id } = await params;
+  if (!mongoose.Types.ObjectId.isValid(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const root = await NotesPage.findOne({ _id: id, userId, archived: false }).lean();
   if (!root) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -76,28 +78,46 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  // PASS 2 — for each new page: clone the databases it references, then rewrite
-  // databaseId + subPage/mention pageId in its content and save.
+  // PASS 2 — clone every database referenced anywhere in the subtree, ONCE
+  // (a per-page map would clone a DB embedded on two pages twice), building a
+  // subtree-wide old→new map.
+  const allDbIds = new Set<string>();
+  for (const { content } of pending) for (const dbId of collectDatabaseIds(content)) allDbIds.add(dbId);
+  const dbMap: Record<string, string> = {};
+  const clonedDbs: { id: string; properties: { type?: string; relationDbId?: string }[] }[] = [];
+  for (const dbId of allDbIds) {
+    if (!mongoose.Types.ObjectId.isValid(dbId)) continue;
+    const src = await NotesDatabase.findOne({ _id: dbId, userId }).lean();
+    if (!src) continue;
+    const clone = await NotesDatabase.create({
+      userId,
+      title: src.title,
+      icon: src.icon,
+      properties: src.properties,
+      views: src.views,
+      rows: src.rows,
+    });
+    dbMap[dbId] = String(clone._id);
+    clonedDbs.push({ id: String(clone._id), properties: (src.properties ?? []) as { type?: string; relationDbId?: string }[] });
+  }
+  // Rewrite relation properties on the clones so they point at sibling clones,
+  // not the ORIGINAL databases (mirrors the sentinel rewrite in POST /api/notes).
+  for (const c of clonedDbs) {
+    let changed = false;
+    const props = c.properties.map((p) => {
+      if (p.type === "relation" && p.relationDbId && dbMap[p.relationDbId]) {
+        changed = true;
+        return { ...p, relationDbId: dbMap[p.relationDbId] };
+      }
+      return p;
+    });
+    if (changed) await NotesDatabase.updateOne({ _id: c.id, userId }, { properties: props });
+  }
+
+  // PASS 3 — rewrite databaseId + subPage/mention pageId in each new page's content.
   for (const { newId, content } of pending) {
-    const dbIds = collectDatabaseIds(content);
-    const dbMap: Record<string, string> = {};
-    for (const dbId of dbIds) {
-      const src = await NotesDatabase.findOne({ _id: dbId, userId }).lean();
-      if (!src) continue;
-      const clone = await NotesDatabase.create({
-        userId,
-        title: src.title,
-        icon: src.icon,
-        properties: src.properties,
-        views: src.views,
-        rows: src.rows,
-      });
-      dbMap[dbId] = String(clone._id);
-    }
-    if (dbIds.length || Object.keys(pageMap).length) {
-      const rewritten = rewriteContentIds(content, dbMap, pageMap);
-      await NotesPage.updateOne({ _id: newId, userId }, { content: rewritten });
-    }
+    const rewritten = rewriteContentIds(content, dbMap, pageMap);
+    await NotesPage.updateOne({ _id: newId, userId }, { content: rewritten });
   }
 
   return NextResponse.json({ page: { id: String(newRoot._id), title: newRoot.title }, count: pending.length }, { status: 201 });

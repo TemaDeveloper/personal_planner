@@ -72,6 +72,31 @@ describe("renderLayout", () => {
     expect(result).not.toContain("data-each");
   });
 
+  it("expands data-each with nested same-tag elements without truncating the body", () => {
+    const html =
+      '<div data-each="entries">' +
+      '<div class="card"><div class="head"><span>{entry.itemName}</span></div></div>' +
+      '<p class="notes">{entry.notes}</p>' +
+      "</div>";
+    const entries = [
+      { itemName: "Monitor A", notes: "first note" },
+      { itemName: "Monitor B", notes: "second note" },
+    ];
+    const result = renderLayout(html, {}, fields, entries);
+    // Every field of every iteration renders — nothing truncated at the
+    // first nested </div>.
+    expect(result).toContain("Monitor A");
+    expect(result).toContain("first note");
+    expect(result).toContain("Monitor B");
+    expect(result).toContain("second note");
+    expect(result).not.toContain("data-each");
+    expect(result).not.toContain("{entry.");
+    // The trailing <p> stays inside each iteration (after its item's name).
+    expect(result.indexOf("first note")).toBeGreaterThan(result.indexOf("Monitor A"));
+    expect(result.indexOf("first note")).toBeLessThan(result.indexOf("Monitor B"));
+    expect(result.indexOf("second note")).toBeGreaterThan(result.indexOf("Monitor B"));
+  });
+
   it("escapes HTML in values to prevent XSS", () => {
     const html = '<div>{itemName}</div>';
     const data = { itemName: '<script>alert("xss")</script>' };

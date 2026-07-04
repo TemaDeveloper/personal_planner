@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { StatBlock } from "@/components/ui/stat-block";
 
@@ -10,6 +11,7 @@ interface MetricCard {
   label: string;
   value: string;
   sub?: string;
+  stale?: boolean;
 }
 
 export function DashboardMetrics() {
@@ -20,19 +22,38 @@ export function DashboardMetrics() {
     fetch("/api/dashboard/metrics")
       .then((r) => r.json())
       .then((data) => {
-        setMetrics(data.metrics ?? []);
+        // Stale metrics point at a section/template that no longer exists —
+        // don't render dead "—" tiles for them.
+        setMetrics(((data.metrics ?? []) as MetricCard[]).filter((m) => !m.stale));
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
   }, []);
 
   const remove = useCallback(async (id: string) => {
-    // Optimistic remove
-    setMetrics((prev) => prev.filter((m) => m.id !== id));
+    // Optimistic remove — remember the tile and its position so a failed
+    // delete can restore it in place.
+    let removed: MetricCard | undefined;
+    let removedIndex = -1;
+    setMetrics((prev) => {
+      removedIndex = prev.findIndex((m) => m.id === id);
+      removed = prev[removedIndex];
+      return prev.filter((m) => m.id !== id);
+    });
+    const restore = () => {
+      setMetrics((prev) => {
+        if (!removed || prev.some((m) => m.id === id)) return prev;
+        const next = [...prev];
+        next.splice(Math.min(Math.max(removedIndex, 0), next.length), 0, removed);
+        return next;
+      });
+      toast.error("Failed to remove metric");
+    };
     try {
-      await fetch(`/api/dashboard/metrics/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/dashboard/metrics/${id}`, { method: "DELETE" });
+      if (!res.ok) restore();
     } catch {
-      // Silently ignore — metric already removed from UI
+      restore();
     }
   }, []);
 

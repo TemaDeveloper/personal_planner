@@ -35,10 +35,19 @@ export function DashboardCalendar({ weekStart }: DashboardCalendarProps) {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   useEffect(() => {
+    // Abort on month change so a slow response for a previous month can't
+    // clobber the activity of the month currently shown.
+    const controller = new AbortController();
     const monthStr = format(month, "yyyy-MM");
-    fetch(`/api/dashboard/activity?month=${monthStr}`)
+    fetch(`/api/dashboard/activity?month=${monthStr}`, { signal: controller.signal })
       .then((r) => r.json())
-      .then((d) => setActivity(d.activity || {}));
+      .then((d) => {
+        if (!controller.signal.aborted) setActivity(d.activity || {});
+      })
+      .catch(() => {
+        // Aborted or failed — keep whatever is currently displayed.
+      });
+    return () => controller.abort();
   }, [month]);
 
   const activeDays = Object.keys(activity).map((d) => new Date(d + "T00:00:00"));
@@ -147,7 +156,8 @@ export function DashboardCalendar({ weekStart }: DashboardCalendarProps) {
             const monthStr = format(month, "yyyy-MM");
             fetch(`/api/dashboard/activity?month=${monthStr}`)
               .then((r) => r.json())
-              .then((d) => setActivity(d.activity || {}));
+              .then((d) => setActivity(d.activity || {}))
+              .catch(() => {});
           }}
         />
       )}

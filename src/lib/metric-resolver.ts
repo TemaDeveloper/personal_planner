@@ -3,8 +3,10 @@
 // Resolves a DashboardMetric document into a human-readable { value, sub? } pair.
 // Pure computation layer — no auth, no HTTP. Called from the GET route handler.
 //
-// Built-in metric computation mirrors the dashboard page (src/app/(app)/dashboard/page.tsx)
-// and finances page (src/app/(app)/finances/page.tsx) exactly.
+// Built-in metric computation reads the unified CustomEntry store (the same
+// data the section pages write), resolving the section's seed template by slug.
+// When a user has no CustomEntry rows for a section yet (pre-migration data),
+// it falls back to the legacy collections so old data still shows.
 
 import {
   startOfWeek,
@@ -19,9 +21,17 @@ import StudySession from "@/lib/models/study-session";
 import HealthLog from "@/lib/models/health-log";
 import Expense from "@/lib/models/expense";
 import CustomFieldValue from "@/lib/models/custom-field-value";
+import CustomEntry from "@/lib/models/custom-entry";
+import SectionTemplate from "@/lib/models/section-template";
 import Route from "@/lib/models/route";
 import { calculateGasCost } from "@/lib/gas-calculator";
 import { formatCurrency } from "@/lib/utils";
+import {
+  DEFAULT_CURRENCY,
+  DEFAULT_ENABLED_SECTIONS,
+  SECTIONS,
+  type SectionId,
+} from "@/lib/constants";
 import type { IDashboardMetric } from "@/lib/models/dashboard-metric";
 
 export interface ResolvedMetric {
@@ -29,6 +39,8 @@ export interface ResolvedMetric {
   label: string;
   value: string;
   sub?: string;
+  /** The metric's target section/template no longer exists (or is disabled). */
+  stale?: boolean;
 }
 
 interface UserLike {
@@ -39,6 +51,32 @@ interface UserLike {
   };
   preferences?: { currency?: string };
   bills?: { amount: number; active: boolean }[];
+  enabledSections?: string[];
+}
+
+/** Coerce an entry.data field to a finite number (0 otherwise). */
+function n(v: unknown): number {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : 0;
+}
+
+type EntryDoc = { date: Date; data?: Record<string, unknown> };
+
+/**
+ * Fetches the user's CustomEntry rows for a built-in section by template slug.
+ * Returns null when the template doesn't exist (fresh DB, not yet seeded) so
+ * callers can fall back to the legacy collection.
+ */
+async function builtinEntries(
+  userId: string,
+  slug: string,
+  range?: [Date, Date]
+): Promise<EntryDoc[] | null> {
+  const template = await SectionTemplate.findOne({ slug }).select("_id").lean();
+  if (!template) return null;
+  const query: Record<string, unknown> = { userId, templateId: template._id };
+  if (range) query.date = { $gte: range[0], $lte: range[1] };
+  return CustomEntry.find(query).select("date data").lean();
 }
 
 /** Returns [weekStart, weekEnd] for the current Mon–Sun week (UTC-safe via date-fns). */
@@ -62,12 +100,57 @@ function periodDateKeys(period: "week" | "month"): [string, string] {
   return [format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd")];
 }
 
+/**
+ * Earnings for a set of work CustomEntry rows. Prefers the rate stored on the
+ * entry (what the work section computes gross/net from); falls back to the
+ * configured job rate matched by the entry's `job` field.
+ */
+function workEarnings(
+  entries: EntryDoc[],
+  jobs: { name: string; hourlyRate: number }[]
+): number {
+  return entries.reduce((sum, e) => {
+    const hours = n(e.data?.hours);
+    const rate =
+      e.data?.hourly_rate != null
+        ? n(e.data.hourly_rate)
+        : jobs.find((j) => j.name === e.data?.job)?.hourlyRate ?? 0;
+    return sum + hours * rate;
+  }, 0);
+}
+
+/** Legacy WorkSession earnings (pre-migration fallback). */
+async function legacyWorkEarnings(
+  userId: string,
+  range: [Date, Date],
+  jobs: { name: string; hourlyRate: number }[]
+): Promise<number> {
+  const sessions = await WorkSession.find({
+    userId,
+    date: { $gte: range[0], $lte: range[1] },
+  }).lean();
+  return sessions.reduce((sum, s) => {
+    const job = jobs.find((j) => j.name === s.jobName);
+    return sum + s.hours * (job?.hourlyRate ?? 0);
+  }, 0);
+}
+
+async function rangeEarnings(
+  userId: string,
+  range: [Date, Date],
+  jobs: { name: string; hourlyRate: number }[]
+): Promise<number> {
+  const entries = await builtinEntries(userId, "work", range);
+  if (entries && entries.length > 0) return workEarnings(entries, jobs);
+  return legacyWorkEarnings(userId, range, jobs);
+}
+
 async function resolveBuiltin(
   metric: IDashboardMetric,
   userId: string,
   user: UserLike
 ): Promise<{ value: string; sub?: string }> {
-  const currency = user.preferences?.currency ?? "CAD";
+  const currency = user.preferences?.currency ?? DEFAULT_CURRENCY;
   const jobs = (user.workConfig?.jobs ?? []).filter((j) => j.active);
 
   const [weekStart, weekEnd] = currentWeekRange();
@@ -77,32 +160,27 @@ async function resolveBuiltin(
 
   // ── work.weekEarnings ──────────────────────────────────────────────────────
   if (fieldKey === "weekEarnings") {
-    const sessions = await WorkSession.find({
-      userId,
-      date: { $gte: weekStart, $lte: weekEnd },
-    }).lean();
-    const total = sessions.reduce((sum, s) => {
-      const job = jobs.find((j) => j.name === s.jobName);
-      return sum + s.hours * (job?.hourlyRate ?? 0);
-    }, 0);
+    const total = await rangeEarnings(userId, [weekStart, weekEnd], jobs);
     return { value: formatCurrency(total, currency) };
   }
 
   // ── work.monthEarnings ─────────────────────────────────────────────────────
   if (fieldKey === "monthEarnings") {
-    const sessions = await WorkSession.find({
-      userId,
-      date: { $gte: monthStart, $lte: monthEnd },
-    }).lean();
-    const total = sessions.reduce((sum, s) => {
-      const job = jobs.find((j) => j.name === s.jobName);
-      return sum + s.hours * (job?.hourlyRate ?? 0);
-    }, 0);
+    const total = await rangeEarnings(userId, [monthStart, monthEnd], jobs);
     return { value: formatCurrency(total, currency) };
   }
 
   // ── gym.daysThisWeek ───────────────────────────────────────────────────────
   if (fieldKey === "daysThisWeek") {
+    const entries = await builtinEntries(userId, "gym", [weekStart, weekEnd]);
+    if (entries && entries.length > 0) {
+      const days = new Set(
+        entries
+          .filter((e) => e.data?.attended !== false)
+          .map((e) => e.date.toISOString().slice(0, 10))
+      );
+      return { value: String(days.size), sub: "days" };
+    }
     const count = await GymAttendance.countDocuments({
       userId,
       date: { $gte: weekStart, $lte: weekEnd },
@@ -112,17 +190,32 @@ async function resolveBuiltin(
 
   // ── study.minutesThisWeek ──────────────────────────────────────────────────
   if (fieldKey === "minutesThisWeek") {
-    const sessions = await StudySession.find({
-      userId,
-      date: { $gte: weekStart, $lte: weekEnd },
-    }).lean();
-    const total = sessions.reduce((sum, s) => sum + s.minutes, 0);
+    const entries = await builtinEntries(userId, "study", [weekStart, weekEnd]);
+    let total: number;
+    if (entries && entries.length > 0) {
+      total = entries.reduce((sum, e) => sum + n(e.data?.minutes), 0);
+    } else {
+      const sessions = await StudySession.find({
+        userId,
+        date: { $gte: weekStart, $lte: weekEnd },
+      }).lean();
+      total = sessions.reduce((sum, s) => sum + s.minutes, 0);
+    }
     const hours = (total / 60).toFixed(1);
     return { value: hours, sub: "hrs this week" };
   }
 
   // ── health.avgSleep ────────────────────────────────────────────────────────
   if (fieldKey === "avgSleep") {
+    const entries = await builtinEntries(userId, "health", [weekStart, weekEnd]);
+    if (entries && entries.length > 0) {
+      const sleeps = entries
+        .map((e) => Number(e.data?.sleep_hours))
+        .filter((v) => Number.isFinite(v));
+      if (sleeps.length === 0) return { value: "—" };
+      const avg = sleeps.reduce((a, b) => a + b, 0) / sleeps.length;
+      return { value: avg.toFixed(1), sub: "hrs avg sleep" };
+    }
     const logs = await HealthLog.find({
       userId,
       date: { $gte: weekStart, $lte: weekEnd },
@@ -134,20 +227,28 @@ async function resolveBuiltin(
 
   // ── finances.netThisMonth ──────────────────────────────────────────────────
   if (fieldKey === "netThisMonth") {
-    const [monthSessions, monthExpenses, monthRoutes] = await Promise.all([
-      WorkSession.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
-      Expense.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
+    const monthRange: [Date, Date] = [monthStart, monthEnd];
+    const [income, financeEntries, monthRoutes] = await Promise.all([
+      rangeEarnings(userId, monthRange, jobs),
+      builtinEntries(userId, "finances", monthRange),
       Route.find({ userId, date: { $gte: monthStart, $lte: monthEnd } }).lean(),
     ]);
 
-    const income = monthSessions.reduce((sum, s) => {
-      const job = jobs.find((j) => j.name === s.jobName);
-      return sum + s.hours * (job?.hourlyRate ?? 0);
-    }, 0);
+    let totalExpenses: number;
+    if (financeEntries && financeEntries.length > 0) {
+      totalExpenses = financeEntries
+        .filter((e) => e.data?.type !== "income")
+        .reduce((s, e) => s + n(e.data?.amount), 0);
+    } else {
+      const monthExpenses = await Expense.find({
+        userId,
+        date: { $gte: monthStart, $lte: monthEnd },
+      }).lean();
+      totalExpenses = monthExpenses.reduce((s, e) => s + e.amount, 0);
+    }
 
     const bills = (user.bills ?? []).filter((b) => b.active);
     const totalBills = bills.reduce((s, b) => s + b.amount, 0);
-    const totalExpenses = monthExpenses.reduce((s, e) => s + e.amount, 0);
 
     const totalKm = monthRoutes.reduce((s, r) => s + (r.distanceKm ?? 0), 0);
     const gasConfig = {
@@ -209,6 +310,24 @@ async function resolveCustomField(
 }
 
 /**
+ * True when the metric's target section no longer exists (custom template
+ * deleted) or is disabled (built-in section removed from enabledSections).
+ * Such metrics would render dead "—" tiles forever, so callers skip them.
+ */
+async function isStaleMetric(metric: IDashboardMetric, user: UserLike): Promise<boolean> {
+  if (metric.sourceKind === "builtin") {
+    if (!(SECTIONS as readonly string[]).includes(metric.sectionKey)) return false;
+    const enabled = user.enabledSections ?? DEFAULT_ENABLED_SECTIONS;
+    return !enabled.includes(metric.sectionKey as SectionId);
+  }
+  // custom-field: the section's template must still exist.
+  const template = await SectionTemplate.findOne({ slug: metric.sectionKey })
+    .select("_id")
+    .lean();
+  return !template;
+}
+
+/**
  * Resolves a single DashboardMetric into a rendered { id, label, value, sub? }.
  * Never throws — returns value "—" on any error.
  */
@@ -221,6 +340,9 @@ export async function resolveMetricValue(
   const label = metric.label;
 
   try {
+    if (await isStaleMetric(metric, user)) {
+      return { id, label, value: "—", stale: true };
+    }
     const resolved =
       metric.sourceKind === "builtin"
         ? await resolveBuiltin(metric, userId, user)

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "messages required" }, { status: 400 });
   }
 
-  const ai = resolveAIConfig(body ?? {});
+  const ai = await resolveAIConfig(body ?? {}, userId);
   if (!ai) {
     return NextResponse.json({ error: "No AI provider configured" }, { status: 400 });
   }
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
   // Extraction/merge must not 500 the turn — degrade to the existing profile.
   let profileFacets: ILifeFacet[] = [];
   let version = 0;
+  let degraded = false;
   try {
     const facets = await extractFacets(userText, ai.provider, ai.apiKey);
     const profile = await applyFacets(userId, facets);
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     version = profile.version;
   } catch (err) {
     console.error("[profile/chat] facet extraction failed", err);
+    degraded = true;
     const existing = await getProfile(userId);
     profileFacets = existing?.facets ?? [];
     version = existing?.version ?? 0;
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
       `Conversation so far:\n${transcript}\n\nReply with your next message.`
     );
   } catch {
+    degraded = true;
     assistant = sufficient
       ? "I think I've got a good picture of your life — ready to build your planner."
       : "Tell me a bit more about a typical week for you.";
@@ -79,5 +82,8 @@ export async function POST(req: NextRequest) {
     facets: profileFacets,
     version,
     sufficient,
+    // True when either AI call failed and we served a canned fallback — lets
+    // the client stop looping on a persistent outage.
+    degraded,
   });
 }

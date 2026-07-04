@@ -33,7 +33,7 @@ export function CalendarView({ slug, categories: initialCategories }: { slug: st
     if (view === "month") return monthGridRange(cursor);
     if (view === "week") return { start: startOfWeek(cursor, { weekStartsOn: 1 }), end: endOfWeek(cursor, { weekStartsOn: 1 }) };
     if (view === "day") return { start: startOfDay(cursor), end: endOfDay(cursor) };
-    return { start: startOfDay(new Date()), end: addDays(new Date(), 60) };
+    return { start: startOfDay(cursor), end: addDays(startOfDay(cursor), 60) };
   }, [view, cursor]);
 
   const fetchEvents = useCallback(async () => {

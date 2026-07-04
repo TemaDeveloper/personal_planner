@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, Trash2, Check, TableIcon, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { resolveComputed, type FieldComputation } from "@/lib/compute/primitives";
 import { formatComputed } from "@/lib/compute/format";
 
@@ -96,7 +96,7 @@ export function TableView({ slug, fields, entries, onAdd, onRefresh }: TableView
               style={{ borderColor: "var(--border-subtle)" }}
             >
               <div className="w-24 flex-shrink-0 text-xs font-medium text-[var(--text-muted)]">
-                {format(new Date(entry.date), "MMM d")}
+                {format(parseISO(String(entry.date).slice(0, 10)), "MMM d")}
               </div>
               {fields.map((f) => {
                 const val = entry.data[f.key];

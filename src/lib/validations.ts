@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VIEW_TYPES, type ViewType } from "@/lib/views/registry";
 
 // -- Helpers --
 export const safeString = z.string().max(500);
@@ -6,7 +7,7 @@ export const safeId = z.string().min(1).max(100);
 
 // -- Auth --
 export const registerSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
+  name: z.string().min(1, "Name is required").max(50, "Name must be 50 characters or fewer"),
   email: z.string().email("Invalid email").max(200),
   password: z.string().min(6, "Password must be at least 6 characters").max(128),
 });
@@ -186,7 +187,11 @@ export const createHobbyProjectSchema = z.object({
 export const createCustomEntrySchema = z.object({
   date: z.string().min(1, "Date is required"),
   data: z.record(z.string(), z.unknown()).optional(),
+  order: z.number().int().min(0).optional(),
 });
+
+/** Full renderable view-type vocabulary, shared by section-update schemas. */
+export const viewTypeEnum = z.enum(VIEW_TYPES as [ViewType, ...ViewType[]]);
 
 // -- Query Params --
 export const dateRangeQuery = z.object({
@@ -242,7 +247,7 @@ export const singleSectionUpdateSchema = z.object({
   name: z.string().min(1).max(50),
   icon: z.string().max(40).default("Star"),
   description: z.string().max(200).default(""),
-  viewType: z.enum(["weekly-cards", "table", "grid", "board", "calendar"]).default("weekly-cards"),
+  viewType: viewTypeEnum.default("weekly-cards"),
   fields: z.array(fieldDefSchema).max(30),
   layoutHtml: z.string().default(""),
 });

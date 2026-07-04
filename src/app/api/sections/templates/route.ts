@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
         : DEFAULT_CATEGORIES
       : undefined;
 
-  const template = await SectionTemplate.create({
+  const doc = {
     name: name.trim(),
     slug,
     icon: icon || "Star",
@@ -88,7 +88,20 @@ export async function POST(req: NextRequest) {
     isBuiltIn: false,
     createdBy: userId,
     usageCount: 1,
-  });
+  };
+
+  let template;
+  try {
+    template = await SectionTemplate.create(doc);
+  } catch (err) {
+    // Check-then-create race: another request claimed the slug in between.
+    // Retry once with a unique suffix.
+    const isDuplicate =
+      err && typeof err === "object" && (err as { code?: number }).code === 11000;
+    if (!isDuplicate) throw err;
+    doc.slug = `${slug}-${Date.now().toString(36)}`;
+    template = await SectionTemplate.create(doc);
+  }
 
   // Add to user's customSections
   await User.findByIdAndUpdate(userId, {

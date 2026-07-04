@@ -15,7 +15,10 @@ import Book from "@/lib/models/book";
 import JournalEntry from "@/lib/models/journal-entry";
 import ShoppingList from "@/lib/models/shopping-list";
 import MealPlan from "@/lib/models/meal-plan";
+import CustomEntry from "@/lib/models/custom-entry";
+import SectionTemplate from "@/lib/models/section-template";
 import { generateCSV } from "@/lib/csv";
+import { flattenEntryValue, fmtDate } from "@/lib/export-builders";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -38,6 +41,46 @@ export async function GET(req: NextRequest) {
 
   let csv = "";
   let filename = "";
+
+  // Sections (built-ins included) migrated to SectionTemplate + CustomEntry.
+  // Prefer live data; fall through to the legacy-model switch only when the
+  // user has no template for the slug or zero entries (pre-migration data).
+  const slug = type?.startsWith("custom:") ? type.slice("custom:".length) : type;
+  const template = slug ? await SectionTemplate.findOne({ slug }).lean() : null;
+  if (template) {
+    const entries = await CustomEntry.find({
+      userId,
+      templateId: template._id,
+      ...(hasDateFilter ? { date: dateFilter } : {}),
+    })
+      .sort({ date: -1 })
+      .lean();
+    // Custom sections have no legacy fallback — always answer from the template
+    // (headers-only CSV when empty). Built-ins fall through when empty.
+    if (entries.length > 0 || type?.startsWith("custom:")) {
+      csv = generateCSV(
+        ["Date", ...template.fields.map((f) => f.label)],
+        entries.map((e) => {
+          const data = (e.data ?? {}) as Record<string, unknown>;
+          return [
+            fmtDate(e.date),
+            ...template.fields.map((f) =>
+              data[f.key] !== undefined ? String(flattenEntryValue(data[f.key])) : ""
+            ),
+          ];
+        })
+      );
+      const filenameSlug = String(slug).replace(/[^a-z0-9-]/gi, "-");
+      filename = `${filenameSlug}-${new Date().toISOString().split("T")[0]}.csv`;
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+      });
+    }
+  }
 
   switch (type) {
     case "work": {

@@ -110,11 +110,12 @@ export function LayoutEditor({ slug, fields, initialHtml, open, onClose, onSave 
 
   const handleSave = async () => {
     try {
-      await fetch(`/api/sections/templates/${slug}/edit-layout`, {
+      const res = await fetch(`/api/sections/templates/${slug}/edit-layout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: "save", currentHtml: html, save: true }),
+        body: JSON.stringify({ currentHtml: html, save: true }),
       });
+      if (!res.ok) throw new Error("Failed");
       toast.success("Layout saved");
       onSave(html);
       onClose();

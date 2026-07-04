@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Plus, X, Check } from "lucide-react";
+import { format } from "date-fns";
 
 // ---- Types ----------------------------------------------------------------
 
@@ -262,25 +263,20 @@ export function BoardView({ slug, template }: BoardViewProps) {
 
     const sourceCol = String(activeEntry.data[statusKey] ?? columns[0]);
 
+    // Build the desired order for every entry in the affected column(s) and
+    // persist all of them — persisting only the dragged card leaves the rest
+    // with colliding default orders that scramble on reload.
+    const updates = new Map<string, { order: number; data?: Record<string, unknown> }>();
+
     if (sourceCol !== targetCol) {
-      // Cross-column move: optimistically update status
-      const snapshot = entries;
-      setEntries((prev) =>
-        prev.map((e) =>
-          e._id === active.id ? { ...e, data: { ...e.data, [statusKey]: targetCol } } : e
-        )
-      );
-      try {
-        const res = await fetch(`/api/sections/${slug}/entries/${active.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: { [statusKey]: targetCol } }),
-        });
-        if (!res.ok) throw new Error("patch failed");
-      } catch {
-        setEntries(snapshot);
-        toast.error("Failed to move card");
-      }
+      // Cross-column move: append to target column, re-index source column
+      const sourceEntries = entriesForColumn(sourceCol).filter((e) => e._id !== active.id);
+      const targetEntries = [...entriesForColumn(targetCol), activeEntry];
+      sourceEntries.forEach((e, i) => updates.set(e._id, { order: i }));
+      targetEntries.forEach((e, i) => {
+        if (e._id === active.id) updates.set(e._id, { order: i, data: { [statusKey]: targetCol } });
+        else updates.set(e._id, { order: i });
+      });
     } else if (overId !== `col:${sourceCol}` && active.id !== over.id) {
       // Same-column reorder over a card (not dropping on column droppable, not same card)
       const colEntries = entriesForColumn(sourceCol);
@@ -288,28 +284,36 @@ export function BoardView({ slug, template }: BoardViewProps) {
       const newIndex = colEntries.findIndex((e) => e._id === over.id);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
 
-      const reordered = arrayMove(colEntries, oldIndex, newIndex);
-      const snapshot = entries;
+      arrayMove(colEntries, oldIndex, newIndex).forEach((e, i) =>
+        updates.set(e._id, { order: i })
+      );
+    } else {
+      return;
+    }
 
-      setEntries((prev) => {
-        const others = prev.filter(
-          (e) => String(e.data[statusKey] ?? "") !== sourceCol
-        );
-        return [...others, ...reordered.map((e, i) => ({ ...e, order: i }))];
-      });
+    const snapshot = entries;
+    setEntries((prev) =>
+      prev.map((e) => {
+        const u = updates.get(e._id);
+        if (!u) return e;
+        return { ...e, order: u.order, data: u.data ? { ...e.data, ...u.data } : e.data };
+      })
+    );
 
-      const movedEntry = reordered[newIndex];
-      try {
-        const res = await fetch(`/api/sections/${slug}/entries/${movedEntry._id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order: newIndex }),
-        });
-        if (!res.ok) throw new Error("order patch failed");
-      } catch {
-        setEntries(snapshot);
-        toast.error("Failed to reorder card");
-      }
+    try {
+      const results = await Promise.all(
+        Array.from(updates.entries()).map(([id, u]) =>
+          fetch(`/api/sections/${slug}/entries/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(u.data ? { data: u.data, order: u.order } : { order: u.order }),
+          })
+        )
+      );
+      if (results.some((r) => !r.ok)) throw new Error("patch failed");
+    } catch {
+      setEntries(snapshot);
+      toast.error("Failed to move card");
     }
   }
 
@@ -321,15 +325,22 @@ export function BoardView({ slug, template }: BoardViewProps) {
     data[titleKey] = title;
     if (priorityField && priority) data[priorityField.key] = priority;
 
+    // New cards go to the bottom of their column, not order 0 (the model
+    // default), which would sort them to the top after reload.
+    const colEntries = entriesForColumn(column);
+    const order = colEntries.length
+      ? Math.max(...colEntries.map((e) => e.order ?? 0)) + 1
+      : 0;
+
     try {
       const res = await fetch(`/api/sections/${slug}/entries`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: new Date().toISOString().split("T")[0], data }),
+        body: JSON.stringify({ date: format(new Date(), "yyyy-MM-dd"), data, order }),
       });
       if (!res.ok) throw new Error("post failed");
       const { entry } = await res.json();
-      setEntries((prev) => [...prev, { ...entry, order: entry.order ?? prev.length }]);
+      setEntries((prev) => [...prev, { ...entry, order: entry.order ?? order }]);
     } catch {
       toast.error("Failed to add card");
     }

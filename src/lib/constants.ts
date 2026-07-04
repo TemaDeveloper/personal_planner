@@ -20,6 +20,9 @@ export type LayoutDensity = (typeof LAYOUTS)[number];
 
 export const CURRENCIES = ["CAD", "USD", "EUR", "GBP"] as const;
 export type Currency = (typeof CURRENCIES)[number];
+// Single fallback currency used anywhere a user has no preference set.
+// Mirrors the User schema default (preferences.currency).
+export const DEFAULT_CURRENCY: Currency = "USD";
 
 export const WEEK_STARTS = ["monday", "sunday"] as const;
 export type WeekStart = (typeof WEEK_STARTS)[number];

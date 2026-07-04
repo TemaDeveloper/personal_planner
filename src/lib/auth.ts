@@ -49,6 +49,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (dbUser) {
             token.id = dbUser._id.toString();
           }
+        } else if (!token.id && token.email) {
+          // Self-heal tokens minted while the DB was unreachable: without an
+          // id the session is useless and every page bounces to /login.
+          await connectDB();
+          const dbUser = await User.findOne({ email: token.email });
+          if (dbUser) {
+            token.id = dbUser._id.toString();
+          }
         }
       } catch (e) {
         console.error("[auth] jwt callback error:", e);
@@ -78,7 +86,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return true;
       } catch (e) {
         console.error("[auth] signIn error:", e);
-        return true;
+        // Letting the sign-in proceed here would issue a session whose user
+        // has no DB record — a "logged in but locked out" dead end. Fail the
+        // sign-in so NextAuth redirects to /login?error=... instead.
+        return false;
       }
     },
   },

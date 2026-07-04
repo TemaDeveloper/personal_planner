@@ -5,7 +5,7 @@ import { resolveUserId } from "@/lib/session";
 import SectionTemplate from "@/lib/models/section-template";
 import User from "@/lib/models/user";
 import CustomEntry from "@/lib/models/custom-entry";
-import { fieldDefSchema, calendarCategoriesUpdateSchema } from "@/lib/validations";
+import { fieldDefSchema, calendarCategoriesUpdateSchema, viewTypeEnum } from "@/lib/validations";
 import { z } from "zod";
 
 export async function GET(
@@ -49,17 +49,32 @@ export async function DELETE(
   await connectDB();
   const { slug } = await params;
 
-  const deleted = await SectionTemplate.findOneAndDelete({
+  const template = await SectionTemplate.findOne({
     slug,
     createdBy: userId,
   });
 
-  if (!deleted) {
+  if (!template) {
     return NextResponse.json({ error: "Not found or not owned by you" }, { status: 404 });
   }
 
-  await User.findByIdAndUpdate(userId, { $pull: { customSections: { templateId: deleted._id } } });
-  await CustomEntry.deleteMany({ userId, templateId: deleted._id });
+  await User.findByIdAndUpdate(userId, { $pull: { customSections: { templateId: template._id } } });
+  await CustomEntry.deleteMany({ userId, templateId: template._id });
+
+  // If other users have adopted this template, keep the document so their
+  // nav and entries aren't stranded — only the owner's data was removed.
+  const otherAdopter = await User.exists({
+    _id: { $ne: userId },
+    "customSections.templateId": template._id,
+  });
+  if (otherAdopter) {
+    return NextResponse.json({
+      success: true,
+      note: "Removed from your sections. The template itself was kept because other users still use it.",
+    });
+  }
+
+  await SectionTemplate.deleteOne({ _id: template._id });
 
   return NextResponse.json({ success: true });
 }
@@ -68,7 +83,7 @@ const patchTemplateSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   icon: z.string().max(40).optional(),
   description: z.string().max(200).optional(),
-  viewType: z.enum(["weekly-cards", "table", "grid", "board", "calendar"]).optional(),
+  viewType: viewTypeEnum.optional(),
   fields: z.array(fieldDefSchema).optional(),
   layoutHtml: z.string().optional(),
 });

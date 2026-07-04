@@ -20,7 +20,16 @@ export async function GET(
   await connectDB();
   const { slug } = await params;
 
-  const template = await SectionTemplate.findOne({ slug }).lean();
+  const template = await SectionTemplate.findOne({
+    slug,
+    $or: [
+      { createdBy: userId },
+      { createdBy: null },
+      { isShared: true },
+    ],
+  })
+    .select("-embedding -sourcePrompt")
+    .lean();
   if (!template) {
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }
@@ -89,7 +98,16 @@ export async function POST(
   await connectDB();
   const { slug } = await params;
 
-  const template = await SectionTemplate.findOne({ slug }).lean();
+  const template = await SectionTemplate.findOne({
+    slug,
+    $or: [
+      { createdBy: userId },
+      { createdBy: null },
+      { isShared: true },
+    ],
+  })
+    .select("-embedding -sourcePrompt")
+    .lean();
   if (!template) {
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }
@@ -124,7 +142,14 @@ export async function POST(
       { status: 400 }
     );
   }
-  const { date, data } = parsed.data;
+  const { date, data, order } = parsed.data;
+
+  // Parse the incoming yyyy-MM-dd explicitly as UTC midnight so storage
+  // doesn't depend on the server's timezone.
+  const dateOnly = date.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+    return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+  }
 
   // Validate data keys against template fields
   const validKeys = new Set(template.fields.map((f) => f.key));
@@ -138,8 +163,9 @@ export async function POST(
   const entry = await CustomEntry.create({
     userId,
     templateId: template._id,
-    date: startOfDay(new Date(date)),
+    date: new Date(`${dateOnly}T00:00:00.000Z`),
     data: cleanData,
+    ...(typeof order === "number" ? { order } : {}),
   });
 
   return NextResponse.json({ entry }, { status: 201 });

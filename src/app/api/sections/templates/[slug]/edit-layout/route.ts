@@ -338,13 +338,27 @@ export async function POST(
   await connectDB();
   const { slug } = await params;
 
-  const template = await SectionTemplate.findOne({ slug });
+  const template = await SectionTemplate.findOne({ slug, createdBy: userId });
   if (!template) {
     return NextResponse.json({ error: "Template not found" }, { status: 404 });
   }
 
   const body = await req.json();
   const { prompt, currentHtml } = body;
+
+  // Explicit save: persist exactly what the user sees — no AI call.
+  if (body.save) {
+    if (typeof currentHtml !== "string" || !currentHtml.trim()) {
+      return NextResponse.json({ error: "currentHtml is required" }, { status: 400 });
+    }
+    const cleaned = currentHtml
+      .replace(/^```html?\n?/i, "")
+      .replace(/\n?```$/i, "")
+      .trim();
+    template.layoutHtml = cleaned;
+    await template.save();
+    return NextResponse.json({ html: cleaned });
+  }
 
   if (!prompt || typeof prompt !== "string") {
     return NextResponse.json({ error: "prompt is required" }, { status: 400 });
@@ -380,12 +394,6 @@ Output ONLY the complete updated HTML:`;
       .replace(/^```html?\n?/i, "")
       .replace(/\n?```$/i, "")
       .trim();
-
-    // Optionally save to template
-    if (body.save) {
-      template.layoutHtml = cleaned;
-      await template.save();
-    }
 
     return NextResponse.json({ html: cleaned });
   } catch (err) {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -23,7 +24,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormInput, FormSelect } from "@/components/ui/form-input";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
-import { ConversationalOnboarding } from "@/components/onboarding/conversational-onboarding";
+import {
+  ConversationalOnboarding,
+  chatStorageKey,
+  onboardingStateKey,
+  LEGACY_CHAT_KEY,
+  LEGACY_STEP_KEY,
+} from "@/components/onboarding/conversational-onboarding";
 
 interface Job {
   name: string;
@@ -47,26 +54,69 @@ const FONT_FAMILY_MAP: Record<FontStyle, string> = {
   mono:      "'JetBrains Mono', monospace",
 };
 
-export default function OnboardingPage() {
-  const router = useRouter();
-  // Return to the chat step (1) after a refresh IF there's a saved conversation;
-  // otherwise start at the welcome step. Deriving from the chat (rather than
-  // persisting an arbitrary index) avoids a stale/out-of-range step crashing the
-  // page or misrouting the manual flow.
-  const [step, setStep] = useState<number>(() => {
-    if (typeof window === "undefined") return 0;
-    try {
-      const chat = JSON.parse(localStorage.getItem("lifora_onboarding_chat_v1") || "null");
-      if (Array.isArray(chat?.messages) && chat.messages.some((m: { role?: string }) => m?.role === "user")) {
-        return 1;
+/**
+ * Restore where the user was (step + mode) from the per-user saved state, so a
+ * refresh doesn't yank someone in manual setup back into an abandoned AI chat.
+ * Also migrates the old un-namespaced chat blob to the per-user key once.
+ * Steps are validated against the active mode's real path so a stale index
+ * can't crash the page or land on an unreachable step.
+ */
+function loadOnboardingState(userKey: string | null): { step: number; aiMode: boolean } {
+  if (typeof window === "undefined") return { step: 0, aiMode: true };
+  try {
+    if (userKey) {
+      const legacy = localStorage.getItem(LEGACY_CHAT_KEY);
+      if (legacy !== null) {
+        if (!localStorage.getItem(chatStorageKey(userKey))) {
+          localStorage.setItem(chatStorageKey(userKey), legacy);
+        }
+        localStorage.removeItem(LEGACY_CHAT_KEY);
       }
-    } catch {
-      /* ignore */
+      localStorage.removeItem(LEGACY_STEP_KEY);
     }
-    return 0;
-  });
+
+    const savedState = JSON.parse(localStorage.getItem(onboardingStateKey(userKey)) || "null");
+    const aiMode = typeof savedState?.aiMode === "boolean" ? savedState.aiMode : true;
+    const validSteps = aiMode ? [0, 1] : [0, 1, 3];
+    if (typeof savedState?.step === "number" && validSteps.includes(savedState.step)) {
+      return { step: savedState.step, aiMode };
+    }
+    // No (valid) saved state — fall back to deriving from a saved chat.
+    const chat = JSON.parse(localStorage.getItem(chatStorageKey(userKey)) || "null");
+    if (Array.isArray(chat?.messages) && chat.messages.some((m: { role?: string }) => m?.role === "user")) {
+      return { step: 1, aiMode: true };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { step: 0, aiMode: true };
+}
+
+export default function OnboardingPage() {
+  const { data: session, status: sessionStatus } = useSession();
+  // Wait for the session so localStorage keys can be namespaced per user
+  // before any state is read — two accounts on one browser must not inherit
+  // each other's onboarding.
+  if (sessionStatus === "loading") return null;
+  const userKey = session?.user?.email ?? session?.user?.id ?? null;
+  return <OnboardingFlow userKey={userKey} />;
+}
+
+function OnboardingFlow({ userKey }: { userKey: string | null }) {
+  const router = useRouter();
+  const [initial] = useState(() => loadOnboardingState(userKey)); // read localStorage once
+  const [step, setStep] = useState(initial.step);
   const [loading, setLoading] = useState(false);
-  const [aiMode, setAiMode] = useState(true);
+  const [aiMode, setAiMode] = useState(initial.aiMode);
+
+  // Persist step + mode so a refresh restores the right place (see loadOnboardingState).
+  useEffect(() => {
+    try {
+      localStorage.setItem(onboardingStateKey(userKey), JSON.stringify({ step, aiMode }));
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [step, aiMode, userKey]);
 
   // Personalization
   const [name, setName] = useState("");
@@ -134,8 +184,10 @@ export default function OnboardingPage() {
       document.documentElement.setAttribute("data-theme", accentTheme);
       document.documentElement.setAttribute("data-font", fontStyle);
       try {
-        localStorage.removeItem("lifora_onboarding_step");
-        localStorage.removeItem("lifora_onboarding_chat_v1");
+        localStorage.removeItem(LEGACY_STEP_KEY);
+        localStorage.removeItem(LEGACY_CHAT_KEY);
+        localStorage.removeItem(chatStorageKey(userKey));
+        localStorage.removeItem(onboardingStateKey(userKey));
       } catch {
         /* ignore */
       }
@@ -181,7 +233,7 @@ export default function OnboardingPage() {
     {
       title: aiMode ? "Let's build your planner" : "Choose your sections",
       content: aiMode ? (
-        <ConversationalOnboarding onManual={() => setAiMode(false)} />
+        <ConversationalOnboarding onManual={() => setAiMode(false)} userKey={userKey} />
       ) : (
         // Manual section picker
         <div className="space-y-4 max-w-sm mx-auto">
@@ -548,6 +600,11 @@ export default function OnboardingPage() {
     },
   ];
 
+  // Steps the active mode actually visits: the AI flow ends inside the chat
+  // step (build → dashboard), and manual mode skips the review step. The
+  // progress dots must reflect the real path, not the raw steps array.
+  const visibleSteps = aiMode ? [0, 1] : [0, 1, 3];
+
   // In manual mode, skip step 2 (review) unless AI was used
   const handleNext = () => {
     if (step === 1 && !aiMode) {
@@ -570,13 +627,13 @@ export default function OnboardingPage() {
       <div className="w-full max-w-lg">
         {/* Progress dots */}
         <div className="flex justify-center gap-2 mb-10">
-          {steps.map((_, i) => (
+          {visibleSteps.map((s) => (
             <div
-              key={i}
+              key={s}
               className="h-1 rounded-full transition-all duration-300"
               style={{
-                width: step === i ? 24 : 8,
-                background: step >= i ? "var(--accent-color)" : "var(--border-subtle)",
+                width: step === s ? 24 : 8,
+                background: step >= s ? "var(--accent-color)" : "var(--border-subtle)",
               }}
             />
           ))}

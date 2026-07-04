@@ -19,9 +19,22 @@ export async function DELETE(
   }
 
   await connectDB();
-  const { id } = await params;
+  const { slug, id } = await params;
 
-  const deleted = await CustomEntry.findOneAndDelete({ _id: id, userId });
+  if (!Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const template = await SectionTemplate.findOne({ slug }).select("_id").lean();
+  if (!template) {
+    return NextResponse.json({ error: "Section not found" }, { status: 404 });
+  }
+
+  const deleted = await CustomEntry.findOneAndDelete({
+    _id: id,
+    userId,
+    templateId: template._id,
+  });
   if (!deleted) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

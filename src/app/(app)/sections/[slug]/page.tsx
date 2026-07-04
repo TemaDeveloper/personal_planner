@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -63,31 +63,57 @@ export default function CustomSectionPage() {
   const [template, setTemplate] = useState<Template | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
   const [showForm, setShowForm] = useState(false);
 
   const weekStart = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
 
-  useEffect(() => {
-    const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
-    fetch(`/api/sections/${slug}/entries?weekOf=${ws.toISOString()}`)
-      .then((r) => r.json())
+  // Table sections list ALL entries (like the self-contained views) so
+  // totals aren't silently limited to the current week.
+  const isTableList =
+    !!template && !template.layoutHtml && resolveRenderer(template.viewType) === "table";
+  const entriesUrl = isTableList
+    ? `/api/sections/${slug}/entries?all=1`
+    : `/api/sections/${slug}/entries?weekOf=${startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 }).toISOString()}`;
+
+  const loadEntries = useCallback(() => {
+    fetch(entriesUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load");
+        return r.json();
+      })
       .then((d) => {
         setTemplate(d.template || null);
         setEntries(d.entries || []);
+        setError(false);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
         setLoading(false);
       });
-  }, [slug, weekOffset]);
+  }, [entriesUrl]);
+
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
 
   const getEntryForDay = (dayDate: Date) => {
     const dayStr = format(dayDate, "yyyy-MM-dd");
-    return entries.find((e) => format(new Date(e.date), "yyyy-MM-dd") === dayStr);
+    // Entry dates are UTC-midnight ISO strings — derive the day key from the
+    // string so it doesn't shift for west-of-UTC users.
+    return entries.find((e) => String(e.date).slice(0, 10) === dayStr);
   };
 
   const deleteEntry = async (id: string) => {
-    await fetch(`/api/sections/${slug}/entries/${id}`, { method: "DELETE" });
-    toast.success("Entry deleted");
-    setEntries((prev) => prev.filter((e) => e._id !== id));
+    const res = await fetch(`/api/sections/${slug}/entries/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.success("Entry deleted");
+      setEntries((prev) => prev.filter((e) => e._id !== id));
+    } else {
+      toast.error("Failed to delete entry");
+    }
   };
 
   const weekEnd = addDays(weekStart, 6);
@@ -102,6 +128,24 @@ export default function CustomSectionPage() {
             <Skeleton key={i} className="h-28" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="animate-slide-up">
+        <PageHeader title="Something went wrong" description="Couldn't load this section." />
+        <Button
+          size="sm"
+          onClick={() => {
+            setLoading(true);
+            setError(false);
+            loadEntries();
+          }}
+        >
+          Retry
+        </Button>
       </div>
     );
   }
@@ -221,7 +265,7 @@ export default function CustomSectionPage() {
 
           <RenderedLayout
             layoutHtml={template.layoutHtml}
-            data={entries.length > 0 ? entries[entries.length - 1].data : {}}
+            data={entries.length > 0 ? entries[0].data : {}}
             fields={template.fields}
             entries={entries.map((e) => e.data)}
           />
@@ -232,12 +276,7 @@ export default function CustomSectionPage() {
           fields={template.fields}
           entries={entries}
           onAdd={() => setShowForm(true)}
-          onRefresh={() => {
-            const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
-            fetch(`/api/sections/${slug}/entries?weekOf=${ws.toISOString()}`)
-              .then((r) => r.json())
-              .then((d) => setEntries(d.entries || []));
-          }}
+          onRefresh={loadEntries}
         />
       ) : (
       <>
@@ -339,12 +378,7 @@ export default function CustomSectionPage() {
           onClose={() => setShowForm(false)}
           onSuccess={() => {
             setShowForm(false);
-            setWeekOffset(weekOffset); // trigger re-fetch
-            // Re-fetch entries
-            const ws = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
-            fetch(`/api/sections/${slug}/entries?weekOf=${ws.toISOString()}`)
-              .then((r) => r.json())
-              .then((d) => setEntries(d.entries || []));
+            loadEntries();
           }}
         />
       )}

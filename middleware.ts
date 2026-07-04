@@ -8,7 +8,13 @@ export function middleware(request: NextRequest) {
     request.cookies.get("__Secure-authjs.session-token")?.value;
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    // Preserve the deep link so sign-in can return the user to it.
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      request.nextUrl.pathname + request.nextUrl.search
+    );
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
@@ -17,22 +23,10 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
-    "/work/:path*",
-    "/gym/:path*",
-    "/finances/:path*",
-    "/habits/:path*",
-    "/study/:path*",
-    "/hobbies/:path*",
-    "/housework/:path*",
-    "/health/:path*",
-    "/goals/:path*",
-    "/reading/:path*",
-    "/journal/:path*",
-    "/shopping/:path*",
-    "/mealprep/:path*",
+    "/notes/:path*",
+    "/sections/:path*",
     "/settings/:path*",
     "/export/:path*",
-    "/sections/:path*",
     "/shared",
     "/onboarding",
   ],

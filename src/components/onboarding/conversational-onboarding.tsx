@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ChatMessage } from "@/lib/profile/conversation";
 
@@ -17,7 +17,19 @@ interface Facet {
 const GREETING =
   "Hi! I'm here to build a planner around your actual life — not a generic template. To start: tell me about a typical week — how you spend your time, how you earn, how you move, and what you're working toward.";
 
-const STORAGE_KEY = "lifora_onboarding_chat_v1";
+/** Legacy, account-agnostic keys (pre-namespacing). Migrated/cleaned on load. */
+export const LEGACY_CHAT_KEY = "lifora_onboarding_chat_v1";
+export const LEGACY_STEP_KEY = "lifora_onboarding_step";
+
+/** Per-account chat blob key so two accounts on one browser don't share a chat. */
+export function chatStorageKey(userKey?: string | null): string {
+  return userKey ? `${LEGACY_CHAT_KEY}:${userKey}` : LEGACY_CHAT_KEY;
+}
+
+/** Per-account onboarding UI state (step + aiMode) key. */
+export function onboardingStateKey(userKey?: string | null): string {
+  return userKey ? `lifora_onboarding_state_v1:${userKey}` : "lifora_onboarding_state_v1";
+}
 
 interface SavedChat {
   messages?: ChatMessage[];
@@ -25,10 +37,10 @@ interface SavedChat {
   sufficient?: boolean;
 }
 
-function loadSaved(): SavedChat | null {
+function loadSaved(storageKey: string): SavedChat | null {
   if (typeof window === "undefined") return null;
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    return JSON.parse(localStorage.getItem(storageKey) || "null");
   } catch {
     return null;
   }
@@ -39,9 +51,16 @@ function loadSaved(): SavedChat | null {
  * open-facet life profile as they talk, and generates a bespoke planner. This
  * is the default first-run experience (SP-5b cutover).
  */
-export function ConversationalOnboarding({ onManual }: { onManual: () => void }) {
+export function ConversationalOnboarding({
+  onManual,
+  userKey,
+}: {
+  onManual: () => void;
+  userKey?: string | null;
+}) {
   const router = useRouter();
-  const [saved] = useState(loadSaved); // parse localStorage once
+  const storageKey = chatStorageKey(userKey);
+  const [saved] = useState(() => loadSaved(storageKey)); // parse localStorage once
   const [messages, setMessages] = useState<ChatMessage[]>(
     saved?.messages ?? [{ role: "assistant", content: GREETING }]
   );
@@ -50,23 +69,22 @@ export function ConversationalOnboarding({ onManual }: { onManual: () => void })
   const [sufficient, setSufficient] = useState<boolean>(saved?.sufficient ?? false);
   const [sending, setSending] = useState(false);
   const [building, setBuilding] = useState(false);
+  // No AI provider is configured anywhere (server env + user settings).
+  const [noProvider, setNoProvider] = useState(false);
+  // Consecutive turns the server answered with a canned fallback.
+  const [degradedTurns, setDegradedTurns] = useState(0);
 
   // Persist the conversation so a refresh doesn't wipe it.
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, facets, sufficient }));
+      localStorage.setItem(storageKey, JSON.stringify({ messages, facets, sufficient }));
     } catch {
       /* ignore quota errors */
     }
-  }, [messages, facets, sufficient]);
+  }, [storageKey, messages, facets, sufficient]);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
-    const next = [...messages, { role: "user" as const, content: text }];
-    setMessages(next);
-    setInput("");
+  const sendTurn = async (next: ChatMessage[]) => {
     setSending(true);
     try {
       const res = await fetch("/api/profile/chat", {
@@ -76,16 +94,43 @@ export function ConversationalOnboarding({ onManual }: { onManual: () => void })
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Something went wrong");
+        if (res.status === 400 && /no ai provider/i.test(data.error || "")) {
+          setNoProvider(true);
+        } else {
+          toast.error(data.error || "Something went wrong");
+        }
       } else {
+        setNoProvider(false);
         setMessages((m) => [...m, { role: "assistant", content: data.assistant }]);
         setFacets(data.facets || []);
         setSufficient(Boolean(data.sufficient));
+        setDegradedTurns((n) => (data.degraded ? n + 1 : 0));
       }
     } catch {
       toast.error("Network error");
     }
     setSending(false);
+  };
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || sending) return;
+    const next = [...messages, { role: "user" as const, content: text }];
+    setMessages(next);
+    setInput("");
+    await sendTurn(next);
+  };
+
+  // Drop the canned fallback reply and re-run the last user turn.
+  const retry = async () => {
+    if (sending) return;
+    const trimmed = [...messages];
+    while (trimmed.length > 0 && trimmed[trimmed.length - 1].role === "assistant") {
+      trimmed.pop();
+    }
+    if (!trimmed.some((m) => m.role === "user")) return;
+    setMessages(trimmed);
+    await sendTurn(trimmed);
   };
 
   const build = async () => {
@@ -104,8 +149,10 @@ export function ConversationalOnboarding({ onManual }: { onManual: () => void })
         body: JSON.stringify({ onboardingDone: true }),
       });
       try {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem("lifora_onboarding_step");
+        localStorage.removeItem(storageKey);
+        localStorage.removeItem(onboardingStateKey(userKey));
+        localStorage.removeItem(LEGACY_CHAT_KEY);
+        localStorage.removeItem(LEGACY_STEP_KEY);
       } catch {
         /* ignore */
       }
@@ -143,6 +190,42 @@ export function ConversationalOnboarding({ onManual }: { onManual: () => void })
           <div className="flex justify-start">
             <div className="rounded-2xl px-3.5 py-2" style={{ background: "var(--surface-2)" }}>
               <Loader2 size={14} className="animate-spin" style={{ color: "var(--text-muted)" }} />
+            </div>
+          </div>
+        )}
+        {noProvider && (
+          <div
+            className="rounded-lg p-3 space-y-2 text-sm"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+          >
+            <p className="flex items-center gap-2 font-medium" style={{ color: "var(--text-primary)" }}>
+              <AlertTriangle size={14} style={{ color: "var(--accent-color)" }} />
+              No AI provider is configured
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Add an API key in Settings later, or set up your planner manually now.
+            </p>
+            <Button size="sm" variant="secondary" onClick={onManual}>
+              Choose sections manually
+            </Button>
+          </div>
+        )}
+        {!noProvider && degradedTurns >= 2 && !sending && (
+          <div
+            className="rounded-lg p-3 space-y-2 text-sm"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)" }}
+          >
+            <p className="flex items-center gap-2 font-medium" style={{ color: "var(--text-primary)" }}>
+              <AlertTriangle size={14} style={{ color: "var(--accent-color)" }} />
+              The AI assistant seems unavailable right now
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={retry}>
+                Retry
+              </Button>
+              <Button size="sm" variant="ghost" onClick={onManual}>
+                Choose sections manually
+              </Button>
             </div>
           </div>
         )}

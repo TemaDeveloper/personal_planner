@@ -76,13 +76,14 @@ function useIsDark(): boolean {
   return dark;
 }
 
-export function NotesEditor({ pageId, initialContent, onPersist }: {
-  pageId?: string; initialContent: unknown; onPersist?: (content: unknown) => Promise<void>;
+export function NotesEditor({ pageId, initialContent, initialUpdatedAt, onPersist }: {
+  pageId?: string; initialContent: unknown; initialUpdatedAt?: string | null;
+  onPersist?: (content: unknown, opts?: { keepalive?: boolean }) => Promise<void>;
 }) {
   const isDark = useIsDark();
   const refresh = useNotesRefresh();
   const pages = useNotesPages();
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error" | "conflict">("idle");
 
   const uploadFile = async (file: File): Promise<string> => {
     const body = new FormData();
@@ -207,45 +208,112 @@ export function NotesEditor({ pageId, initialContent, onPersist }: {
     },
   });
 
-  const persist = useRef<(content: unknown) => Promise<void>>(async () => {});
+  // Dirty buffer: `pending` holds the newest unsaved content, `dirty` whether an
+  // unsaved edit exists. A failed save keeps both, so nothing is ever dropped.
+  const dirty = useRef(false);
+  const pending = useRef<unknown>(null);
+  // Set once the server reports a concurrent edit (409) — from then on this
+  // editor stops overwriting and asks the user to reload.
+  const conflicted = useRef(false);
+  // Newest updatedAt we know the server has — sent as baseUpdatedAt so the
+  // server can 409 instead of letting a stale tab clobber newer edits.
+  const baseUpdatedAt = useRef<string | null>(initialUpdatedAt ?? null);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persist = useRef<(content: unknown, opts?: { keepalive?: boolean }) => Promise<void>>(async () => {});
   useLayoutEffect(() => {
-    persist.current = async (content: unknown) => {
+    persist.current = async (content: unknown, opts?: { keepalive?: boolean }) => {
+      if (conflicted.current) return;
       setStatus("saving");
-      // onPersist lets the same editor save anywhere (e.g. a database row body);
-      // default is the notes-page PATCH.
-      if (onPersist) {
-        await onPersist(content);
-      } else if (pageId) {
-        await fetch(`/api/notes/${pageId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        });
+      try {
+        // onPersist lets the same editor save anywhere (e.g. a database row body);
+        // default is the notes-page PATCH.
+        if (onPersist) {
+          await onPersist(content, opts);
+        } else if (pageId) {
+          const res = await fetch(`/api/notes/${pageId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content, ...(baseUpdatedAt.current ? { baseUpdatedAt: baseUpdatedAt.current } : {}) }),
+            keepalive: opts?.keepalive,
+          });
+          if (res.status === 409) {
+            conflicted.current = true;
+            setStatus("conflict");
+            return;
+          }
+          if (!res.ok) throw new Error(`Save failed (${res.status})`);
+          const json = await res.json().catch(() => null);
+          if (json && typeof json.updatedAt === "string") baseUpdatedAt.current = json.updatedAt;
+        }
+        // Only clear the dirty flag if nothing newer arrived while in flight.
+        if (pending.current === content) dirty.current = false;
+        setStatus("saved");
+      } catch {
+        // Keep the dirty buffer and retry — never show "Saved" for a failed write.
+        setStatus("error");
+        if (retryTimer.current) clearTimeout(retryTimer.current);
+        retryTimer.current = setTimeout(() => {
+          if (dirty.current) void persist.current(pending.current ?? content);
+        }, 3000);
       }
-      setStatus("saved");
     };
   });
 
   const debouncedSave = useDebouncedSave<unknown>((c) => persist.current(c), 600);
 
-  // Flush the latest content on unmount. The editor is keyed per page, so it
-  // unmounts when navigating away — without this, edits made in the last 600ms
-  // (still sitting in the debounce) would be dropped. pageId/editor are this
-  // instance's, so the flush always targets the correct (departing) page.
+  // Flush the latest content on unmount — but only when dirty. The editor is
+  // keyed per page, so it unmounts when navigating away; without the flush,
+  // edits made in the last 600ms (still sitting in the debounce) would be
+  // dropped, and without the dirty check a read-only tab would clobber newer
+  // edits from another tab on navigate-away.
   useEffect(() => {
-    return () => { void persist.current(editor.document); };
+    return () => {
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+      if (dirty.current && !conflicted.current) void persist.current(pending.current ?? editor.document);
+    };
+  }, [editor]);
+
+  // Unmount effects don't run on a hard tab close — flush the pending content
+  // with a keepalive fetch so the last ≤600ms of typing survives.
+  useEffect(() => {
+    const flush = () => {
+      if (!dirty.current || conflicted.current) return;
+      void persist.current(pending.current ?? editor.document, { keepalive: true });
+    };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+    };
   }, [editor]);
 
   return (
     <div className="relative">
-      <div className="absolute right-2 -top-6 text-[11px]" style={{ color: "var(--text-faint)" }}>
-        {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
+      <div className="absolute right-2 -top-6 text-[11px] whitespace-nowrap" style={{ color: "var(--text-faint)" }}>
+        {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : status === "conflict" ? (
+          <span style={{ color: "var(--alert)" }}>This page was changed elsewhere — reload to continue</span>
+        ) : status === "error" ? (
+          <span style={{ color: "var(--alert)" }}>
+            Not saved — retrying{" "}
+            <button type="button" className="underline" onClick={() => { if (dirty.current && pending.current) void persist.current(pending.current); }}>
+              Retry now
+            </button>
+          </span>
+        ) : ""}
       </div>
       <BlockNoteView
         editor={editor}
         theme={isDark ? "dark" : "light"}
         slashMenu={false}
-        onChange={() => { debouncedSave(editor.document); queueMicrotask(autodetectCode); }}
+        onChange={() => {
+          const doc = editor.document;
+          pending.current = doc;
+          dirty.current = true;
+          debouncedSave(doc);
+          queueMicrotask(autodetectCode);
+        }}
       >
         <SuggestionMenuController
           triggerCharacter="@"

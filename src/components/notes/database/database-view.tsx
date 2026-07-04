@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Plus, Table2, Columns3, List as ListIcon, LayoutGrid, Trash2, CalendarDays, Search } from "lucide-react";
 import type { DBProperty, DBRow, DBView, PropertyType, ViewType } from "@/lib/models/notes-database";
 import { groupRowsByProperty, isSelectType, optionColor, colorForLabel, filterRows, formatCellText, migrateRowsForTypeChange, applySorts, applyFilters, reorderRows, synthesizeOptions } from "@/lib/notes/database";
@@ -28,11 +29,41 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   const [db, setDb] = useState<DB | null>(null);
   const [activeView, setActiveView] = useState(0);
   const [missing, setMissing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [peekRowId, setPeekRowId] = useState<string | null>(null);
 
   const [relatedDbs, setRelatedDbs] = useState<RelatedDbs>({});
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/notes/databases/${databaseId}`);
+      // Only a real 404 means the database is gone; anything else is a
+      // transient failure the user can retry.
+      if (res.status === 404) { setMissing(true); return; }
+      if (!res.ok) throw new Error(`Load failed (${res.status})`);
+      setLoadError(false);
+      setDb((await res.json()).database);
+    } catch {
+      setLoadError(true);
+    }
+  }, [databaseId]);
+  useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- initial fetch
+
+  // All mutations funnel through this: on failure, surface it and re-fetch the
+  // authoritative state so the optimistic UI doesn't silently diverge.
+  const mutate = useCallback(async (url: string, init: RequestInit, what: string) => {
+    try {
+      const res = await fetch(url, init);
+      if (!res.ok) throw new Error(`${what} failed (${res.status})`);
+    } catch {
+      toast.error(`Couldn't save ${what} — reloading`);
+      void load();
+    }
+  }, [load]);
+  const mutateRef = useRef(mutate);
+  useEffect(() => { mutateRef.current = mutate; });
 
   // Latest db in a ref so the debounced meta-flush always sends current state
   // (never a stale snapshot that could clobber a concurrent menu edit).
@@ -43,10 +74,10 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     const cur = dbRef.current;
     if (!cur) return;
     metaDirty.current = false;
-    fetch(`/api/notes/databases/${databaseId}`, {
+    void mutateRef.current(`/api/notes/databases/${databaseId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: cur.title, properties: cur.properties }),
-    });
+    }, "database changes");
   });
   const debouncedMeta = useDebouncedSave<void>(() => sendMeta.current(), 500);
   const flushMeta = () => { metaDirty.current = true; debouncedMeta(); };
@@ -58,13 +89,6 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     const dirty = metaDirty;
     return () => { if (dirty.current) send.current(); };
   }, []);
-
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/notes/databases/${databaseId}`);
-    if (!res.ok) { setMissing(true); return; }
-    setDb((await res.json()).database);
-  }, [databaseId]);
-  useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- initial fetch
 
   // Prefetch databases referenced by relation properties (for chips + rollups).
   const relationTargets = useMemo(
@@ -90,19 +114,25 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
 
   const patchRow = async (rowId: string, cells: Record<string, unknown>) => {
     setDb((d) => d ? { ...d, rows: d.rows.map((r) => r.id === rowId ? { ...r, cells: { ...r.cells, ...cells } } : r) } : d);
-    await fetch(`/api/notes/databases/${databaseId}/rows/${rowId}`, {
+    await mutate(`/api/notes/databases/${databaseId}/rows/${rowId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cells }),
-    });
+    }, "row");
   };
   const addRow = async (seed: Record<string, unknown> = {}, content?: unknown) => {
-    const res = await fetch(`/api/notes/databases/${databaseId}/rows`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cells: seed, content }),
-    });
-    if (res.ok) { const { row } = await res.json(); setDb((d) => d ? { ...d, rows: [...d.rows, row] } : d); }
+    try {
+      const res = await fetch(`/api/notes/databases/${databaseId}/rows`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cells: seed, content }),
+      });
+      if (!res.ok) throw new Error(`Add row failed (${res.status})`);
+      const { row } = await res.json();
+      setDb((d) => d ? { ...d, rows: [...d.rows, row] } : d);
+    } catch {
+      toast.error("Couldn't add row");
+    }
   };
   const deleteRow = async (rowId: string) => {
     setDb((d) => d ? { ...d, rows: d.rows.filter((r) => r.id !== rowId) } : d);
-    await fetch(`/api/notes/databases/${databaseId}/rows/${rowId}`, { method: "DELETE" });
+    await mutate(`/api/notes/databases/${databaseId}/rows/${rowId}`, { method: "DELETE" }, "row deletion");
   };
   const duplicateRow = (rowId: string) => {
     const src = db?.rows.find((r) => r.id === rowId);
@@ -110,15 +140,15 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   };
   const saveSchema = async (properties: DBProperty[]) => {
     setDb((d) => d ? { ...d, properties } : d);
-    await fetch(`/api/notes/databases/${databaseId}`, {
+    await mutate(`/api/notes/databases/${databaseId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ properties }),
-    });
+    }, "columns");
   };
   const saveViews = async (views: DBView[]) => {
     setDb((d) => d ? { ...d, views } : d);
-    await fetch(`/api/notes/databases/${databaseId}`, {
+    await mutate(`/api/notes/databases/${databaseId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ views }),
-    });
+    }, "views");
   };
   const addColumn = () => {
     if (!db) return;
@@ -140,10 +170,10 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     setDb((d) => d ? { ...d, properties, rows } : d);
     // Persist via the server-side migrate so it runs against authoritative rows
     // and won't clobber a concurrent cell edit to other columns.
-    fetch(`/api/notes/databases/${databaseId}`, {
+    void mutate(`/api/notes/databases/${databaseId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ migrate: { propId, fromType: prev.type, toType: type } }),
-    });
+    }, "column type");
   };
   const deleteColumn = (propId: string) => {
     if (!db) return;
@@ -158,9 +188,9 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
         const opt = { id: uid("o"), label, color: colorForLabel(label) };
         return { ...p, options: [...(p.options ?? []), opt] };
       });
-      fetch(`/api/notes/databases/${databaseId}`, {
+      void mutateRef.current(`/api/notes/databases/${databaseId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ properties }),
-      });
+      }, "option");
       return { ...d, properties };
     });
   };
@@ -173,6 +203,12 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
   };
 
   if (missing) return <div contentEditable={false} className="my-2 text-[13px] px-3 py-2 rounded-md" style={{ background: "var(--surface-raised)", color: "var(--text-faint)" }}>Database not found.</div>;
+  if (loadError && !db) return (
+    <div contentEditable={false} className="my-2 text-[13px] px-3 py-2 rounded-md" style={{ background: "var(--surface-raised)", color: "var(--text-faint)" }}>
+      Couldn&apos;t load database.{" "}
+      <button type="button" className="underline" onClick={() => load()} style={{ color: "var(--text-muted)" }}>Retry</button>
+    </div>
+  );
   if (!db) return <div contentEditable={false} className="my-2 text-[13px] px-1" style={{ color: "var(--text-faint)" }}>Loading database…</div>;
 
   const view = db.views[activeView] ?? db.views[0];
@@ -207,9 +243,9 @@ export function DatabaseView({ databaseId }: { databaseId: string }) {
     setDb((d) => d ? { ...d, rows } : d);
     // Send only the id order — the server reorders its authoritative rows so a
     // concurrent cell edit isn't clobbered by a stale full-rows snapshot.
-    fetch(`/api/notes/databases/${databaseId}`, {
+    void mutate(`/api/notes/databases/${databaseId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rowOrder: rows.map((r) => r.id) }),
-    });
+    }, "row order");
   };
 
   // Title + column-name typing update locally and debounce the PATCH (was one
