@@ -39,11 +39,19 @@ export async function POST(
     return NextResponse.json({ toggled: false });
   }
 
-  await HabitLog.create({
-    habitId: id,
-    userId,
-    date,
-  });
-
-  return NextResponse.json({ toggled: true }, { status: 201 });
+  try {
+    await HabitLog.create({
+      habitId: id,
+      userId,
+      date,
+    });
+    return NextResponse.json({ toggled: true }, { status: 201 });
+  } catch (err: unknown) {
+    // Concurrent request created the log first — the unique habitId+date
+    // index rejects our insert, but a log now exists either way.
+    if (err && typeof err === "object" && (err as { code?: number }).code === 11000) {
+      return NextResponse.json({ toggled: true }, { status: 200 });
+    }
+    throw err;
+  }
 }
