@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const jobName = searchParams.get("jobName");
+  if (!jobName) {
+    return NextResponse.json({ error: "jobName is required" }, { status: 400 });
+  }
 
   const now = new Date();
   const todayStart = startOfDay(now);
