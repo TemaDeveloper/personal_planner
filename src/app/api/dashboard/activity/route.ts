@@ -16,8 +16,8 @@ import MealPlan from "@/lib/models/meal-plan";
 import Expense from "@/lib/models/expense";
 import CustomEntry from "@/lib/models/custom-entry";
 import SectionTemplate from "@/lib/models/section-template";
-import { startOfMonth, endOfMonth, format } from "date-fns";
 import { DEFAULT_ENABLED_SECTIONS, type SectionId } from "@/lib/constants";
+import { toDateKey, utcMonthRange } from "@/lib/date-key";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -31,15 +31,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const monthParam = searchParams.get("month"); // "2026-05"
 
-  let start: Date, end: Date;
-  if (monthParam) {
-    const d = new Date(monthParam + "-01");
-    start = startOfMonth(d);
-    end = endOfMonth(d);
-  } else {
-    start = startOfMonth(new Date());
-    end = endOfMonth(new Date());
-  }
+  const { start, end } = utcMonthRange(monthParam ? new Date(monthParam + "-01") : new Date());
 
   const user = await User.findById(userId).lean();
   if (!user) {
@@ -54,7 +46,7 @@ export async function GET(req: NextRequest) {
 
   const addDates = (dates: Date[], sectionId: string) => {
     for (const d of dates) {
-      const key = format(d, "yyyy-MM-dd");
+      const key = toDateKey(d);
       if (!activity[key]) activity[key] = [];
       if (!activity[key].includes(sectionId)) activity[key].push(sectionId);
     }
@@ -154,7 +146,7 @@ export async function GET(req: NextRequest) {
           for (const doc of docs) {
             const slug = templateMap.get(String(doc.templateId));
             if (slug) {
-              const key = format(doc.date, "yyyy-MM-dd");
+              const key = toDateKey(doc.date);
               if (!activity[key]) activity[key] = [];
               if (!activity[key].includes(slug)) activity[key].push(slug);
             }
