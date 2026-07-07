@@ -32,11 +32,11 @@ describe("SectionTemplate schema", () => {
     expect(instance.forkCount).toBe(0);
   });
 
-  it("has isShared field as Boolean defaulting to true", () => {
+  it("has isShared field as Boolean defaulting to false (private unless explicitly shared)", () => {
     const schemaPaths = SectionTemplate.schema.paths;
     expect(schemaPaths["isShared"]).toBeDefined();
     const instance = new SectionTemplate({ name: "Test", slug: "test", icon: "Star" });
-    expect(instance.isShared).toBe(true);
+    expect(instance.isShared).toBe(false);
   });
 
   it("has isShared + usageCount compound index defined", () => {
