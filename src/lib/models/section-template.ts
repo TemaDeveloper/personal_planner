@@ -93,7 +93,9 @@ const SectionTemplateSchema = new Schema<ISectionTemplate>(
     sourcePrompt: { type: String, default: "" },
     forkedFrom: { type: Schema.Types.ObjectId, ref: "SectionTemplate", default: null },
     forkCount: { type: Number, default: 0 },
-    isShared: { type: Boolean, default: true },
+    // Private by default — only the shared-template-pool save path
+    // (src/lib/embeddings.ts) should set this true explicitly.
+    isShared: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -25,7 +25,7 @@ export async function GET(
     $or: [
       { createdBy: userId },
       { createdBy: null },
-      { isShared: true },
+      { isShared: true, usageCount: { $gte: 3 } },
     ],
   }).lean();
 

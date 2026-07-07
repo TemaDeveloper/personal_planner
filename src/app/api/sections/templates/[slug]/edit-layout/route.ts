@@ -338,7 +338,14 @@ export async function POST(
   await connectDB();
   const { slug } = await params;
 
-  const template = await SectionTemplate.findOne({ slug });
+  const template = await SectionTemplate.findOne({
+    slug,
+    $or: [
+      { createdBy: userId },
+      { createdBy: null },
+      { isShared: true, usageCount: { $gte: 3 } },
+    ],
+  });
   if (!template) {
     return NextResponse.json({ error: "Template not found" }, { status: 404 });
   }
@@ -381,8 +388,9 @@ Output ONLY the complete updated HTML:`;
       .replace(/\n?```$/i, "")
       .trim();
 
-    // Optionally save to template
-    if (body.save) {
+    // Optionally save to template — only the owner may persist changes, even
+    // though a shared/built-in template can be read here for AI context.
+    if (body.save && String(template.createdBy) === String(userId)) {
       template.layoutHtml = cleaned;
       await template.save();
     }

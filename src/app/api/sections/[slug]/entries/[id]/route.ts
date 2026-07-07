@@ -46,7 +46,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const template = await SectionTemplate.findOne({ slug }).lean();
+  const template = await SectionTemplate.findOne({
+    slug,
+    $or: [
+      { createdBy: userId },
+      { createdBy: null },
+      { isShared: true, usageCount: { $gte: 3 } },
+    ],
+  }).lean();
   if (!template) {
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }

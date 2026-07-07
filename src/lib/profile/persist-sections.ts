@@ -22,6 +22,7 @@ export interface TemplateDoc {
   isBuiltIn: boolean;
   createdBy: string;
   usageCount: number;
+  isShared: boolean;
   sourceDimension?: string;
   sourceFacetKey?: string;
 }
@@ -57,6 +58,9 @@ export function buildTemplateDoc(
     isBuiltIn: false,
     createdBy: userId,
     usageCount: 1,
+    // Personal, profile-generated sections describe the user's actual life
+    // (name/description/layout) — never share them by default.
+    isShared: false,
     ...(source?.dimension ? { sourceDimension: source.dimension } : {}),
     ...(source?.facetKey ? { sourceFacetKey: source.facetKey } : {}),
   };

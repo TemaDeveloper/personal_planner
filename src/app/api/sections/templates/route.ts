@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
     isBuiltIn: false,
     createdBy: userId,
     usageCount: 1,
+    isShared: false,
   });
 
   // Add to user's customSections

@@ -20,7 +20,14 @@ export async function GET(
   await connectDB();
   const { slug } = await params;
 
-  const template = await SectionTemplate.findOne({ slug }).lean();
+  const template = await SectionTemplate.findOne({
+    slug,
+    $or: [
+      { createdBy: userId },
+      { createdBy: null },
+      { isShared: true, usageCount: { $gte: 3 } },
+    ],
+  }).lean();
   if (!template) {
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }
@@ -89,7 +96,14 @@ export async function POST(
   await connectDB();
   const { slug } = await params;
 
-  const template = await SectionTemplate.findOne({ slug }).lean();
+  const template = await SectionTemplate.findOne({
+    slug,
+    $or: [
+      { createdBy: userId },
+      { createdBy: null },
+      { isShared: true, usageCount: { $gte: 3 } },
+    ],
+  }).lean();
   if (!template) {
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }

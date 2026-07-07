@@ -367,7 +367,14 @@ export async function buildExport(
     default: {
       if (section.startsWith("custom:")) {
         const slug = section.slice("custom:".length);
-        const template = await SectionTemplate.findOne({ slug }).lean();
+        const template = await SectionTemplate.findOne({
+          slug,
+          $or: [
+            { createdBy: userId },
+            { createdBy: null },
+            { isShared: true, usageCount: { $gte: 3 } },
+          ],
+        }).lean();
         if (!template) {
           return { name: "Unknown", columns: [], rows: [] };
         }
