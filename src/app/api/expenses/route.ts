@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const limit = Math.min(Math.max(Number(searchParams.get("limit")) || 200, 1), 200);
+  const skip = Math.max(Number(searchParams.get("skip")) || 0, 0);
 
   const filter: Record<string, unknown> = { userId };
   if (from || to) {
@@ -37,9 +39,12 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const expenses = await Expense.find(filter).sort({ date: -1 }).limit(200).lean();
+  const [expenses, total] = await Promise.all([
+    Expense.find(filter).sort({ date: -1 }).skip(skip).limit(limit).lean(),
+    Expense.countDocuments(filter),
+  ]);
 
-  return NextResponse.json({ expenses });
+  return NextResponse.json({ expenses, total, skip, limit });
 }
 
 export async function POST(req: NextRequest) {

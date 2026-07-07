@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
   const subject = searchParams.get("subject");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const limit = Math.min(Math.max(Number(searchParams.get("limit")) || 200, 1), 200);
+  const skip = Math.max(Number(searchParams.get("skip")) || 0, 0);
 
   const filter: Record<string, unknown> = { userId };
   if (subject) filter.subject = String(subject);
@@ -27,9 +29,12 @@ export async function GET(req: NextRequest) {
     if (to) (filter.date as Record<string, Date>).$lte = new Date(to);
   }
 
-  const sessions = await StudySession.find(filter).sort({ date: -1 }).limit(200).lean();
+  const [sessions, total] = await Promise.all([
+    StudySession.find(filter).sort({ date: -1 }).skip(skip).limit(limit).lean(),
+    StudySession.countDocuments(filter),
+  ]);
 
-  return NextResponse.json({ sessions });
+  return NextResponse.json({ sessions, total, skip, limit });
 }
 
 export async function POST(req: NextRequest) {
