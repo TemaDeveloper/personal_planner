@@ -123,8 +123,11 @@ export default function SettingsPage() {
         setTargetDaysPerWeek(data.gymConfig?.targetDaysPerWeek ?? 3);
         setAiProviderSetting(data.aiProvider || "");
         setHasAiKey(data.hasAiKey || false);
-        setLoading(false);
-      });
+      })
+      .catch(() => {
+        toast.error("Failed to load settings");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
