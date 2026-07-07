@@ -242,9 +242,17 @@ export function WorkTracker({
                       size="icon"
                       aria-label="Delete session"
                       onClick={async () => {
-                        await fetch(`/api/work/sessions/${s._id}`, { method: "DELETE" });
-                        toast.success("Session deleted");
-                        router.refresh();
+                        try {
+                          const res = await fetch(`/api/work/sessions/${s._id}`, { method: "DELETE" });
+                          if (res.ok) {
+                            toast.success("Session deleted");
+                            router.refresh();
+                          } else {
+                            toast.error("Failed to delete session");
+                          }
+                        } catch {
+                          toast.error("Failed to delete session");
+                        }
                       }}
                       className="h-7 w-7 text-[var(--text-muted)] hover:text-destructive"
                     >
@@ -329,9 +337,17 @@ export function WorkTracker({
                       size="icon"
                       aria-label="Delete expense"
                       onClick={async () => {
-                        await fetch(`/api/expenses/${e._id}`, { method: "DELETE" });
-                        toast.success("Expense deleted");
-                        router.refresh();
+                        try {
+                          const res = await fetch(`/api/expenses/${e._id}`, { method: "DELETE" });
+                          if (res.ok) {
+                            toast.success("Expense deleted");
+                            router.refresh();
+                          } else {
+                            toast.error("Failed to delete expense");
+                          }
+                        } catch {
+                          toast.error("Failed to delete expense");
+                        }
                       }}
                       className="h-7 w-7 text-[var(--text-muted)] hover:text-destructive"
                     >
@@ -426,9 +442,17 @@ export function WorkTracker({
                       size="icon"
                       aria-label="Delete route"
                       onClick={async () => {
-                        await fetch(`/api/routes/${r._id}`, { method: "DELETE" });
-                        toast.success("Route deleted");
-                        router.refresh();
+                        try {
+                          const res = await fetch(`/api/routes/${r._id}`, { method: "DELETE" });
+                          if (res.ok) {
+                            toast.success("Route deleted");
+                            router.refresh();
+                          } else {
+                            toast.error("Failed to delete route");
+                          }
+                        } catch {
+                          toast.error("Failed to delete route");
+                        }
                       }}
                       className="h-7 w-7 text-[var(--text-muted)] hover:text-destructive"
                     >
