@@ -17,41 +17,51 @@ export async function GET() {
 
   const habits = await Habit.find({ userId, active: true }).lean();
   const today = startOfDay(new Date());
+  const rangeStart = subDays(today, 365);
 
-  // Get today's logs and compute streaks
-  const habitsWithLogs = await Promise.all(
-    habits.map(async (habit) => {
-      const todayLog = await HabitLog.findOne({
-        habitId: habit._id,
-        date: today,
-      });
+  // Batch-fetch every log in the streak lookback window in one query, then
+  // compute completedToday/streak in memory instead of querying per habit
+  // per day (was up to 365 DB round-trips per habit).
+  const habitIds = habits.map((h) => h._id);
+  const logs = habitIds.length > 0
+    ? await HabitLog.find({
+        habitId: { $in: habitIds },
+        date: { $gte: rangeStart, $lte: today },
+      }).lean()
+    : [];
 
-      // Calculate streak
-      let streak = 0;
-      const checkDate = todayLog ? today : subDays(today, 1);
-      for (let i = 0; i < 365; i++) {
-        const log = await HabitLog.findOne({
-          habitId: habit._id,
-          date: startOfDay(subDays(checkDate, i)),
-        });
-        if (log) {
-          streak++;
-        } else {
-          break;
-        }
+  const datesByHabit = new Map<string, Set<number>>();
+  for (const log of logs) {
+    const key = String(log.habitId);
+    const dates = datesByHabit.get(key) ?? new Set<number>();
+    dates.add(startOfDay(log.date).getTime());
+    datesByHabit.set(key, dates);
+  }
+
+  const habitsWithLogs = habits.map((habit) => {
+    const dates = datesByHabit.get(String(habit._id)) ?? new Set<number>();
+    const todayLog = dates.has(today.getTime());
+
+    let streak = 0;
+    const checkDate = todayLog ? today : subDays(today, 1);
+    for (let i = 0; i < 365; i++) {
+      if (dates.has(startOfDay(subDays(checkDate, i)).getTime())) {
+        streak++;
+      } else {
+        break;
       }
+    }
 
-      return {
-        _id: String(habit._id),
-        name: habit.name,
-        emoji: habit.emoji,
-        color: habit.color,
-        active: habit.active,
-        completedToday: !!todayLog,
-        streak,
-      };
-    })
-  );
+    return {
+      _id: String(habit._id),
+      name: habit.name,
+      emoji: habit.emoji,
+      color: habit.color,
+      active: habit.active,
+      completedToday: todayLog,
+      streak,
+    };
+  });
 
   return NextResponse.json({ habits: habitsWithLogs });
 }
