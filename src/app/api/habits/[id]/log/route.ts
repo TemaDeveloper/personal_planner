@@ -28,14 +28,12 @@ export async function POST(
   }
   const date = startOfDay(new Date(parsed.data.date));
 
-  // Toggle: if log exists, remove it; otherwise create it
-  const existing = await HabitLog.findOne({
-    habitId: id,
-    date,
-  });
+  // Atomic toggle: findOneAndDelete returns the doc if it existed, null otherwise.
+  // This eliminates the race condition where two concurrent requests both see no
+  // existing log and both create one.
+  const deleted = await HabitLog.findOneAndDelete({ habitId: id, date });
 
-  if (existing) {
-    await HabitLog.findByIdAndDelete(existing._id);
+  if (deleted) {
     return NextResponse.json({ toggled: false });
   }
 
