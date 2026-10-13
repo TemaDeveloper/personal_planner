@@ -32,8 +32,30 @@ export async function POST(req: NextRequest) {
   const ai = resolveAIConfig(body ?? {});
   if (!ai) return NextResponse.json({ error: "No AI provider configured" }, { status: 400 });
 
+  await connectDB();
+
+  // Atomic idempotency guard: claim generation atomically so concurrent requests
+  // cannot both pass. Only proceeds when modifiedCount === 1 (we won the race).
+  // Uses generationPending to distinguish "done" from "claimed but failed", so a
+  // retry after a mid-flight crash can still proceed.
+  const claim = await User.updateOne(
+    { _id: userId, onboardingDone: { $ne: true }, generationPending: { $ne: true } },
+    { $set: { generationPending: true } }
+  );
+  if (claim.modifiedCount === 0) {
+    // Either already done or another request is in flight right now.
+    const user = await User.findById(userId).select("onboardingDone generationPending").lean();
+    if (user?.onboardingDone) {
+      return NextResponse.json({ error: "Planner already generated" }, { status: 409 });
+    }
+    // Another request is in progress — tell the client to retry shortly.
+    return NextResponse.json({ error: "Generation already in progress" }, { status: 409 });
+  }
+
   const profile = await getProfile(userId);
   if (!profile || profile.facets.length === 0) {
+    // Release the claim so the user can retry after fixing their profile.
+    await User.updateOne({ _id: userId }, { $unset: { generationPending: "" } });
     return NextResponse.json({ error: "No profile to generate from" }, { status: 400 });
   }
 
@@ -46,7 +68,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await connectDB();
     const created = [];
     for (const section of sections) {
       // Unique slug, avoiding collisions with built-ins and existing templates.
@@ -73,9 +94,11 @@ export async function POST(req: NextRequest) {
       created.push({ _id: template._id, name: template.name, slug: template.slug });
     }
 
-    // Mark onboarding complete server-side so a failed client PATCH can't bounce
-    // the user back into onboarding after their planner was created.
-    await User.updateOne({ _id: userId }, { $set: { onboardingDone: true } });
+    // Mark onboarding complete and release the in-progress lock atomically.
+    await User.updateOne(
+      { _id: userId },
+      { $set: { onboardingDone: true }, $unset: { generationPending: "" } }
+    );
 
     // Learn-back: record each facet dimension into the vocabulary.
     for (const facet of profile.facets) {
@@ -94,6 +117,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sections: created }, { status: 201 });
   } catch (err) {
     console.error("[profile/generate] failed", err);
+    // Release the lock so the user can retry after a failure.
+    await User.updateOne({ _id: userId }, { $unset: { generationPending: "" } }).catch(() => {});
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Generation failed" },
       { status: 500 }

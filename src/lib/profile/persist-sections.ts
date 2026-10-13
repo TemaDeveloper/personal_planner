@@ -1,5 +1,7 @@
 import type { GeneratedSection } from "@/lib/profile/generate-sections";
 import type { IFieldDefinition } from "@/lib/models/section-template";
+import { DEFAULT_CATEGORIES } from "@/lib/calendar";
+import type { CalendarCategory } from "@/lib/calendar";
 
 export function slugify(name: string): string {
   return name
@@ -23,6 +25,7 @@ export interface TemplateDoc {
   createdBy: string;
   usageCount: number;
   isShared: boolean;
+  calendarCategories?: CalendarCategory[];
   sourceDimension?: string;
   sourceFacetKey?: string;
 }
@@ -61,6 +64,7 @@ export function buildTemplateDoc(
     // Personal, profile-generated sections describe the user's actual life
     // (name/description/layout) — never share them by default.
     isShared: false,
+    ...(section.viewType === "calendar" ? { calendarCategories: DEFAULT_CATEGORIES } : {}),
     ...(source?.dimension ? { sourceDimension: source.dimension } : {}),
     ...(source?.facetKey ? { sourceFacetKey: source.facetKey } : {}),
   };
